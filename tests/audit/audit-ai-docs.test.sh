@@ -171,38 +171,11 @@ EOF
 }
 
 # ─── React-Next probes ───────────────────────────────────────────
-
-# ─── R12: 'use client' file imports server-only module ───────────
-# Probe matches imports from infrastructure/, config/env, fs, node:fs, node:crypto.
-test_R12() {
-  should_skip R12 && return 0
-  [ -f "$AUDIT_UI_SH" ] || return 0
-  local d; d=$(new_workdir); enter "$d"
-  mkdir -p src/app
-  cat > src/app/page.tsx <<'EOF'
-'use client'
-import { readFileSync } from 'fs';
-export default function Page() { return null; }
-EOF
-  assert_fails R12 "$AUDIT_UI_SH"
-  rm -rf "$d"
-}
-
-# ─── R14: Server Action without Zod safeParse on FormData ────────
-test_R14() {
-  should_skip R14 && return 0
-  [ -f "$AUDIT_UI_SH" ] || return 0
-  local d; d=$(new_workdir); enter "$d"
-  mkdir -p src/app/actions
-  cat > src/app/actions/contact.ts <<'EOF'
-'use server'
-export async function contact(formData: FormData) {
-  return { ok: true };
-}
-EOF
-  assert_fails R14 "$AUDIT_UI_SH"
-  rm -rf "$d"
-}
+# R12, R14, R20 are now enforced by ESLint (rules-as-tests plugin):
+#   R12 → no-restricted-globals + no-server-imports-in-client
+#   R14 → require-form-safe-parse
+#   R20 → require-use-server-directive
+# Negative tests for those rules live in templates/shared/eslint-rules/*.test.ts.
 
 # ─── R17: Component without .stories.tsx (emits WARN, not FAIL) ──
 test_R17() {
@@ -224,22 +197,6 @@ test_R17() {
   rm -rf "$d"
 }
 
-# ─── R20: Server Action without 'use server' directive ───────────
-# R20 probe checks for missing 'use server', NOT Zod (that's R14).
-test_R20() {
-  should_skip R20 && return 0
-  [ -f "$AUDIT_UI_SH" ] || return 0
-  local d; d=$(new_workdir); enter "$d"
-  mkdir -p src/app/actions
-  cat > src/app/actions/save.ts <<'EOF'
-export async function save(formData: FormData) {
-  return { ok: true };
-}
-EOF
-  assert_fails R20 "$AUDIT_UI_SH"
-  rm -rf "$d"
-}
-
 # ─── Run all ─────────────────────────────────────────────────────
 echo "── Running negative tests for audit probes ──"
 
@@ -247,10 +204,7 @@ test_R4
 test_R4_partial
 test_D1
 test_D2
-test_R12
-test_R14
 test_R17
-test_R20
 
 echo ""
 echo "── Summary ──"

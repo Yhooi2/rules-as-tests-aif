@@ -5,17 +5,17 @@
 # Each probe maps EXPLICITLY to a rule from .ai-factory/RULES.react-next.md.
 #
 # Rule mapping:
-#   R12 Server vs Client          → globals (window/document/localStorage) delegated to ESLint
-#                                    (no-restricted-globals); server-imports-in-client → probe_R12
-#                                    until ESLint rule rules-as-tests/no-server-imports-in-client lands
+#   R12 Server vs Client          → delegated to ESLint
+#                                    (no-restricted-globals + rules-as-tests/no-server-imports-in-client)
 #   R13 Data fetching             → manual review (TanStack Query usage)
-#   R14 Forms                     → probe_R14  (server actions + Zod safeParse)
+#   R14 Forms                     → delegated to ESLint rule rules-as-tests/require-form-safe-parse
 #   R15 Accessibility             → delegated to ESLint (jsx-a11y/no-static-element-interactions)
 #   R16 Performance               → delegated to ESLint (@next/next/no-img-element + no-html-link-for-pages)
 #   R17 Component tests           → probe_R17  (each component has .stories.tsx)
 #   R18 TanStack Query            → manual review
 #   R19 Styles                    → delegated to dependency-cruiser (no styled-components)
-#   R20 Server Actions            → probe_R20  ('use server' + Zod parse)
+#   R20 Server Actions            → delegated to ESLint rule rules-as-tests/require-use-server-directive
+#                                    (screen.debug() leftovers → ESLint testing-library/no-debugging-utils)
 #
 # Plus base server-side probes from audit-ai-docs.sh.
 #
@@ -62,53 +62,9 @@ if [ -f scripts/audit-ai-docs.sh ] && [ -z "$ONLY" ]; then
   echo ""
 fi
 
-# ────────────────────────────────────────────────────────────────────────
-# R12 — Server vs Client Components
-# Globals (window/document/localStorage) in Server Components: delegated to
-# ESLint no-restricted-globals (templates/react-next/eslint.config.react.mjs).
-# Remaining grep probe: 'use client' files importing server-only modules.
-# Will be replaced by ESLint rule rules-as-tests/no-server-imports-in-client.
-# ────────────────────────────────────────────────────────────────────────
-if skip_unless R12; then : ; else
-  RULE="R12: 'use client' files must not import server-only modules"
-  VIOL=""
-  for f in $(find src -name "*.tsx" 2>/dev/null); do
-    if head -3 "$f" | grep -q "'use client'\\|\"use client\""; then
-      out=$(grep -E "from ['\"](.*infrastructure|.*config/env|fs|node:fs|node:crypto)['\"]" "$f" 2>/dev/null \
-        | grep -v "// audit:exempt" || true)
-      [ -n "$out" ] && VIOL="$VIOL"$'\n'"$f (client): imports server-only — $out"
-    fi
-  done
-
-  if [ -z "$VIOL" ]; then
-    pass "$RULE"
-  else
-    fail "$RULE"
-    echo "$VIOL" | sed 's/^/    /'
-  fi
-fi
-
-# ────────────────────────────────────────────────────────────────────────
-# R14 — Forms: Server Actions accept FormData and validate with Zod
-# ────────────────────────────────────────────────────────────────────────
-if skip_unless R14; then : ; else
-  RULE="R14: Forms via Server Actions with Zod safeParse on formData"
-  VIOL=""
-  for f in $(find src/app/actions src/features/*/api -name "*.ts" 2>/dev/null \
-    | grep -v "\\.unit\\.\\|\\.integration\\.\\|\\.audit\\." || true); do
-    if grep -q "formData: FormData\\|formData: globalThis.FormData" "$f" 2>/dev/null; then
-      grep -q "\\.safeParse(" "$f" || VIOL="$VIOL"$'\n'"$f: accepts FormData but no safeParse() call"
-    fi
-  done
-
-  if [ -z "$VIOL" ]; then
-    pass "$RULE"
-  else
-    fail "$RULE"
-    echo "$VIOL" | sed 's/^/    /'
-  fi
-fi
-
+# R12: delegated to ESLint rules — no-restricted-globals (Server Components)
+#      + rules-as-tests/no-server-imports-in-client ('use client' files).
+# R14: delegated to ESLint rule rules-as-tests/require-form-safe-parse.
 # R15: delegated to ESLint rule jsx-a11y/no-static-element-interactions
 # R16a: delegated to ESLint rule @next/next/no-img-element
 # R16b: delegated to ESLint rule @next/next/no-html-link-for-pages
@@ -134,33 +90,8 @@ if skip_unless R17; then : ; else
   fi
 fi
 
-# ────────────────────────────────────────────────────────────────────────
-# R20 — Server Actions: 'use server' directive + structure
-# Plus: no screen.debug() in committed tests (subset of R20 hygiene)
-# ────────────────────────────────────────────────────────────────────────
-if skip_unless R20; then : ; else
-  RULE="R20: Server Actions have 'use server' directive"
-  VIOL=""
-  for f in $(find src/app/actions src/features/*/api -name "*.ts" 2>/dev/null \
-    | grep -v "\\.unit\\.\\|\\.test\\." || true); do
-    if grep -qE "^export async function" "$f" 2>/dev/null; then
-      grep -q "'use server'\\|\"use server\"" "$f" \
-        || VIOL="$VIOL"$'\n'"$f: missing 'use server' directive"
-    fi
-  done
-
-  # Also: no screen.debug() left in committed tests
-  DEBUG_LEFTOVER=$(grep -rn "screen\\.debug(" src/ 2>/dev/null \
-    | grep -v "// audit:exempt" || true)
-  [ -n "$DEBUG_LEFTOVER" ] && VIOL="$VIOL"$'\n'"screen.debug() in tests:"$'\n'"$DEBUG_LEFTOVER"
-
-  if [ -z "$VIOL" ]; then
-    pass "$RULE"
-  else
-    fail "$RULE"
-    echo "$VIOL" | sed 's/^/    /'
-  fi
-fi
+# R20: delegated to ESLint rule rules-as-tests/require-use-server-directive.
+#      screen.debug() leftovers → ESLint testing-library/no-debugging-utils.
 
 # ────────────────────────────────────────────────────────────────────────
 # Summary

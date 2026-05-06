@@ -11,7 +11,9 @@
 - `'use client'` ставится в начале файла, до импортов.
 - Файлы с `import 'server-only'` не могут быть импортированы из `'use client'` файлов.
 
-**Check:** `audit-ai-docs.react-next.sh` probe `R12` + ESLint `no-restricted-globals` для Server Components.
+**Check:** ESLint `no-restricted-globals` (Server Components: window/document/localStorage)
++ ESLint `rules-as-tests/no-server-imports-in-client` ('use client' files: forbid imports from
+infrastructure/, config/env, fs, node:fs, node:crypto, node:path).
 
 ## R13 — Data fetching
 - Server Components: прямые `async`/`await` вызовы (БД, fetch с auth headers).
@@ -31,7 +33,8 @@
 - Errors возвращаются, не throw'ятся (Next десериализует).
 - `revalidatePath()` / `revalidateTag()` после мутаций, изменяющих кеш.
 
-**Check:** `audit-ai-docs.react-next.sh` probe `R14`.
+**Check:** ESLint `rules-as-tests/require-form-safe-parse` (любая функция с параметром
+`FormData` обязана вызывать `.safeParse(...)` в теле).
 
 ## R15 — Accessibility
 - Каждый интерактивный элемент имеет accessible name (aria-label, aria-labelledby или text content).
@@ -91,7 +94,8 @@
 - `revalidatePath()` / `revalidateTag()` после мутаций, изменяющих кеш.
 - Server Actions защищены auth-проверкой (если требуется): первая строка функции — `requireUser()` или эквивалент.
 
-**Check:** `audit-ai-docs.react-next.sh` probe `R20` + project-specific probe для auth.
+**Check:** ESLint `rules-as-tests/require-use-server-directive` (`export async function`
+требует `'use server'` директивы в начале файла) + project-specific probe для auth.
 
 ---
 

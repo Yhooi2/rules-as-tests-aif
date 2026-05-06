@@ -91,15 +91,15 @@ When the project uses React/Next.js (detected by `next.config.{js,ts,mjs}` or `p
 
 | Rule | Check |
 |---|---|
-| **R12 Server vs Client Components** | for each modified `.tsx`: detect `'use client'`. If present → no server-only imports (`fs`, `db`, env-secrets). If absent in `app/**/*.tsx` → no `useState`/`useEffect`/`useRef`/`onClick`. |
+| **R12 Server vs Client Components** | ESLint `no-restricted-globals` (Server Components: window/document/localStorage) + `rules-as-tests/no-server-imports-in-client` ('use client' files: forbid imports from infrastructure/, config/env, fs, node:fs, node:crypto, node:path) |
 | **R13 Data fetching** | client components don't `fetch()` directly without `useQuery`/`useSWR` wrapper |
-| **R14 Forms** | server actions have `'use server'` AND Zod parse on `formData` |
+| **R14 Forms** | ESLint `rules-as-tests/require-form-safe-parse` (any function with `FormData` parameter must call `.safeParse(...)` in body) |
 | **R15 Accessibility** | `npx eslint --rule 'jsx-a11y/no-static-element-interactions:error' <changed>` |
 | **R16 Performance** | `npx eslint <changed> (rules: @next/next/no-img-element, @next/next/no-html-link-for-pages)` |
 | **R17 Component tests** | for every new `.tsx` component → matching `.stories.tsx` and `.unit.ts` exist |
 | **R18 TanStack Query** | `useQuery`/`useSWR` calls have typed schema via Zod `.parse()` of response |
 | **R19 Styles** | no CSS-in-JS imports (`styled-components`, `@emotion`) |
-| **R20 Server Actions** | return type matches `{ ok: true, data } \| { ok: false, error }` pattern |
+| **R20 Server Actions** | ESLint `rules-as-tests/require-use-server-directive` (`export async function` requires `'use server'` directive at top of file); return type matches `{ ok: true, data } \| { ok: false, error }` pattern |
 
 ---
 

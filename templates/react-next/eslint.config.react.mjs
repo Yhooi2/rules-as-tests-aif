@@ -182,7 +182,7 @@ export default defineConfig(
     },
   },
 
-  // Custom AST rules (R2 / R7 / R8)
+  // Custom AST rules (R2 / R7 / R8 / R12 / R14 / R20)
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/infrastructure/**/*.{ts,tsx}'],
@@ -209,6 +209,30 @@ export default defineConfig(
     plugins: { 'rules-as-tests': customRules },
     rules: {
       'rules-as-tests/require-otel-span': 'error',
+    },
+  },
+  // R12 part 2 — 'use client' files cannot import server-only modules
+  // Path-agnostic: rule self-checks for 'use client' directive
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: { 'rules-as-tests': customRules },
+    rules: {
+      'rules-as-tests/no-server-imports-in-client': 'error',
+    },
+  },
+  // R14 + R20 — Server Actions / API handlers
+  {
+    files: [
+      'app/**/actions/**/*.{ts,tsx}',
+      'src/app/**/actions/**/*.{ts,tsx}',
+      'app/api/**/*.{ts,tsx}',
+      'src/app/api/**/*.{ts,tsx}',
+      'src/features/*/api/**/*.{ts,tsx}',
+    ],
+    plugins: { 'rules-as-tests': customRules },
+    rules: {
+      'rules-as-tests/require-form-safe-parse': 'error',
+      'rules-as-tests/require-use-server-directive': 'error',
     },
   },
 
