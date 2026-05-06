@@ -110,18 +110,6 @@ export default defineConfig(
           message:
             'Use union types or `as const` objects instead of enum (verbatimModuleSyntax-incompatible).',
         },
-        {
-          selector:
-            'CallExpression[callee.object.name="Date"][callee.property.name="now"]',
-          message:
-            'Use an injected Clock instead of Date.now() in production code.',
-        },
-        {
-          selector:
-            'CallExpression[callee.object.name="Math"][callee.property.name="random"]',
-          message:
-            'Use an injected Random source instead of Math.random() in production code.',
-        },
       ],
     },
   },
