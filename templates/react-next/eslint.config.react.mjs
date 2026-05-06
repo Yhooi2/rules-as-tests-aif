@@ -13,7 +13,7 @@ import testingLibrary from 'eslint-plugin-testing-library';
 import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 import { defineConfig } from 'eslint/config';
-import customRules from '../shared/eslint-rules/index.ts';
+import customRules from './eslint-rules-local/index.ts';
 
 export default defineConfig(
   {

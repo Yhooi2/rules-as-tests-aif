@@ -128,6 +128,16 @@ copy_safe "$PKG_ROOT/templates/shared/husky-pre-commit.sh" "$PROJECT_ROOT/.husky
 copy_safe "$PKG_ROOT/templates/shared/husky-pre-push.sh" "$PROJECT_ROOT/.husky/pre-push"
 chmod +x "$PROJECT_ROOT/.husky/pre-commit" "$PROJECT_ROOT/.husky/pre-push" 2>/dev/null || true
 
+# ─── 5b. Custom ESLint rules plugin (used by eslint.config.mjs) ───
+echo "▶ Custom ESLint rules → eslint-rules-local/"
+mkdir -p "$PROJECT_ROOT/eslint-rules-local"
+for f in "$PKG_ROOT"/templates/shared/eslint-rules/*.ts; do
+  case "$f" in
+    *.test.ts) continue ;;
+  esac
+  copy_safe "$f" "$PROJECT_ROOT/eslint-rules-local/$(basename "$f")"
+done
+
 # ─── 6. Stack-specific templates ────────────────────────
 echo "▶ Stack-specific templates ($STACK) → project root"
 mkdir -p "$PROJECT_ROOT/.github/workflows"
