@@ -134,6 +134,7 @@ mkdir -p "$PROJECT_ROOT/eslint-rules-local"
 for f in "$PKG_ROOT"/templates/shared/eslint-rules/*.ts; do
   case "$f" in
     *.test.ts) continue ;;
+    */vitest.config.ts) continue ;;
   esac
   copy_safe "$f" "$PROJECT_ROOT/eslint-rules-local/$(basename "$f")"
 done
