@@ -5,7 +5,9 @@
 # Each probe maps EXPLICITLY to a rule from .ai-factory/RULES.react-next.md.
 #
 # Rule mapping:
-#   R12 Server vs Client          → probe_R12  (use client + server-only imports)
+#   R12 Server vs Client          → globals (window/document/localStorage) delegated to ESLint
+#                                    (no-restricted-globals); server-imports-in-client → probe_R12
+#                                    until ESLint rule rules-as-tests/no-server-imports-in-client lands
 #   R13 Data fetching             → manual review (TanStack Query usage)
 #   R14 Forms                     → probe_R14  (server actions + Zod safeParse)
 #   R15 Accessibility             → delegated to ESLint (jsx-a11y/no-static-element-interactions)
@@ -62,21 +64,14 @@ fi
 
 # ────────────────────────────────────────────────────────────────────────
 # R12 — Server vs Client Components
+# Globals (window/document/localStorage) in Server Components: delegated to
+# ESLint no-restricted-globals (templates/react-next/eslint.config.react.mjs).
+# Remaining grep probe: 'use client' files importing server-only modules.
+# Will be replaced by ESLint rule rules-as-tests/no-server-imports-in-client.
 # ────────────────────────────────────────────────────────────────────────
 if skip_unless R12; then : ; else
-  RULE="R12: Server vs Client boundary (no window/document in Server Components)"
+  RULE="R12: 'use client' files must not import server-only modules"
   VIOL=""
-  for f in $(find src/app app -name "*.tsx" 2>/dev/null \
-    | grep -v "\\.unit\\.\\|\\.integration\\.\\|\\.test\\.\\|\\.spec\\." || true); do
-    if head -3 "$f" | grep -q "'use client'\\|\"use client\""; then
-      continue
-    fi
-    out=$(grep -nE "\\bwindow\\.|\\bdocument\\.|\\blocalStorage\\b|\\bsessionStorage\\b" "$f" 2>/dev/null \
-      | grep -v "// audit:exempt" || true)
-    [ -n "$out" ] && VIOL="$VIOL"$'\n'"$f: $out"
-  done
-
-  # Also: 'use client' files importing server-only modules
   for f in $(find src -name "*.tsx" 2>/dev/null); do
     if head -3 "$f" | grep -q "'use client'\\|\"use client\""; then
       out=$(grep -E "from ['\"](.*infrastructure|.*config/env|fs|node:fs|node:crypto)['\"]" "$f" 2>/dev/null \
