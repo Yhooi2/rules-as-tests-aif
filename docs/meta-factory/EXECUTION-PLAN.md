@@ -185,6 +185,30 @@ Pages Router REMOVED, async params/searchParams обязательны (Promises
 
 ---
 
+## 5.5 Phase entry gate (added 2026-05-08 — context7-first research)
+
+> **Trigger:** перед началом любой Phase, до драфта `PHASE-N-PROMPT.md`.
+> **Origin:** 2026-05-08 AIF comparison обнаружил 6 areas of overlap c готовыми решениями; до этого roadmap содержал ~30-40% reinvented capability.
+
+**Step 0 «Existing solutions research»** — обязательный gate перед implementation планированием:
+
+1. **List capability areas** Phase покроет (3-7 distinct capabilities)
+2. **Resolve candidates** через `mcp__context7__resolve-library-id` для каждой capability — AIF + 2-4 top alternatives в той же домене
+3. **Specific queries** через `mcp__context7__query-docs` по target functionality (не general terms; itera 3 phrasings минимум если результат пустой)
+4. **Build matrix** `{capability} × {existing solution} × {convergent design}` — записывается в `docs/meta-factory/phase-N-research.md` (transient artifact, ≤200 строк)
+5. **Go/no-go per capability:** для каждой — explicit rationale «build vs reuse» с цитатой из context7 result
+
+**Hard constraints:**
+- **No git clone / gh api** для external libraries — только context7 (per memory rule установленному 2026-05-08).
+- Если context7 не имеет library ID — flag «not in context7» в matrix, fallback к local clone только как last resort с explicit оговоркой.
+- **Output verifiable** — каждый claim в matrix через context7 query, не trust-by-narration.
+
+**Acceptance:** matrix complete + go/no-go decisions per capability + ≥1 reuse decision (если все 3-7 capabilities = «build», это red flag — high probability of reinvention).
+
+**Phase 0.5 — 2** этому gate'у не предшествовали (предшествуют сейчас retrofit в `aif-comparison.md`). Применяется начиная с Phase 3 retrofit + Phase 4-9.
+
+---
+
 ## 6. План фаз с retrospective gates
 
 > **Parallelism note (M3 finding 2026-05-07):** Phase 2 (principles meta-tests) и Phase 4 (Stack Detector v1) технически могут стартовать параллельно с Phase 3 (monorepo split): Phase 2 пишет тесты в `tests/principles/` независимо от структуры пакетов; Phase 4 дорабатывает уже-работающий `setup.sh:82-97` + `scripts/detect-applicable-rules.ts` in-place. Phase 3 split лишь определяет финальный shape куда переезжают артефакты. Решение «делать ли параллельно» — **на Phase 1 retrospective** по реальной cognitive-load оценке, не сейчас. Cumulative timeline в §8 оставлен консервативным как upper bound; sequential execution = baseline, parallelism = potential win при подтверждении на Phase 1 retro.
