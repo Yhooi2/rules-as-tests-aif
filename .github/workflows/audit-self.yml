@@ -2,7 +2,7 @@ name: audit-self
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'chore/**']
   pull_request:
 
 jobs:
@@ -171,3 +171,61 @@ jobs:
               || { echo "::error::$hook lacks expected probes (looks empty/stub)"; exit 1; }
           done
           echo "✓ .husky/ hooks present, executable, non-trivial"
+
+  framework-self-install-ts-server:
+    name: Self-install on tmp consumer (ts-server)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+      - name: Install python pyyaml (required by audit probes)
+        run: pip install pyyaml
+      - name: Self-install on tmp consumer (ts-server preset)
+        run: |
+          mkdir -p /tmp/fake-consumer-ts && cd /tmp/fake-consumer-ts
+          git init --quiet
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          echo '{"name":"fake-consumer-ts","version":"0.0.0","private":true}' > package.json
+          bash "$GITHUB_WORKSPACE/install.sh" ts-server
+      - name: Run framework own audits inside fake consumer
+        run: |
+          cd /tmp/fake-consumer-ts
+          bash "$GITHUB_WORKSPACE/tests/audit/audit-ai-docs.test.sh" || \
+            { echo "::error::framework audits failed inside tmp consumer (ts-server)"; exit 1; }
+
+  framework-self-install-react-next:
+    name: Self-install on tmp consumer (react-next)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+      - name: Install python pyyaml (required by audit probes)
+        run: pip install pyyaml
+      - name: Self-install on tmp consumer (react-next preset)
+        run: |
+          mkdir -p /tmp/fake-consumer-rn && cd /tmp/fake-consumer-rn
+          git init --quiet
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          echo '{"name":"fake-consumer-rn","version":"0.0.0","private":true}' > package.json
+          # next.config.js triggers auto-detection in setup.sh; also pass explicit stack to install.sh
+          echo 'module.exports = {};' > next.config.js
+          bash "$GITHUB_WORKSPACE/install.sh" react-next
+      - name: Run framework own audits inside fake consumer
+        run: |
+          cd /tmp/fake-consumer-rn
+          bash "$GITHUB_WORKSPACE/tests/audit/audit-ai-docs.test.sh" || \
+            { echo "::error::framework audits failed inside tmp consumer (react-next)"; exit 1; }
