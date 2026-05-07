@@ -53,12 +53,16 @@ If `audit:docs` fails — that's a separate category of failure (docs-vs-code dr
 
 ### Step 4: Output structured verdict
 
+_Policy: `.parse()` is forbidden in `src/web/handlers/`, `src/app/actions/`, `src/app/api/`. Use `.safeParse()` and branch on `.success`._
+
 ```
 ## Verdict
 - R1 TypeScript hygiene: PASS
 - R2 Validation at boundaries: FAIL
-    src/web/handlers/order.ts:42 — `request.body` accessed without nearby Zod .parse()
-    Fix: add `const body = OrderSchema.parse(request.body)` at line 41.
+    src/web/handlers/order.ts:42 — `request.body` accessed without `.safeParse()`
+    Fix: replace any `.parse(request.body)` with:
+      const r = OrderSchema.safeParse(request.body);
+      if (!r.success) return reply.code(400).send(r.error.flatten());
 - R3 Architectural boundaries: PASS
 - R4 Tests for new code: FAIL
     src/domain/order.ts:exports `placeOrder` (line 23) — no matching test file
