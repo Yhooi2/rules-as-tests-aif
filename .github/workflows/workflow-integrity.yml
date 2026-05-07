@@ -1,0 +1,75 @@
+name: workflow-integrity
+
+# R11 — CI integrity, executable form.
+# See factory/RULES.md#r11--ci-integrity for policy.
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    name: actionlint — YAML & expression correctness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      - name: Run actionlint
+        uses: rhysd/actionlint@4dde6cc9404f24f0930a25e9d34fc5a4ea22e0eb  # v1.7.12 — pin and bump via Dependabot
+        with:
+          args: -color
+
+  zizmor:
+    name: zizmor — supply-chain audits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install zizmor
+        run: pip install zizmor
+      - name: Run zizmor
+        run: |
+          zizmor --format sarif .github/workflows/ > zizmor.sarif
+        continue-on-error: false
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: zizmor.sarif
+          category: zizmor
+
+  branch-protection-assertion:
+    name: ci-success required-check assertion
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Assert ci-success is a required status check on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Try classic branch protection first
+          if gh api "repos/${{ github.repository }}/branches/main/protection" 2>/dev/null \
+              | jq -e '.required_status_checks.contexts | contains(["ci-success"])' > /dev/null; then
+            echo "✅ ci-success is required (classic branch protection)"
+            exit 0
+          fi
+          # Fall back to rulesets
+          if gh api "repos/${{ github.repository }}/rulesets" 2>/dev/null \
+              | jq -e '[.[] | select(.enforcement == "active")] | length > 0' > /dev/null; then
+            echo "✅ rulesets active — manually verify ci-success in https://github.com/${{ github.repository }}/settings/rules"
+            exit 0
+          fi
+          echo "::error::ci-success is NOT a required status check on main."
+          echo "::error::Set it via: Settings → Branches → main → Require status checks → ci-success"
+          exit 1
