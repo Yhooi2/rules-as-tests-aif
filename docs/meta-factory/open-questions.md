@@ -54,6 +54,14 @@ Generated если:
 
 Это **рабочая гипотеза**, нужно валидировать на реальных правилах.
 
+#### Phase 2 empirical update (2026-05-07)
+
+Phase 2 показала: meta-tests **uniformly applicable** ко всем 26 правилам manifest (R1-R20 + IR1-IR6) на manifest level — независимо от классификации invariant/generated. Composite pass rate 100% (26/26 на applicable principles).
+
+**Что Phase 2 НЕ показала:** где конкретно проходит граница invariant ↔ generated. Это финально валидируется только в Phase 3 (monorepo split), когда правила физически разделятся на `packages/core/` (invariant) vs `packages/preset-*/` (generated) и каждый пакет должен пройти standalone test runs (per EXECUTION-PLAN §6 Phase 3 verification).
+
+**Status:** partial closure — manifest-level uniformity подтверждена; physical boundary refinement deferred to Phase 3 retro.
+
 ### 13.4 Обработка legacy кодовой базы
 
 Если мета-фабрика устанавливается в **существующий** проект с кучей legacy кода — все сгенерированные правила сразу дадут тысячи violations. Что делать?

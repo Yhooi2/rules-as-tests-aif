@@ -209,8 +209,12 @@ actually fail on the mutated input. No tautological meta-tests detected.
   a well-named placeholder rule (e.g., `rules-as-tests/placeholder`) would pass P3
   but provide no enforcement. Phase 5 runtime check is the real gate.
 
-**§13.3 closure:** Empirically closed — all R1-R20 and IR1-IR6 pass meta-tests at 100%.
-  PROPOSAL.md §13.3 can be updated to reflect this finding.
+**§13.3 closure:** **Partial.** Empirically: all R1-R20 + IR1-IR6 pass meta-tests uniformly
+  at manifest level (26/26). Physical boundary invariant↔generated refinement requires Phase 3
+  (standalone test runs per `packages/core/` vs `packages/preset-*/` after split).
+  See [open-questions.md](../open-questions.md) §13.3 «Phase 2 empirical update» — partial
+  closure recorded; final closure deferred to Phase 3 retro. (Note: §13.3 location moved
+  from PROPOSAL.md → open-questions.md в Phase 1.D split.)
 
 **Verdict:** **GO** — all acceptance criteria met:
   - ≥7 principles: ✓ (7)
