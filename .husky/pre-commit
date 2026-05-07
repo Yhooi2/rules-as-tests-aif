@@ -54,13 +54,13 @@ while IFS= read -r f; do
   esac
 done <<< "$CHANGED"
 
-exit "$fail"
-
 # ── Spec discipline (Phase 1.C) — soft warn for staged orchestrator-prompts ──
-SPEC_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^\.claude/orchestrator-prompts/.*\.md$' || true)
+SPEC_FILES=$(echo "$CHANGED" | grep '^\.claude/orchestrator-prompts/.*\.md$' || true)
 if [ -n "$SPEC_FILES" ]; then
   echo "ℹ Validating staged orchestrator-prompts (soft-warn)..."
   # shellcheck disable=SC2086
   npx tsx "$REPO_ROOT/scripts/validate-batch-spec.ts" --soft $SPEC_FILES \
     || echo "⚠ spec-validate findings; pre-push will hard-fail"
 fi
+
+exit "$fail"

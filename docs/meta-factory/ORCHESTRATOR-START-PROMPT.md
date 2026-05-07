@@ -103,52 +103,76 @@
 
 ---
 
-## Delegation guidelines
+## Delegation guidelines (token-economy mode, 2026-05-07)
 
-Старшая (ты, Opus orchestrator) **не делает** mechanical edits — только review, planning, decisions. Делегация junior tasks — двумя путями (выбор зависит от объёма и контекста):
+Старшая (ты, Opus orchestrator) **сам делает только мелкие задачи**. Средние/большие — обязательно через готовый промпт для Sonnet (manual handoff). **Это правило установлено Art'ом** для экономии Opus tokens.
 
-### Путь A — `Agent` tool (Opus subagent в той же сессии)
+### Что orchestrator делает САМ (мелкое, ≤20 строк / 1 file / decision)
 
-Subagent наследует Opus, **не** Sonnet. Использовать когда задача:
-- маленькая-средняя по объёму
-- укладывается в одно сообщение orchestrator'а с чёткими acceptance criteria
-- требует немедленного return результата старшей для следующего шага
+- Single-file edits ≤20 строк (line number fixes, status updates, one-paragraph additions)
+- Decision artifacts: retros, verdicts, review summaries, addendums
+- Простая verification: `wc -l`, `grep -c`, `bash -n`, `gh run list`
+- Communication с Art'ом
+- Self-review проходы по уже-готовому коду (read-only)
 
-| Тип задачи | subagent_type | Когда использовать |
-|---|---|---|
-| Чтение и поиск кода | `Explore` | Quick lookups в неизвестных частях кодовой базы |
-| Mechanical edits (multi-file refactor, ограниченный scope) | `general-purpose` | Небольшие batch implementations, локальные правки |
-| Architecture design (read-only) | `Plan` | Перед реализацией нетривиальной фазы — спросить план |
-| UI/React работа | `ui-designer-react` или `ux-react-expert` | Phase 7 react-next preset |
-| Code review (independent) | `general-purpose` с явной формулировкой «independent review» | Acceptance check после batch'а |
+### Путь B (default для среднего/большого) — готовый промпт для Sonnet manual handoff
 
-**Параллелизм:** если несколько batch'ей независимы — single message с multiple `Agent` tool calls.
+**Использовать для:**
+- Multi-file edits, batch implementations
+- Создание скриптов с тестами (`scripts/*.ts` + `*.test.ts`)
+- Architecture changes (PROPOSAL split, monorepo refactor)
+- Phase batches (1.A, 1.B, 1.C, 2, 3, ...)
+- Любая writing task которая требует >1 file ИЛИ >50 строк output
 
-### Путь B — готовый промпт для Sonnet (manual handoff в новую сессию)
+**Workflow:**
+1. Orchestrator пишет полностью self-contained промпт (см. формат ниже)
+2. Кладёт промпт **в chat Art'у** или сохраняет в файл `docs/meta-factory/<task>-PROMPT.md`
+3. Art копирует в новую Sonnet-сессию (Claude Code или claude.ai)
+4. Sonnet выполняет работу + верификацию в своей сессии
+5. Art forwards Sonnet report обратно orchestrator'у
+6. Orchestrator: review report → next decision / next prompt
 
-Старшая пишет полностью self-contained промпт текстом и отдаёт Art'у. Art сам открывает **новую Sonnet-сессию** и вставляет промпт. Использовать когда задача:
-- крупная (Phase 1 batch целиком, Phase 3 split, Phase 4+ детектор)
-- хочется изолировать выполнение от Opus-сессии (квота, длительный контекст)
-- нужен явный manual handoff с возможностью Art'у проконтролировать перед запуском
+**Формат self-contained промпта:**
+- Working dir + branch explicit
+- Контекст: что уже сделано, цель batch'а
+- Список файлов для обязательного чтения (с reasons почему каждый)
+- Scope: что создать / изменить, с line counts targets
+- Hard constraints (не делать `git push`, не использовать `--no-verify`, pinned SHAs only)
+- Verification команды (реально выполняемые, не псевдо-код)
+- Self-reflection questions (для retro)
+- Return format (структурированный report ≤400 слов)
+- НИКАКИХ ссылок на context текущей Opus-сессии — Sonnet начнёт с нуля
 
-**Формат промпта для Sonnet** (copy-paste-ready):
-- working dir и branch явно
-- список файлов для обязательного чтения
-- chunk by chunk acceptance criteria (verification команды)
-- stop conditions
-- куда коммитить retro
-- никаких ссылок на context текущей Opus-сессии (Sonnet начнёт с нуля)
+### Путь A (`Agent` tool → Opus subagent) — только для read-only
 
-**`Agent` tool с Sonnet — не работает, не пытаться.** Subagent в Claude Code наследует или Opus, или ограничен availability — Sonnet через `Agent` недоступен.
+**Разрешено:**
+- Quick lookups (Explore subagent — find files / grep symbols)
+- Single-question independent reviews готового кода (без writing)
+- 1-shot decisions с output ≤50 строк
+
+**Запрещено:**
+- Writing tasks (создание/правка файлов) — это сжигает Opus quota
+- Multi-step implementations
+- Anything which Sonnet manual handoff может сделать дешевле
+
+**`Agent` tool с Sonnet — не работает, не пытаться.** Subagent в Claude Code наследует Opus от parent (или ограничен availability) — Sonnet через `Agent` недоступен.
 
 ### Общий контракт делегации (оба пути)
 
 - Ты планируешь → передаёшь конкретный batch с командами и acceptance criteria
-- Junior (Opus subagent или manual Sonnet) выполняет + сам верифицирует
+- Junior (Sonnet manual или Opus subagent) выполняет + сам верифицирует
 - Ты принимаешь по доказательствам (логи, diff, тесты)
-- Никогда не делай batch implementation сам — это нарушает orchestrator pattern
+- Если report показывает issues — пишешь follow-up промпт, не правишь сам
 
-**Skill:** существующий `orchestrator` skill в репо описывает Mode A / Mode B — оба варианта совместимы с Путём A и Путём B выше.
+### Self-check перед делегацией
+
+Прежде чем писать `Agent` tool call — спросить:
+- Можно ли это сделать через Sonnet manual handoff (Путь B)?
+- Если да → Путь B (default)
+- Если нет (read-only / quick lookup) → Путь A
+- Если задача мелкая ≤20 строк → orchestrator сам
+
+**Skill:** `orchestrator` skill в репо описывает Mode A / Mode B — Mode B (Sonnet handoff) теперь default; Mode A (Agent tool Opus) deprecated для writing.
 
 ---
 
