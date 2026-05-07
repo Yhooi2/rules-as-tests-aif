@@ -231,6 +231,12 @@ grep "self-application.md" PROPOSAL.md                # cross-reference exists
 
 **Артефакты:** `.husky/pre-commit`, `.husky/pre-push`, `Makefile`, `CONTRIBUTING.md`, root `package.json` если нужен для husky.
 
+**Scope expansion (added 2026-05-07 per PROPOSAL.md §13.9 — `--no-verify` mitigation):** новый job `enforce-husky-presence` в `.github/workflows/audit-self.yml`:
+- Проверяет существование `.husky/pre-commit` и `.husky/pre-push` в коммитимом репо (`test -f` + `test -x`)
+- Содержимое hooks не пустое и не начинается с `exit 0`
+- CI fail при отсутствии setup'а — превращает локальный `--no-verify` bypass из invisible в visible breach
+- ~10 строк YAML, no external dependencies
+
 **Содержание `.husky/pre-commit`:**
 - Из `templates/shared/husky-pre-commit.sh` + extended mechanical probes из `audit-self.yml`:
   - bash syntax (scoped к `git diff --cached -- '*.sh'`)

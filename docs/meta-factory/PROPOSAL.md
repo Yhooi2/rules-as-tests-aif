@@ -717,6 +717,7 @@ Decision matrix в [self-application.md](self-application.md) §3 фиксиру
 ## 15. Self-application as architectural invariant
 
 Self-application — не отдельный шаг, а cross-cutting invariant каждого слоя мета-фабрики. Без него центральный тезис «documents lie; tests don't» фальсифицирован: фреймворк поставляет enforcement-инструменты потребителю, но не применяет их к себе. Invariant действует с момента 0 — установка лишь последняя точка верификации.
+
 | Слой | Self-application clause |
 |---|---|
 | **L0 Invariant Core** | Принципы прогоняются как тесты против собственного `rules-manifest.json` в pre-commit/CI |
