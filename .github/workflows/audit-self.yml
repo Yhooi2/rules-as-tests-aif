@@ -43,7 +43,26 @@ jobs:
       - name: No file > 500 lines (markdown)
         run: |
           fail=0
+          # Exempt list: declared-transient artifacts per their own disclaimer.
+          # Each entry MUST include rationale comment.
+          # Guard: each exempt file must contain "transient artifact" in first 20 lines
+          # — prevents agents from adding entries to EXEMPT without in-file justification.
+          EXEMPT=(
+            "./docs/meta-factory/EXECUTION-PLAN.md"  # transient pre-1.0 plan, see line 8
+          )
           while IFS= read -r f; do
+            for ex in "${EXEMPT[@]}"; do
+              if [ "$f" = "$ex" ]; then
+                if head -20 "$f" | grep -qi "transient artifact"; then
+                  echo "::notice file=$f::skipped overweight check (declared transient)"
+                  continue 2
+                else
+                  echo "::error file=$f::listed in EXEMPT but no 'transient artifact' marker in first 20 lines"
+                  fail=1
+                  continue 2
+                fi
+              fi
+            done
             n=$(wc -l < "$f")
             if [ "$n" -gt 500 ]; then
               echo "::error file=$f::overweight ($n lines, max 500)"
