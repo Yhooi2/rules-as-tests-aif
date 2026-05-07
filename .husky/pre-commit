@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Pre-commit hook: fast checks only (target: <5 seconds).
+# Author-side enforcement for rules-as-tests-aif repo.
+# Installs via: make install-hooks
+#
+# Probes (Decision matrix MUST rows, self-application.md §3):
+#   - Bash syntax:      bash -n on changed *.sh
+#   - JSON validity:    python3 json.load on changed *.json
+#   - YAML validity:    python3 yaml.safe_load on changed *.yml/*.yaml
+#   - Markdown ≤500 lines: awk on changed *.md
+
+set -euo pipefail
+
+CHANGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+
+if [ -z "$CHANGED" ]; then
+  exit 0
+fi
+
+fail=0
+
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  case "$f" in
+    *.sh)
+      if ! bash -n "$f" 2>/tmp/pre-commit-err; then
+        echo "❌ Bash syntax error in $f:"
+        cat /tmp/pre-commit-err
+        fail=1
+      fi
+      ;;
+    *.json)
+      if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" 2>/tmp/pre-commit-err; then
+        echo "❌ Invalid JSON in $f:"
+        cat /tmp/pre-commit-err
+        fail=1
+      fi
+      ;;
+    *.yml|*.yaml)
+      if ! python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$f" 2>/tmp/pre-commit-err; then
+        echo "❌ Invalid YAML in $f:"
+        cat /tmp/pre-commit-err
+        fail=1
+      fi
+      ;;
+    *.md)
+      lines=$(awk 'END{print NR}' "$f")
+      if [ "$lines" -gt 500 ]; then
+        echo "❌ Markdown file $f exceeds 500 lines ($lines lines). Split or trim."
+        fail=1
+      fi
+      ;;
+  esac
+done <<< "$CHANGED"
+
+exit "$fail"

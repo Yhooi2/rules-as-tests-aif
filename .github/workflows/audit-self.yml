@@ -151,3 +151,23 @@ jobs:
         run: npm install --silent tsx ajv
       - name: Render & diff
         run: npx tsx scripts/render-rules.ts --check
+
+  enforce-husky-presence:
+    name: Verify .husky/ hooks exist and are non-trivial
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Verify .husky/ hooks exist and are executable
+        run: |
+          for hook in .husky/pre-commit .husky/pre-push; do
+            test -f "$hook" || { echo "::error::missing $hook"; exit 1; }
+            test -x "$hook" || { echo "::error::$hook not executable"; exit 1; }
+            # non-empty + non-trivial (not just exit 0)
+            grep -qE '\b(actionlint|zizmor|bash -n|json\.load|yaml\.safe_load)\b' "$hook" \
+              || { echo "::error::$hook lacks expected probes (looks empty/stub)"; exit 1; }
+          done
+          echo "✓ .husky/ hooks present, executable, non-trivial"
