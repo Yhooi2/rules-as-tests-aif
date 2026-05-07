@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write  # required by github/codeql-action/upload-sarif
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55  # v5.5.0
@@ -40,14 +39,10 @@ jobs:
       - name: Install zizmor
         run: pip install zizmor
       - name: Run zizmor
-        run: |
-          zizmor --format sarif .github/workflows/ > zizmor.sarif
-      - name: Upload SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@717e230604b28efc38d8b4d3737d0611b16bc19a  # v3.30.0
-        with:
-          sarif_file: zizmor.sarif
-          category: zizmor
+        # Plain console output. zizmor exits non-zero on findings; that's the gate.
+        # Avoiding SARIF upload keeps this workflow runnable in repos without
+        # GitHub Advanced Security enabled (free public repos, etc.).
+        run: zizmor --format plain .github/workflows/
 
   branch-protection-assertion:
     name: ci-success required-check assertion
