@@ -29,6 +29,9 @@ jobs:
   zizmor:
     name: zizmor — supply-chain audits
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # required by github/codeql-action/upload-sarif
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
       - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55  # v5.5.0
@@ -39,7 +42,6 @@ jobs:
       - name: Run zizmor
         run: |
           zizmor --format sarif .github/workflows/ > zizmor.sarif
-        continue-on-error: false
       - name: Upload SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@717e230604b28efc38d8b4d3737d0611b16bc19a  # v3.30.0
@@ -58,18 +60,34 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Try classic branch protection first
-          if gh api "repos/${{ github.repository }}/branches/main/protection" 2>/dev/null \
-              | jq -e '.required_status_checks.contexts | contains(["ci-success"])' > /dev/null; then
-            echo "✅ ci-success is required (classic branch protection)"
-            exit 0
+          # Tri-state semantics:
+          #   - protection or rulesets configured AND include ci-success → pass
+          #   - protection or rulesets configured but ci-success missing → fail (R11 violated)
+          #   - no protection AND no rulesets → warn (R11 not yet adopted), pass
+          # Rationale: don't block PRs in repos that haven't yet configured branch
+          # protection. Once configured, R11 enforcement kicks in automatically.
+
+          protection_json="$(gh api "repos/${{ github.repository }}/branches/main/protection" 2>/dev/null || echo 'null')"
+          rulesets_json="$(gh api "repos/${{ github.repository }}/rulesets" 2>/dev/null || echo '[]')"
+
+          has_protection=$(echo "$protection_json" | jq 'if . == null or (type=="object" and has("message")) then false else true end')
+          has_rulesets=$(echo "$rulesets_json" | jq 'if type=="array" then [.[] | select(.enforcement == "active")] | length > 0 else false end')
+
+          if [ "$has_protection" = "true" ]; then
+            if echo "$protection_json" | jq -e '.required_status_checks.contexts | contains(["ci-success"])' > /dev/null; then
+              echo "✅ ci-success is required (classic branch protection)"
+              exit 0
+            fi
+            echo "::error::Branch protection exists on main but ci-success is NOT in required status checks (R11 violated)."
+            echo "::error::Settings → Branches → main → Require status checks → ci-success"
+            exit 1
           fi
-          # Fall back to rulesets
-          if gh api "repos/${{ github.repository }}/rulesets" 2>/dev/null \
-              | jq -e '[.[] | select(.enforcement == "active")] | length > 0' > /dev/null; then
+
+          if [ "$has_rulesets" = "true" ]; then
             echo "✅ rulesets active — manually verify ci-success in https://github.com/${{ github.repository }}/settings/rules"
             exit 0
           fi
-          echo "::error::ci-success is NOT a required status check on main."
-          echo "::error::Set it via: Settings → Branches → main → Require status checks → ci-success"
-          exit 1
+
+          echo "::warning::No branch protection or active rulesets on main. R11 not yet adopted in this repo."
+          echo "::warning::Configure: Settings → Branches → main → Require status checks → ci-success"
+          exit 0
