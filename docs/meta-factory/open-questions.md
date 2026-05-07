@@ -62,6 +62,17 @@ Phase 2 показала: meta-tests **uniformly applicable** ко всем 26 �
 
 **Status:** partial closure — manifest-level uniformity подтверждена; physical boundary refinement deferred to Phase 3 retro.
 
+#### Phase 3 empirical closure (2026-05-08)
+
+**CLOSED.** Manifest field `stack` = authoritative invariant marker. Hypothesis validated empirically через Gate 3 ESLint rule allocation (Phase 3 monorepo split):
+
+- `stack: ["ts-server", "react-next"]` (universal) → `packages/core/` (invariant) — 3 rules: R7, R2, R8
+- `stack: ["react-next"]` (specific) → `packages/preset-next-15-canonical/` (generated) — 3 rules: R12, R14, R20
+
+Gate 3 allocation matched `stack` field 1:1 без exceptions. Zero hard-to-classify files (REVISE trigger did not fire). Physical split complete: `packages/core/` tests 65/65 pass standalone; `packages/preset-next-15-canonical/` tests 38/38 pass standalone.
+
+**Invariant boundary rule (validated):** rule is invariant IFF `stack` field contains both `["ts-server", "react-next"]`; rule is stack-specific IFF `stack` is a strict subset. This is now the SSOT for future rule classification decisions (Phase 5+).
+
 ### 13.4 Обработка legacy кодовой базы
 
 Если мета-фабрика устанавливается в **существующий** проект с кучей legacy кода — все сгенерированные правила сразу дадут тысячи violations. Что делать?

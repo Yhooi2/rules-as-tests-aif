@@ -9,7 +9,7 @@ pre-push-check:
 	@.husky/pre-push
 
 principles-meta-tests:
-	@npm --prefix scripts run test:principles
+	@npm --prefix packages/core run test:principles
 
 install-hooks:
 	@chmod +x .husky/pre-commit .husky/pre-push

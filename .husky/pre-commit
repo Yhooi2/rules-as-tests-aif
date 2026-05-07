@@ -72,7 +72,7 @@ SPEC_FILES=$(echo "$CHANGED" | grep '^\.claude/orchestrator-prompts/.*\.md$' || 
 if [ -n "$SPEC_FILES" ]; then
   echo "ℹ Validating staged orchestrator-prompts (soft-warn)..."
   # shellcheck disable=SC2086
-  npx tsx "$REPO_ROOT/scripts/validate-batch-spec.ts" --soft $SPEC_FILES \
+  npx tsx "$REPO_ROOT/packages/core/spec-validation/validate-batch-spec.ts" --soft $SPEC_FILES \
     || echo "⚠ spec-validate findings; pre-push will hard-fail"
 fi
 
