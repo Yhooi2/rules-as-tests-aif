@@ -45,7 +45,7 @@
 [install only validated rules]
 ```
 
-Пакет ест свой собственный собачий корм на этапе генерации: его принципы (5 layers, AST > grep, paired negative tests, mutation testing, two-AI review) применяются к LLM-output как фильтр.
+Пакет ест свой собственный собачий корм на этапе генерации: его принципы (5 layers, AST > grep, paired negative tests, mutation testing, two-AI review via AIF `review-sidecar`) применяются к LLM-output как фильтр.
 
 ### 1.3 Зачем именно мета-уровень
 

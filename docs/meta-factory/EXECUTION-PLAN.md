@@ -209,6 +209,8 @@ Pages Router REMOVED, async params/searchParams обязательны (Promises
 
 **Phase 3 retrofit status (2026-05-08):** Step 0 retroactively conducted — see [phase-3-research.md](phase-3-research.md) (matrix + decisions) и [PHASE-3-PROMPT-v0.2.0.md](PHASE-3-PROMPT-v0.2.0.md) (delta prompt). Verdict: **KEEP merged Phase 3 as-is** — все 5 capability reuse decisions validated ex-post; нет capability change worth revert+redo cost. Forward Step 0 triggers documented для Phase 4 (entry), Phase 8 (Changesets adoption), Phase 9+ (pnpm/Nx/Turbo re-evaluation thresholds).
 
+> **Phase 4-9 caveat (2026-05-08):** descriptions ниже написаны до AIF analysis 2026-05-08. После решения «plug-in для AIF» (PROPOSAL §1.4) — significant reuse expected: ~30-40% capability через AIF skills. Конкретные reuse decisions per Phase **обязаны** проходить Step 0 gate (см. §5.5) до драфта phase prompt. См. [aif-comparison.md §9 reuse matrix](aif-comparison.md). Текущие Phase descriptions — upper-bound build estimates; реальный scope сужается на Phase entry.
+
 ---
 
 ## 6. План фаз с retrospective gates
@@ -497,7 +499,7 @@ Snapshot test в CI.
 - rule-tester прогон → understood (наш текущий паттерн)
 - Mutation на правилах → **только Path B** (отложено до Phase 9)
 - Tautology check → fixed negative-корпус (определён в Phase 2)
-- Two-AI review → ai-rulesmith pattern; дорогая верификация, только после merge, не блокирует
+- Two-AI review → AIF `review-sidecar` с `model: opus` override (anti-bias convention поверх AIF infrastructure); дорогая верификация, только после merge, не блокирует
 - Cross-rule conflict → fixture с заведомо конфликтующими правилами
 
 **Self-reflection:**
