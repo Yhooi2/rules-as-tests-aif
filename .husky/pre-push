@@ -11,6 +11,8 @@
 
 set -euo pipefail
 
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
 # ── 1. actionlint ────────────────────────────────────────────────────────────
 if ! command -v actionlint &>/dev/null; then
   echo "❌ actionlint not found in PATH."
@@ -45,6 +47,16 @@ if command -v npx &>/dev/null; then
 else
   echo "❌ npx not found. Install Node.js to enable manifest render drift check."
   exit 1
+fi
+
+# ── 5. Spec discipline (Phase 1.C) — hard fail ────────────────────────────────
+SPEC_FILES=$(git diff origin/main...HEAD --name-only --diff-filter=ACM 2>/dev/null \
+  | grep '^\.claude/orchestrator-prompts/.*\.md$' || true)
+if [ -n "$SPEC_FILES" ]; then
+  echo "Validating modified orchestrator-prompts in this push..."
+  # shellcheck disable=SC2086
+  npx tsx "$REPO_ROOT/scripts/validate-batch-spec.ts" $SPEC_FILES \
+    || { echo "❌ spec-validate findings — fix before push"; exit 1; }
 fi
 
 exit 0

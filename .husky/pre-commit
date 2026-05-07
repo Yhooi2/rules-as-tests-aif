@@ -11,6 +11,7 @@
 
 set -euo pipefail
 
+REPO_ROOT=$(git rev-parse --show-toplevel)
 CHANGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
 
 if [ -z "$CHANGED" ]; then
@@ -54,3 +55,12 @@ while IFS= read -r f; do
 done <<< "$CHANGED"
 
 exit "$fail"
+
+# ── Spec discipline (Phase 1.C) — soft warn for staged orchestrator-prompts ──
+SPEC_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^\.claude/orchestrator-prompts/.*\.md$' || true)
+if [ -n "$SPEC_FILES" ]; then
+  echo "ℹ Validating staged orchestrator-prompts (soft-warn)..."
+  # shellcheck disable=SC2086
+  npx tsx "$REPO_ROOT/scripts/validate-batch-spec.ts" --soft $SPEC_FILES \
+    || echo "⚠ spec-validate findings; pre-push will hard-fail"
+fi

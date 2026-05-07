@@ -6,6 +6,8 @@
     "render-rules": "tsx render-rules.ts",
     "render-rules:check": "tsx render-rules.ts --check",
     "detect": "tsx detect-applicable-rules.ts",
+    "validate-batch-spec": "tsx validate-batch-spec.ts",
+    "test:validate-batch-spec": "vitest run validate-batch-spec.test.ts",
     "test": "vitest run --reporter=default"
   },
   "devDependencies": {
