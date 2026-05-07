@@ -119,10 +119,10 @@ jobs:
             while IFS= read -r r; do
               in_audit=0
               # skip_unless R<n>[a-z]*  — covers R16 → R16a/R16b sub-probes
-              grep -qE "skip_unless ${r}[a-z]*\b" packages/core/audit-self/*.sh 2>/dev/null && in_audit=1
+              grep -qE "skip_unless ${r}[a-z]*\b" packages/core/audit-self/*.sh packages/preset-next-15-canonical/audit-self/*.sh 2>/dev/null && in_audit=1
               in_manual=0
               grep -qE "$r.*manual|manual.*$r|$r.*delegated|delegated.*$r" \
-                agents/best-practices-sidecar.md packages/core/audit-self/*.sh 2>/dev/null && in_manual=1
+                agents/best-practices-sidecar.md packages/core/audit-self/*.sh packages/preset-next-15-canonical/audit-self/*.sh 2>/dev/null && in_manual=1
               if [ "$in_audit" -eq 0 ] && [ "$in_manual" -eq 0 ]; then
                 echo "::error::orphan rule $r — no probe, no manual review note, no delegation"
                 fail=1
@@ -166,8 +166,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: '20'
-      - name: Install renderer deps
-        run: npm install --prefix packages/core --silent
+      - name: Install workspace deps (hoists tsx to root)
+        run: npm install --silent
       - name: Render & diff
         run: npx tsx packages/core/render/render-rules.ts --check
 
