@@ -41,7 +41,7 @@ else
 fi
 
 # ── 4. Manifest render drift ──────────────────────────────────────────────────
-# --check flag verified to exist in scripts/render-rules.ts (line 77)
+# --check flag verified to exist in packages/core/render/render-rules.ts
 if command -v npx &>/dev/null; then
   npx tsx packages/core/render/render-rules.ts --check
 else
