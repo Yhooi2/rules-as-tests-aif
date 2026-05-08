@@ -258,7 +258,7 @@ Self-application — **не отдельный шаг**, а cross-cutting invari
 ### §6.0 v1 deterministic stance (locked Phase 4-7)
 
 > **Date:** 2026-05-08 (Phase 7 close).
-> **Scope:** durable, all 5 layers L1-L5. Supersedes the v1+v2 unified phrasing in §6 Phase 5/6/7 descriptions below (Phase 4-9 caveat in §5.5 already flags this drift).
+> **Scope:** durable, all 5 layers L1-L5 (stop-rules apply to every `packages/*` workspace's `package.json`, not only the L1-L5 architectural code paths). Supersedes the v1+v2 unified phrasing in §6 Phase 5/6/7 descriptions below (Phase 4-9 caveat in §5.5 already flags this drift).
 > **Origin:** four retros (Phase 4/5/6/7) converged on the same architectural decision — ship deterministic-curated v1, defer LLM extension as a strict-superset v2 trigger.
 
 **What shipped deterministic in v1:**
