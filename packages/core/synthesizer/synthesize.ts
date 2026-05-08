@@ -8,6 +8,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv } from 'ajv';
 import type { ResearchPlan } from '../research/types.ts';
+import { mergeEslintRuleConfig } from './merge-eslint-config.ts';
 import type { SynthesisPlan, SynthesizedRule } from './types.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,7 @@ export function synthesize(plan: ResearchPlan): SynthesisPlan {
   const rules: SynthesizedRule[] = [];
   const mdFragments: string[] = [];
   const mergedEslintConfig: Record<string, unknown> = {};
+  const ruleSources = new Map<string, string[]>();
   let nextId = 1;
 
   for (const entry of plan.patterns) {
@@ -78,7 +80,12 @@ export function synthesize(plan: ResearchPlan): SynthesisPlan {
     };
     rules.push(rule);
     mdFragments.push(recipe.rulesMdTemplate.replace(/\{\{id\}\}/g, id));
-    Object.assign(mergedEslintConfig, recipe.eslintRuleConfig);
+    mergeEslintRuleConfig(
+      mergedEslintConfig,
+      recipe.eslintRuleConfig,
+      recipe.patternId,
+      ruleSources,
+    );
   }
 
   const result: SynthesisPlan = {
