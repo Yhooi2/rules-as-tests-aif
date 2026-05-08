@@ -9,21 +9,13 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Ajv } from 'ajv';
 import semver from 'semver';
 import { validateProvenance } from './allowlist.ts';
+import { errorsText, validateEntry } from './internal-validators.ts';
 import type { ResearchEntry } from './types.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const STORE_ROOT = resolve(HERE, 'store');
-const SCHEMA_PATH = resolve(HERE, 'research-plan.schema.json');
-
-const ajv = new Ajv({ allErrors: true, strict: false });
-const schemaDoc = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
-ajv.addSchema(schemaDoc, 'research-plan');
-const validateEntry = ajv.compile({
-  $ref: 'research-plan#/definitions/ResearchEntry',
-});
 
 export class ResearchEntryError extends Error {
   constructor(
@@ -39,10 +31,7 @@ function tryLoad(filePath: string): ResearchEntry | null {
   if (!existsSync(filePath)) return null;
   const raw = JSON.parse(readFileSync(filePath, 'utf8'));
   if (!validateEntry(raw)) {
-    throw new ResearchEntryError(
-      filePath,
-      ajv.errorsText(validateEntry.errors),
-    );
+    throw new ResearchEntryError(filePath, errorsText(validateEntry.errors));
   }
   const entry = raw as ResearchEntry;
   for (const p of entry.provenance) {

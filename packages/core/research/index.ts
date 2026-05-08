@@ -21,6 +21,8 @@ export function research(detection: DetectionResult): ResearchPlan {
   };
 }
 
+export { ResearchPlanError, validateResearchPlan } from './validate-plan.ts';
+
 export type {
   Provenance,
   ResearchEntry,

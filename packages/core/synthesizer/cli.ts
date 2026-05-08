@@ -8,7 +8,7 @@
 
 import { readFileSync } from 'node:fs';
 import { detectStack } from '../detector/index.ts';
-import { research } from '../research/index.ts';
+import { research, validateResearchPlan } from '../research/index.ts';
 import type { ResearchPlan } from '../research/types.ts';
 import { synthesize } from './synthesize.ts';
 import { emit } from './emit.ts';
@@ -40,7 +40,9 @@ function parseArgs(argv: string[]): Args {
 
 function loadPlan(args: Args): ResearchPlan {
   if (args.fromResearch) {
-    return JSON.parse(readFileSync(args.fromResearch, 'utf8')) as ResearchPlan;
+    const parsed: unknown = JSON.parse(readFileSync(args.fromResearch, 'utf8'));
+    validateResearchPlan(parsed);
+    return parsed;
   }
   return research(detectStack(args.root));
 }
