@@ -12,6 +12,8 @@ export default defineConfig({
       'detector/**/*.test.ts',
       'research/**/*.test.ts',
       'synthesizer/**/*.test.ts',
+      'validator/**/*.test.ts',
+      'installer/**/*.test.ts',
     ],
   },
 });

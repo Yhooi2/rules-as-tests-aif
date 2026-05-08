@@ -8,7 +8,6 @@
 import { validateProvenance } from './allowlist.ts';
 import {
   errorsText,
-  validateEntry,
   validateResearchPlanShape,
 } from './internal-validators.ts';
 import type { ResearchPlan } from './types.ts';
@@ -26,11 +25,6 @@ export function validateResearchPlan(plan: unknown): asserts plan is ResearchPla
   }
   const parsed = plan as ResearchPlan;
   for (const entry of parsed.patterns) {
-    if (!validateEntry(entry)) {
-      throw new ResearchPlanError(
-        `pattern[${entry.id ?? '?'}]: ${errorsText(validateEntry.errors)}`,
-      );
-    }
     for (const p of entry.provenance) {
       const v = validateProvenance(p);
       if (!v.ok) {
