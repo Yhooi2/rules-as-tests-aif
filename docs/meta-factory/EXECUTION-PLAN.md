@@ -735,6 +735,13 @@ Manual baseline: 1-2 дня создание `preset-next-16-manual`. Затем
 - **Multi-stack monorepos (§13.5).** Решается на Phase 9+ после single-stack успеха.
 - **Legacy codebase UX (§13.4).** Adoption-критично, но не архитектурно. Phase 11.
 - **AIF integration (§13.6).** Phase 11 — после стабилизации core.
+  - Backlog SSOT: [aif-comparison.md §7 «Phase 11 backlog»](aif-comparison.md). 3 subtasks:
+    - **11.1** — emit `aif-gate-result`-compatible JSON shape from L4 ValidationReport + L5 InstallReport.
+    - **11.2** — `/aif-loop` RULE-SCHEMA convertor (JSON-to-JSON mapping `rules-manifest.json` ↔ AIF rule schema).
+    - **11.3** — `docs/meta-factory/contributing-recipes.md` (external-author onboarding).
+  - **Trigger condition for starting Phase 11:** Phase 8 + Phase 9 stable; first real consumer onboard. Until then — backlog only, no implementation.
+  - Touchpoint 4 (`skill-context/<skill>/SKILL.md` per-skill overrides) is **closed in Phase 4** (commit `b5e16b7`, see [retros/phase-4.md](retros/phase-4.md) Reuse posture #4.6); it is not a Phase 11 subtask.
+  - `/aif-verify` integration spike → Phase 8 entry research per [retros/phase-7.md](retros/phase-7.md) Open Q #5; not a Phase 11 subtask.
 - **Path B (§3.2).** Phase 9+ — экспериментальный, не блокер 1.0.
 - **Confidence tier UI/CLI (§8).** Логика встроена в L1 detector + L4 validator; UX-разработка — позже.
 
