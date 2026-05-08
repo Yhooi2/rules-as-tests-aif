@@ -61,13 +61,15 @@ Each entry in [prior-art-evaluations.md](prior-art-evaluations.md) checked again
 
 ### §4.A1 — Path A LLM gen «picks from menu» (NEW SSOT entry #4)
 
-**context7 candidates checked (3, per Hard Constraint #5):** `/websites/cursor_fr` (query: «Cursor select existing ESLint plugin rules from menu LLM picks rule configuration for codebase Next.js»); `/websites/continue_dev` (resolve only); `/factory-ai/eslint-plugin` (query: «AI agent ESLint rules selection configuration from codebase context custom rules for AI-generated code Next.js framework»).
+**context7 candidates checked (5, per PROMPT Hard Constraint #10 + §6 T3 explicit candidate list):** `/websites/cursor_fr` (query); `/websites/continue_dev` (resolve only); `/factory-ai/eslint-plugin` (query); `/websites/sourcegraph` (query, T7 delta-fix per review M2); `/aider-ai/aider` (query, T7 delta-fix per review M2).
 
 **Findings:**
-- **Cursor rules** (`.mdc` files with YAML frontmatter, glob/description/manual selection) are **AI-agent prompt-rules**, not ESLint plugin selection. Different surface — guides the agent's behavior, doesn't lint code.
-- **Continue.dev** offers customizable assistants and rules, no ESLint-rule-pick-from-menu feature surfaced.
-- **`@factory/eslint-plugin`** — production-grade hand-curated ESLint plugin (21 rules, `base`/`recommended`/`frontend`/`backend` configs) explicitly «designed to improve AI coding agent output quality by enforcing custom lint rules». Includes Next.js-aware rules (e.g. `Require Middleware in Next.js Route Handlers`). Comprehensive per-rule Markdown for AI agent adaptation; explicit reuse pattern «projects publish own custom plugin using Factory as template». Not LLM-driven «picks from menu» (rules are hand-authored), but the closest production analog to the curated menu Path A LLM gen would select from.
-- **No production tool implements LLM-driven «picks from menu»** of existing ESLint rules given a codebase.
+- **Cursor rules** (`.mdc` files with YAML frontmatter) are **AI-agent prompt-rules**, not ESLint plugin selection. Different surface.
+- **Continue.dev** — customizable assistants/rules; no ESLint-rule-pick-from-menu surface.
+- **`@factory/eslint-plugin`** — production hand-curated ESLint plugin (21 rules; `base`/`recommended`/`frontend`/`backend` configs) explicitly «designed to improve AI coding agent output quality». Next.js-aware (middleware-on-route-handlers); per-rule Markdown for agent adaptation; reuse pattern «projects publish own custom plugin using Factory as template». NOT LLM-driven menu pick (rules hand-authored), but the closest production analog to the curated menu.
+- **Cody (Sourcegraph)** — `cody.contextFilters` (`include`/`exclude` `repoNamePattern` RE2-regex) configures **repository-level context inclusion**, NOT ESLint rule selection. Cody also surfaces `*.rule.md` repo-rules — these are AI-agent prompt-rules same category as Cursor `.mdc`, not ESLint pick-from-menu.
+- **Aider** — `.aider.conf.yml` configures **LLM model + edit format + repo-map**, not ESLint rules. Aider's «conventions» surface is human-authored agent guidance (markdown), parallel to Cody/Cursor rule files; NOT ESLint plugin/rule selection from codebase context.
+- **No production tool implements LLM-driven «picks from menu»** of existing ESLint rules given a codebase. 5-candidate coverage (Cursor, Continue.dev, Factory, Cody, Aider) reinforces the negative-existence claim.
 
 **SSOT update:** new entry [#4](prior-art-evaluations.md) (Factory ESLint Plugin, WATCHLIST — potential reference / partial reuse target if Phase 9+ Path A LLM gen materialises and recipe inventory needs scaling).
 
@@ -103,11 +105,13 @@ Each entry in [prior-art-evaluations.md](prior-art-evaluations.md) checked again
 
 ### §4.A3 — LLM-driven research extension (NEW SSOT entry #5)
 
-**context7 query (1 phrasing — substantive result; Hard Constraint #5 floor of 3 applies «если результат пустой»):** «web_search_20250305 tool with allowed_domains constraint live documentation framework lookup TypeScript SDK» against `/anthropics/anthropic-sdk-typescript`.
+**context7 queries (3 phrasings, source `/anthropics/anthropic-sdk-typescript`, per PROMPT Hard Constraint #10):** «web_search_20250305 tool with allowed_domains constraint live documentation framework lookup TypeScript SDK»; «web_search tool result caching cache_control max_uses budget limit Anthropic SDK TypeScript token usage statistics» (T7 delta-fix per review M1); «server_tool_use ServerToolUsage web_search_requests count usage tracking pricing Anthropic SDK 2026 production deployment» (T7).
 
 **Findings:**
-- **`web_search_20250305`** — first-class server tool in Anthropic TypeScript SDK with `allowed_domains` / `blocked_domains` (mutually exclusive), `max_uses` budget cap, `cache_control` for caching, `user_location`, `defer_loading`, stream-compatible. Same spec name referenced in [open-questions.md §13.10 entry #1](open-questions.md).
-- Trigger condition «first real consumer reports gap on non-curated framework, OR Phase 8 acceptance shows curated store insufficient for Next 16 patterns» has NOT fired (Phase 8 closed without curated-store gap per [retros/phase-8.md Open Q #2](retros/phase-8.md)).
+- **`web_search_20250305`** — first-class server tool with `allowed_domains` / `blocked_domains` (mutually exclusive), `max_uses` budget cap, `cache_control` (TTL `'5m'` or `'1h'` per `tools[].cache_control: { type: 'ephemeral', ttl: ... }`), `user_location`, `defer_loading`, `strict` schema validation, stream-compatible.
+- **Cost-tracking surface:** `Usage` interface separates `input_tokens` / `cache_creation_input_tokens` / `cache_read_input_tokens` as independent counters (JSDoc: «Total input tokens is the summation of all three»); `server_tool_use: ServerToolUsage` carries `web_search_requests` counter for per-call billing visibility. Production-grade observability for §13.11 cost-tracking shape.
+- Spec name `web_search_20250305` matches [open-questions.md §13.10 entry #1](open-questions.md) reference.
+- Trigger «first real consumer reports gap on non-curated framework, OR Phase 8 acceptance shows curated store insufficient» has NOT fired (Phase 8 closed without gap per [retros/phase-8.md Open Q #2](retros/phase-8.md)).
 
 **SSOT update:** new entry [#5](prior-art-evaluations.md) (Anthropic `web_search_20250305` with `allowed_domains`, ADOPT WHEN TRIGGERED — production-ready first-party tool, no third-party SDK alternative needed; trigger fires per §13.10 entry #1).
 

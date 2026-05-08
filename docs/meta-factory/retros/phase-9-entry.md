@@ -22,7 +22,7 @@ The motivation: [open-questions.md §13.10 entry #2](../open-questions.md) trigg
 | 1 | `git diff main --name-only` non-allowlisted | empty | **OK: docs-only** (allowlist: `phase-9-entry-research.md`, `prior-art-evaluations.md`, `retros/phase-9-entry.md`) |
 | 2 | Commits ahead of main (excl retro) | 5-7 task | **9 atomic + this retro = 10** (over upper bound — see Self-reflection #1) |
 | 3 | Conventional-commits compliance | 9/9 (English subjects) | **9/9** |
-| 4 | `Prior-art:` trailers on capability commits | ≥1 (T2 always; T3 per new entry) | **10 trailer lines** across T2 (3 stacked) / T3.1 / T3.2 / T3.3 (skipped) / T3.4 (skipped) / T3.5 / T4 |
+| 4 | `Prior-art:` trailers on capability commits | ≥1 (T2 always; T3 per new entry) | **11 trailer lines** across T2 (3 stacked) / T3.1 / T3.2 / T3.3 (skipped) / T3.4 (skipped) / T3.5 / T4 / T5 (skipped) / T6 retro = 9 commits, 3+1×8 = 11 lines (corrected in T7 delta-fix per review m1) |
 | 5 | T1: §2 capability area list | 9 areas | **9 (A1-A9)** |
 | 6 | T2: Step 1.5 SSOT match consult | 3 entries × match-check | **3/3 — entry #1 substantive update; #2/#3 status «still applies»** |
 | 7 | T3: ≥3 candidates per unmatched area (Hard Constraint #5) | A1 ≥3, A4 ≥3, A5 ≥3, A3 ≥1 (substantive single-phrasing) | **A1=3, A4=3, A5=3, A3=1 substantive** |
