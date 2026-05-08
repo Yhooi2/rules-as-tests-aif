@@ -220,7 +220,7 @@ Pages Router REMOVED, async params/searchParams обязательны (Promises
 > **Phase 5/6/7 reordering note (2026-05-08, post-Phase-6 close):** boundaries reassigned during burn-mode session, single coherent edit covering Phase 5 + Phase 6 retros:
 >
 > - **Original (v0.1.x):** Phase 5 = L4 Validator, Phase 6 = L2 Research Agent, Phase 7 = L3 Synthesizer + L5 Installer.
-> - **Current (v0.1.2+):** **Phase 5 = L2 Research Agent** (closed, see [retros/phase-5.md](retros/phase-5.md)) → **Phase 6 = L3 Synthesizer Path A only** (closed, see [retros/phase-6.md](retros/phase-6.md)) → **Phase 7 = L4 Validator + L5 Installer** (next).
+> - **Current (v0.1.3+):** **Phase 5 = L2 Research Agent** (closed, see [retros/phase-5.md](retros/phase-5.md)) → **Phase 6 = L3 Synthesizer Path A only** (closed, see [retros/phase-6.md](retros/phase-6.md)) → **Phase 7 = L4 Validator + L5 Installer** (closed 2026-05-08, see [retros/phase-7.md](retros/phase-7.md)) → **Phase 8 = Acceptance Next 15 → 16 + canonical regen ≤5%** (next).
 >
 > Rationale: linear data flow `0 → 1 → 2 → 3 → 4 → 5` per [architecture.md §2.1](architecture.md). L4 Validator gates synthesized output — without L2 + L3 there is nothing beyond Phase 2 manifest meta-tests for L4 to validate; running L4 first was inverted from data flow. L5 Installer needs L3 output to install. The Phase descriptions below retain their original headings («Phase 5 — Layer 4 Validator…», etc.) for diff hygiene; **read via the mapping above**, not the headings. Cumulative timeline in §8 unchanged in calendar terms; reordering does not affect total budget.
 

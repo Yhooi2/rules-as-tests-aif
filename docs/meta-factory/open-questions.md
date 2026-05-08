@@ -104,11 +104,9 @@ AIF — это workflow framework (slash-команды, sub-agents, .ai-factory
 
 Acceptance criterion для L2 в [self-application.md](self-application.md) §2: «Все три источника (`skills/rules-as-tests/SKILL.md`, `references/overview.md`, `references/ai-traps.md`) семантически синхронизированы; drift detection возвращает 0 расхождений». Но **что значит «семантически»**? Возможные операционализации:
 
-- **Symbolic:** одинаковые term'ы (e.g. «MUST» vs «should» — диcyrepancy при demotion'е)
-- **Behavioral:** rule из `overview.md` проверяется тестом из `ai-traps.md` → если изменился principle и не изменился test (или наоборот) — drift
-- **Embedding-based:** semantic similarity score; threshold для drift
-
-Решение откладывается до Phase 6. До этого — manual review при любом изменении файлов из этих трёх источников.
+- **Symbolic:** одинаковые term'ы (e.g. «MUST» vs «should» — диcyrepancy при demotion'е) — **CLOSED Phase 5** ([retros/phase-5.md](retros/phase-5.md), [packages/core/research/drift.ts](../../packages/core/research/drift.ts)): symbolic v1 ships modal-verb + term-presence detection over the 3 canonical sources; `framework-self-research` CI gate enforces 0 mismatches per commit. Same-line modal attribution trade-off documented inline at [drift.ts:79](../../packages/core/research/drift.ts#L79) (m1 from PR #5 review). Phase 7 closing edit — symbolic v1 is the v1 deliverable for this open question.
+- **Behavioral:** rule из `overview.md` проверяется тестом из `ai-traps.md` → если изменился principle и не изменился test (или наоборот) — drift — **OPEN, v2 trigger**. Behavioral drift requires linking each principle to a runnable assertion; closed by either a real consumer reporting the gap or Phase 8 acceptance test.
+- **Embedding-based:** semantic similarity score; threshold для drift — **OPEN, v2 trigger** (orthogonal to symbolic + behavioral; can layer on later).
 
 > **Filename history (2026-05-07):** ранее три источника описывались как `skills/`, `principles.md`, `ai-traps.md` — но `principles.md` не существовал в репо (phantom file). Phase 1.D resync (per Art's Option A decision) исправил формулировку на реальные filenames; `references/overview.md` играет роль «principles» — содержит детальное описание 5 layers framework. Reviewer flagged это как MAJOR-2; canonical source — [self-application.md](self-application.md) §2.
 
