@@ -9,6 +9,7 @@ export default defineConfig({
       'spec-validation/**/*.test.ts',
       'eslint-rules/**/*.test.ts',
       'detector-v0/**/*.test.ts',
+      'detector/**/*.test.ts',
     ],
   },
 });

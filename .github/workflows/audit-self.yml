@@ -265,3 +265,38 @@ jobs:
           cd /tmp/fake-consumer-rn
           bash "$GITHUB_WORKSPACE/packages/core/audit-self/audit-ai-docs.test.sh" || \
             { echo "::error::framework audits failed inside tmp consumer (react-next)"; exit 1; }
+
+  framework-self-detect:
+    name: Detector v1 — self-application snapshot (L1 invariant)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+      - name: Install workspace deps (hoists tsx + transitive semver)
+        run: npm install --silent
+      - name: Detect this repo and diff against frozen snapshot
+        run: |
+          ACTUAL=$(npm --prefix packages/core run detect --silent -- "$GITHUB_WORKSPACE")
+          EXPECTED=$(cat packages/core/detector/expected-self-detect.json)
+          if ! diff <(echo "$ACTUAL" | jq -S .) <(echo "$EXPECTED" | jq -S .); then
+            echo "::error::detector self-application snapshot drift — update packages/core/detector/expected-self-detect.json or fix the regression"
+            exit 1
+          fi
+          echo "✓ self-detect snapshot stable"
+      - name: Verify setup.sh --stack=$(detect) --dry-run idempotent
+        run: |
+          DETECTED=$(npm --prefix packages/core run detect --silent -- "$GITHUB_WORKSPACE" | jq -r .stack)
+          bash setup.sh --stack="$DETECTED" --dry-run --skip-aif-init --skip-deps > /tmp/run1.txt 2>&1
+          bash setup.sh --stack="$DETECTED" --dry-run --skip-aif-init --skip-deps > /tmp/run2.txt 2>&1
+          if ! diff /tmp/run1.txt /tmp/run2.txt > /dev/null; then
+            echo "::error::setup.sh --dry-run is not idempotent — L1 acceptance (a) violated"
+            diff /tmp/run1.txt /tmp/run2.txt
+            exit 1
+          fi
+          echo "✓ setup.sh --dry-run idempotent (L1 acceptance a)"
