@@ -7,7 +7,9 @@
   "bin": {
     "rules-as-tests-detect": "./detector/cli.ts",
     "rules-as-tests-research": "./research/cli.ts",
-    "rules-as-tests-synth": "./synthesizer/cli.ts"
+    "rules-as-tests-synth": "./synthesizer/cli.ts",
+    "rules-as-tests-validate": "./validator/cli.ts",
+    "rules-as-tests-install": "./installer/cli.ts"
   },
   "exports": {
     "./manifest": "./manifest/rules-manifest.json",
@@ -15,7 +17,9 @@
     "./eslint-rules": "./eslint-rules/index.ts",
     "./detector": "./detector/index.ts",
     "./research": "./research/index.ts",
-    "./synthesizer": "./synthesizer/index.ts"
+    "./synthesizer": "./synthesizer/index.ts",
+    "./validator": "./validator/index.ts",
+    "./installer": "./installer/index.ts"
   },
   "scripts": {
     "test": "vitest run --reporter=default",
@@ -26,7 +30,9 @@
     "detect": "tsx detector/cli.ts",
     "detect:install-rules": "tsx detector-v0/detect-applicable-rules.ts",
     "research": "tsx research/cli.ts",
-    "synth": "tsx synthesizer/cli.ts"
+    "synth": "tsx synthesizer/cli.ts",
+    "validate": "tsx validator/cli.ts",
+    "install:synth": "tsx installer/cli.ts"
   },
   "devDependencies": {
     "@typescript-eslint/rule-tester": "^8.59.0",

@@ -12,6 +12,10 @@
     "examples": {
       "bad": "// src/app/page.tsx\nimport { useRouter } from 'next/router';\nexport default function Page() {\n  const router = useRouter();\n  return null;\n}",
       "good": "// src/app/page.tsx\nimport { useRouter } from 'next/navigation';\nexport default function Page() {\n  const router = useRouter();\n  return null;\n}"
+    },
+    "negative-test": {
+      "input": "import { useRouter } from 'next/router';\nexport default function Page() { return null; }",
+      "expect-violation": "no-restricted-imports"
     }
   },
   "rulesMdTemplate": "## {{id}} — Forbid `next/router` imports in App Router\n\n**Stack:** react-next  \n**Check:** ESLint `no-restricted-imports`  \n**Why:** `next/router` is the Pages Router API and does not work in App Router segments. Use `next/navigation` instead.\n",
