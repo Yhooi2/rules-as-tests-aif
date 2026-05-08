@@ -227,19 +227,19 @@ if [ "$STACK" = "react-next" ]; then
     npx -y storybook@latest init --skip-install --no-dev || {
       warn "  storybook init failed — falling back to template scaffold"
       mkdir -p .storybook
-      cp "$PKG_DIR/templates/react-next/.storybook/main.ts" .storybook/main.ts
-      cp "$PKG_DIR/templates/react-next/.storybook/preview.ts" .storybook/preview.ts
+      cp "$PKG_DIR/packages/core/templates/react-next/.storybook/main.ts" .storybook/main.ts
+      cp "$PKG_DIR/packages/core/templates/react-next/.storybook/preview.ts" .storybook/preview.ts
     }
     # Remove the auto-added onboarding addon (storybook init adds it; we don't ship it)
     if [ -f .storybook/main.ts ]; then
       sed -i.bak "s/'@storybook\/addon-onboarding',\?//" .storybook/main.ts && rm -f .storybook/main.ts.bak
     fi
     # Merge our package.json additions
-    if [ -f "$PKG_DIR/templates/react-next/storybook-package-additions.json" ] && [ -f package.json ]; then
+    if [ -f "$PKG_DIR/packages/core/templates/react-next/storybook-package-additions.json" ] && [ -f package.json ]; then
       log "Merging Storybook scripts/devDeps into package.json..."
       node -e "
         const pkg = JSON.parse(require('fs').readFileSync('package.json', 'utf8'));
-        const add = JSON.parse(require('fs').readFileSync('$PKG_DIR/templates/react-next/storybook-package-additions.json', 'utf8'));
+        const add = JSON.parse(require('fs').readFileSync('$PKG_DIR/packages/core/templates/react-next/storybook-package-additions.json', 'utf8'));
         pkg.scripts = { ...pkg.scripts, ...add.scripts };
         pkg.devDependencies = { ...pkg.devDependencies, ...add.devDependencies };
         require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
