@@ -87,6 +87,20 @@ Each entry in [prior-art-evaluations.md](prior-art-evaluations.md) checked again
 
 **Verdict outcome (A9):** REUSE — Phase 11.1 closure tail = adding JSON-schema validation step against fetched-fresh AIF contract (small, ~30 LOC `Ajv` or hand-rolled validator). Decision in §5.
 
+### §4.A5 — Path B AST gen (toolkit only; no LLM-gen analog)
+
+**context7 candidates (3, per Hard Constraint #5):** `/dsherret/ts-morph` (query: «generate ESLint rule TypeScript code from AST pattern programmatic rule synthesis»); `/facebook/jscodeshift` (resolve only; codemod toolkit); `/comby-tools/comby` (resolve only; structural search-replace).
+
+**Findings:**
+- **`ts-morph`** — TypeScript Compiler API wrapper for programmatic AST manipulation (`createSourceFile(structure)`, `addInterface`, `addClass`, `addFunction`, `setBodyText(writer)`). Complete codegen toolkit; would be a Path B dependency if/when triggered.
+- **`jscodeshift`** — Facebook's codemod toolkit for AST transforms over JS/TS files. Same toolkit category as ts-morph; Path B dep alternative.
+- **`comby`** — language-agnostic structural search-replace (medium-reputation source, 303 snippets). Different surface (rewrite, not generate); not a fit for «LLM writes ESLint rule TS source».
+- **No LLM-driven ESLint rule synthesis tool found** — the toolkits exist for AST manipulation; the LLM-gen layer on top is undefined. This matches Phase 8.8 retro «no analog for «LLM writes ESLint rule TypeScript source»».
+
+**SSOT update:** none. ts-morph / jscodeshift are infra-toolkits (transitive-style), not LLM-gen analogs; SSOT bloat avoided per [prior-art-evaluations.md §1](prior-art-evaluations.md) «entry without non-trivial trigger condition is a sign of weak rationale» (their trigger = «Path B activates», already encoded in [open-questions.md §13.10 entry #3](open-questions.md)).
+
+**Verdict outcome:** [open-questions.md §13.10 entry #3](open-questions.md) trigger has NOT fired — no Phase 8 pattern lacked an existing ESLint plugin (Phase 8 R12/R14/R20 were rules already in `preset-next-15-canonical/eslint-rules/`, mechanical lift). Final §5 row: A5 → DEFER.
+
 ## §5. Build vs reuse matrix + Phase 9 priority — see T4 commit
 
 Populated in T4: final matrix table with verdict (BUILD / REUSE / DEFER / STOP) and Phase 9 priority (P0 / P1 / P2 / OUT) per area.
