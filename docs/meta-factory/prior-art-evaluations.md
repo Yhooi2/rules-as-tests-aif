@@ -71,7 +71,16 @@ Each entry is a row in the table at §4 below. The row schema:
 
 ## 5. Staleness policy
 
-(Added Phase 8.8 T10.)
+Entries with `Last reviewed` >180 days surface as candidates for re-evaluation during the next phase entry research session (manual review during [§5.5 Step 1.5](EXECUTION-PLAN.md)). The 180-day threshold reflects the typical cadence between major framework releases — Next.js / Fastify / etc. ship breaking changes on roughly that scale, and a SSOT entry whose «last reviewed» predates the release window is presumed stale until re-verified.
+
+**Format:** all dates ISO 8601 (`YYYY-MM-DD`). Older formats (e.g. `2026-05-08T15:30:00Z` ISO 8601 timestamp) are accepted for parsing but the date column is canonical date-only.
+
+**No automated CI gate yet** — staleness detection is currently a manual phase-research activity, not a workflow check. Rationale: the cost of a false positive (flagging a still-current entry as stale and forcing re-verification) exceeds the cost of a false negative (a stale entry persisting one extra phase). Automated staleness gating is deferred to Phase 8.X+ self-diagnostics tooling per [self-diagnostics-design.md §6](self-diagnostics-design.md). When activated, the gate should warn-only at first (per the same false-positive logic) and only escalate to hard fail after observed FP rate <10% on 10+ phase research sessions.
+
+**Re-verification scope:** when Step 1.5 surfaces a stale entry, the phase research must run a fresh context7 query (≥3 phrasings per Hard Constraint #5) and update the entry in the same commit:
+- If still applicable: bump `Last reviewed` only.
+- If new evidence changes verdict: new commit changing `Verdict` and `Rationale` (audit trail in git history; do not edit history).
+- If the candidate has been deprecated/abandoned: change `Verdict` to `REJECT` with the disqualifier in `Rationale`.
 
 ---
 
