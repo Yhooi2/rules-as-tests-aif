@@ -29,7 +29,7 @@
       "additionalProperties": false,
       "required": ["url", "allowlistKey", "fetchedAt"],
       "properties": {
-        "url": { "type": "string", "format": "uri" },
+        "url": { "type": "string" },
         "allowlistKey": { "type": "string" },
         "fetchedAt": { "type": "string" }
       }
