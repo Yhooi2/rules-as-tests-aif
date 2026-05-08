@@ -634,6 +634,45 @@ Manual baseline: 1-2 дня создание `preset-next-16-manual`. Затем
 
 ---
 
+### Phase 8.8 — Prior-art evaluation mechanism (1 day, документная)
+
+> **Trigger:** Phase 8 close (acceptance GO verdict). Sequential, не параллель (Phase 8.X self-diagnostics — отдельный parallel slot per [§6 Phase 8 note](#phase-8)).
+> **Mirror:** [Phase 7.5 pattern](retros/phase-7.5.md) — formalization/process phase, ноль кода.
+> **Numbering:** 8.8 (не 8.5 — slot занят/зарезервирован per Art's explicit direction). 8.X parallel sub-phase = self-diagnostics; 8.8 sequential post-acceptance = prior-art mechanism.
+> **Blocker for Phase 9 entry:** Phase 9 entry session **не должна начинаться** без Phase 8.8 close. Mechanism нужен ДО Phase 9 implementation, иначе Phase 9 повторит риск reinventing existing solutions (как findings analog research 2026-05-08 показали для L1 detector / L3 LLM gen capabilities).
+
+**Motivation.** Phase 4-7 retros + Phase 7.5 analog research surfaced 3 closest prior-art candidates not in EXECUTION-PLAN.md §3.3 (Autogrep, Netlify framework-info, fitness functions vocabulary). Без structural enforcement каждая будущая фаза рискует skip'нуть consult — text references в shipped docs не gate'ируются, легко missed. Phase 8.8 закрывает gap через 5-уровневую конструкцию (SSOT doc + entry gate + prompt template + commit-trailer convention + periodic refresh).
+
+**Output (full design):** см. dedicated session doc; structure mirrors Phase 7.5 (≈6-7 atomic commits, retro). Brief scope:
+
+- **Уровень 1** — `docs/meta-factory/prior-art-evaluations.md` SSOT (shipped reference, ≤500 lines) — table-driven entries `{Candidate, Capability matched, First seen, Last reviewed, Verdict (ADOPT/DEFER/WATCHLIST/REJECT), Rationale, Trigger to revisit}`. Initial entries: Autogrep, Netlify framework-info, fitness functions, plus what surfaced в Phase 8 capabilities.
+- **Уровень 2** — §5.5 Step 1.5 mandatory consult gate (вставляется между «List capability areas» и «Resolve candidates» в текущем Step 0).
+- **Уровень 3** — `PHASE-ENTRY-PROMPT-TEMPLATE.md` (или update ORCHESTRATOR-START-PROMPT.md) — Task 0 «consult prior-art-evaluations.md» as mandatory first step для Phase N entry session.
+- **Уровень 4** — process invariant в `CLAUDE.md` / `CONTRIBUTING.md`: build-vs-reuse mandatory check + `Prior-art:` commit trailer convention для capability commits + pre-push WARN hook (новый dep / новый module ≥50 LOC без trailer).
+- **Уровень 5** — periodic staleness refresh routine spec (impl Phase 8.X+ tooling); CI gate `framework-prior-art-staleness` (Phase 8.X+ as well).
+
+**Retroactive audit.** Phase 8.8 retro обязана содержать post-hoc consult для каждого build-vs-reuse decision Phase 8 (Next 16 detection, regen diff metric, recipe expansion strategy R12/R14/R20, gate 5 invocation mode). Если retro показывает gap (Phase 8 reinvented existing solution) → document как «Phase 8.8 retroactive finding» + add candidate в SSOT для Phase 9 evaluation.
+
+**Acceptance:**
+- `prior-art-evaluations.md` exists, ≤500 lines, ≥3 initial entries
+- §5.5 Step 1.5 added; phase-N-research.md template requires consult evidence
+- CLAUDE.md / CONTRIBUTING.md document `Prior-art:` trailer convention
+- Pre-push hook warns на capability commits без trailer
+- Phase 8 retroactive audit completed; gaps (если есть) документированы
+- `retros/phase-8.8.md` written; **Verdict: GO к Phase 9 entry**
+
+**Self-reflection:**
+- Какие Phase 8 decisions surfaced новые prior-art candidates которых не было в pre-Phase-8 analog research (2026-05-08)?
+- Mechanism оверкилл (5 уровней) или каждый уровень ловит свой класс гэпов? Reviewer perspective.
+- Pre-push WARN — false-positive rate? Если >30% → soft warn → soft notice.
+
+**Evaluation:**
+- Self-application score: 6/10 (process discipline applied к собственным будущим фазам = recursive self-application thesis on meta-process level)
+- Time-vs-plan ratio: ≤1 day; >2x → root cause (механизм слишком сложен для wall-clock budget'а)
+- Verdict gate: **GO** только если все 5 уровней зафиксированы ИЛИ explicit downgrade rationale per уровню
+
+---
+
 ### Phase 9+ — Path B, нишевые стеки, multi-stack monorepos, AIF integration
 
 Согласно PROPOSAL §10 Phase 10-11 + §13.5, §13.6.
