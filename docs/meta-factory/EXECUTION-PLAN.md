@@ -610,6 +610,8 @@ diff -r packages/preset-next-15-canonical /tmp/regenerated-preset  # minimal
 
 **Задача:** запустить `meta-factory upgrade --from=next@15 --to=next@16`, сравнить с manual baseline. **Это и есть финальный acceptance**.
 
+> **Phase 8.X parallel sub-phase:** self-diagnostics implementation per [self-diagnostics-design.md](self-diagnostics-design.md). **Trigger:** Phase 8 acceptance test passes (deterministic green). Scope: §2 schema, §3 path, §5 read CLI, §6 write hooks, L5 (c) invariant, CI gate `framework-self-diagnose`. Does not block Phase 9 entry.
+
 **Verification:**
 ```bash
 mkdir /tmp/next-16-test && cd /tmp/next-16-test
