@@ -167,7 +167,7 @@ Decision matrix в [self-application.md](self-application.md) §3 фиксиру
 ### 13.12 Real-corpus validation strategy
 
 **Status:** OPEN, v2 trigger.
-**Origin:** Phase 7 close — gate 4 (tautology) ships with a 3-file negative corpus (`empty.ts`, `comment-only.ts`, `unrelated.tsx`). This is sanitary, not exhaustive. Polmness depends on gate 3 + gate 5 + a real-world corpus.
+**Origin:** Phase 7 close — gate 4 (tautology) ships with a 3-file negative corpus (`empty.ts`, `comment-only.ts`, `unrelated.tsx`). This is sanitary, not exhaustive. Fullness depends on gate 3 + gate 5 + a real-world corpus.
 
 **Trigger condition:** first real consumer onboard, OR Phase 8 acceptance test runs `meta-factory upgrade --from=next@15 --to=next@16` against a real Next 16 codebase.
 
