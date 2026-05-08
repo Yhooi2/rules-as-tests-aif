@@ -336,15 +336,15 @@ else
 fi
 
 # Re-install our hooks from the package (absolute paths — cwd is project root).
-if [ -f "$PKG_DIR/templates/shared/husky-pre-commit.sh" ]; then
+if [ -f "$PKG_DIR/packages/core/templates/shared/husky-pre-commit.sh" ]; then
   log "Installing pre-commit hook..."
-  dryguard cp "$PKG_DIR/templates/shared/husky-pre-commit.sh" "$PROJECT_DIR/.husky/pre-commit"
+  dryguard cp "$PKG_DIR/packages/core/templates/shared/husky-pre-commit.sh" "$PROJECT_DIR/.husky/pre-commit"
   dryguard chmod +x "$PROJECT_DIR/.husky/pre-commit"
 fi
 
-if [ -f "$PKG_DIR/templates/shared/husky-pre-push.sh" ]; then
+if [ -f "$PKG_DIR/packages/core/templates/shared/husky-pre-push.sh" ]; then
   log "Installing pre-push hook..."
-  dryguard cp "$PKG_DIR/templates/shared/husky-pre-push.sh" "$PROJECT_DIR/.husky/pre-push"
+  dryguard cp "$PKG_DIR/packages/core/templates/shared/husky-pre-push.sh" "$PROJECT_DIR/.husky/pre-push"
   dryguard chmod +x "$PROJECT_DIR/.husky/pre-push"
 fi
 ok "Husky configured"
