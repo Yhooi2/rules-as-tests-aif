@@ -13,6 +13,7 @@ import type { SynthesisPlan, SynthesizedRule } from './types.ts';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RECIPES_ROOT = resolve(HERE, 'recipes');
 const SCHEMA_PATH = resolve(HERE, 'synthesis-plan.schema.json');
+const RECIPE_SCHEMA_PATH = resolve(HERE, 'recipe.schema.json');
 
 interface Recipe {
   patternId: string;
@@ -27,6 +28,9 @@ const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
 ajv.addSchema(schema, 'synthesis-plan');
 const validatePlan = ajv.compile({ $ref: 'synthesis-plan' });
 
+const recipeSchema = JSON.parse(readFileSync(RECIPE_SCHEMA_PATH, 'utf8'));
+const validateRecipe = ajv.compile(recipeSchema);
+
 export class SynthesisPlanError extends Error {
   constructor(public readonly errors: string) {
     super(`Invalid SynthesisPlan: ${errors}`);
@@ -34,10 +38,24 @@ export class SynthesisPlanError extends Error {
   }
 }
 
+export class RecipeError extends Error {
+  constructor(
+    public readonly path: string,
+    public readonly errors: string,
+  ) {
+    super(`Invalid recipe at ${path}: ${errors}`);
+    this.name = 'RecipeError';
+  }
+}
+
 function loadRecipe(patternId: string): Recipe | null {
   const path = resolve(RECIPES_ROOT, `${patternId}.json`);
   if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, 'utf8')) as Recipe;
+  const raw = JSON.parse(readFileSync(path, 'utf8'));
+  if (!validateRecipe(raw)) {
+    throw new RecipeError(path, ajv.errorsText(validateRecipe.errors));
+  }
+  return raw as Recipe;
 }
 
 export function synthesize(plan: ResearchPlan): SynthesisPlan {

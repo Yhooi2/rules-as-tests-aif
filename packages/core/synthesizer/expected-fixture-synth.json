@@ -19,6 +19,10 @@
         "bad": "// src/app/page.tsx\nimport { useRouter } from 'next/router';\nexport default function Page() {\n  const router = useRouter();\n  return null;\n}",
         "good": "// src/app/page.tsx\nimport { useRouter } from 'next/navigation';\nexport default function Page() {\n  const router = useRouter();\n  return null;\n}"
       },
+      "negative-test": {
+        "input": "import { useRouter } from 'next/router';\nexport default function Page() { return null; }",
+        "expect-violation": "no-restricted-imports"
+      },
       "id": "G1",
       "research": {
         "entryId": "nextjs-app-router",
@@ -80,6 +84,10 @@
       "examples": {
         "bad": "'use client'\nimport fs from 'node:fs';\n\nexport default function ClientWidget() {\n  return <div>{fs.readFileSync('config.json', 'utf8')}</div>;\n}",
         "good": "'use client'\nimport { useState } from 'react';\n\nexport default function ClientWidget({ initialConfig }: { initialConfig: string }) {\n  const [config] = useState(initialConfig);\n  return <div>{config}</div>;\n}"
+      },
+      "negative-test": {
+        "input": "'use client'\nimport fs from 'node:fs';\nexport default function X() { return null; }",
+        "expect-violation": "noServerImportInClient"
       },
       "id": "G3",
       "research": {

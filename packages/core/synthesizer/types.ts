@@ -11,6 +11,11 @@ export type ManifestCheck =
   | { type: 'script'; script: string }
   | { type: 'manual'; rationale?: string };
 
+export interface NegativeTest {
+  input: string;
+  'expect-violation': string;
+}
+
 export interface SynthesizedRule {
   id: string;
   title: string;
@@ -18,6 +23,7 @@ export interface SynthesizedRule {
   'applies-to'?: string[];
   check: ManifestCheck;
   examples: { bad: string; good: string };
+  'negative-test'?: NegativeTest;
   research: { entryId: string; provenance: Provenance[] };
 }
 
