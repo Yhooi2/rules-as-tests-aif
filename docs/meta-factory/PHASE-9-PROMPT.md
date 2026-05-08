@@ -141,7 +141,7 @@ cd packages/core && npm test --run research 2>&1 | tail -3                      
 
 ### T3 — A8: glob-overlap weight calibration corpus
 
-**Why:** [phase-8-research.md §3](phase-8-research.md) seeded `W_RULES=0.40 / W_KEYS=0.40 / W_GLOBS=0.20` as initial guesses. Phase 8 acceptance ran reflexive (regen-vs-frozen, similarity=1.0 by construction); divergent-plan calibration data does not exist. Phase 9 builds the corpus so the weights become **data-backed** rather than guessed; future weight tweaks become regression-guarded.
+**Why:** [phase-8-research.md §3](phase-8-research.md) seeded `W_RULES=0.40 / W_KEYS=0.40 / W_GLOBS=0.20` as initial guesses. Phase 8 acceptance ran reflexive (regen-vs-frozen, similarity=1.0 by construction); divergent-plan calibration data does not exist. Phase 9 builds the corpus as a **regression guard for the weights formula** (5 mutants × 3 dimensions ≈ 1 sample/dimension — sufficient to verify the formula behaves as designed, NOT statistical calibration of `0.40/0.40/0.20` values). Statistical calibration of the values themselves still requires real divergent-plan data per [retros/phase-8.md Self-reflection #9](retros/phase-8.md); Phase 9's corpus catches formula breakage but does not validate the weight values.
 
 **Corpus shape (decided):** 5 mutation cases derived programmatically from `canonical-v15` (or the equivalent post-A6 frozen snapshot):
 
@@ -158,13 +158,13 @@ cd packages/core && npm test --run research 2>&1 | tail -3                      
 1. **Test file:** `packages/core/diff/preset-similarity.calibration.test.ts` (new, ~80-150 LOC).
 2. **Mutator helpers** (inline in the test file, or in a sibling `preset-similarity.calibration-fixtures.ts` ≤50 LOC if cleaner): pure functions taking the canonical plan + mutation params, returning a mutated SynthesisPlan.
 3. **Assertions:** for each mutant, compute expected score from current `W_*` weights and assert `presetSimilarity(canonical, mutant)` matches within ±0.01 tolerance.
-4. **Doc note** in `preset-similarity.ts` header: append "Weights are data-backed by `preset-similarity.calibration.test.ts` mutation corpus (Phase 9 A8). Tweaks to W_* require updating the corpus's expected-score column."
+4. **Doc note** in `preset-similarity.ts` header: append "Calibration corpus `preset-similarity.calibration.test.ts` (Phase 9 A8) serves as **regression guard** for the weights formula — 5 mutants × 3 dimensions verify the formula behaves as designed. Statistical calibration of `0.40/0.40/0.20` values requires real divergent-plan data per `docs/meta-factory/retros/phase-8.md` Self-reflection #9; the corpus does NOT validate the weight values themselves. Tweaks to W_* require updating the corpus's expected-score column."
 
 **Verification:**
 ```bash
 test -f packages/core/diff/preset-similarity.calibration.test.ts
 cd packages/core && npm test --run diff/preset-similarity.calibration 2>&1 | tail -3    # green; 5 cases pass
-grep -E "calibration.test.ts|data-backed" packages/core/diff/preset-similarity.ts        # 1+ hit
+grep -E "calibration.test.ts|regression guard" packages/core/diff/preset-similarity.ts    # 1+ hit (matches M1 review delta-fix framing)
 ```
 
 **Commit subject:** `test(diff): A8 — preset-similarity calibration corpus (5 mutants from canonical-v15)`
