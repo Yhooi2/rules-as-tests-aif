@@ -15,6 +15,8 @@
 
 **Phase 9 implementation scope is deliberately small** — 4 BUILD areas, all deterministic, all pre-validated stop-rule-compliant. The entry research [§5](phase-9-entry-research.md) refined Phase 9 *down* from a 9-area candidate list. **Do not widen scope** in this session; reverting any DEFER requires a new entry-research cycle per [retros/phase-9-entry.md Open Q #1-#5](retros/phase-9-entry.md).
 
+**Post-merge coverage-gap context (commit `f92f60b`, branch base):** the entry research closed §13.10 #2 ROI re-evaluation negative on a 5-candidate context7 base (Cursor / Continue.dev / Factory ESLint Plugin / Cody / Aider). Two candidates were NOT checked but should have been — **AIF `/aif-evolve`** (LLM-driven rule synthesis from accumulated fix patches; already an integrated dependency per [aif-comparison.md](aif-comparison.md)) and the **Oh My ClaudeCode family** (multi-agent orchestration in our exact runtime). The DEFER stance carries forward unchanged; the user's commit recorded the gap as a 2-line note in [open-questions.md §13.10](open-questions.md) closure-criteria block. **Phase 9 implementation scope (A6/A7/A8/A9) is unaffected** per the commit's own claim. The gap is relevant to A6's §13.10 #2 trigger-wording sub-task — see §4 T1 sub-task #3.
+
 ### §1.1 Pre-resolved decisions (do not re-open)
 
 The drafting session that produced this prompt resolved 7 open questions from the Phase 9 entry retro. Decisions are baked into §3 and §4 below; re-opening is a `REVISE` on PR #13, not a Phase 9 implementation activity. Summary table:
@@ -47,7 +49,7 @@ The drafting session that produced this prompt resolved 7 open questions from th
 6. [docs/meta-factory/aif-comparison.md §9](aif-comparison.md) — REUSE matrix; A9 reuses `aif-gate-result` GATE-RESULT-CONTRACT.md schema, not building competitor.
 7. [docs/meta-factory/aif-comparison.md §7 Phase 11.1 subtask](aif-comparison.md) — Phase 8 closed L4/L5 emission + wire format; A9 closes the remaining "schema validation against fetched-fresh schema" item.
 8. [docs/meta-factory/retros/phase-8.md](retros/phase-8.md) Self-reflection #5 / #6 / #9 — root justifications for A6 (recipe duplication), A7 (`next/any/` tier), A8 (calibration).
-9. [docs/meta-factory/open-questions.md §13.10](open-questions.md) entry #2 — current trigger wording; A6 sub-task edits this.
+9. [docs/meta-factory/open-questions.md §13.10](open-questions.md) entry #2 — current trigger wording + post-merge coverage-gap note (commit `f92f60b`); A6 sub-task edits the trigger condition column without overwriting the gap note.
 10. [packages/core/research/load.ts](../../packages/core/research/load.ts) — current 3-tier resolution (`<framework>/<major>.x/` → `<framework>/<major-1>.x/` → `shared/`); A7 inserts a 4th `any/` tier.
 11. [packages/core/diff/preset-similarity.ts](../../packages/core/diff/preset-similarity.ts) — current `W_RULES=0.4 / W_KEYS=0.4 / W_GLOBS=0.2` weights (88 LOC post-PR-#11 fix); A8 builds calibration corpus targeting these.
 12. [packages/core/validator/to-aif-gate-result.ts](../../packages/core/validator/to-aif-gate-result.ts) — current emit (67 LOC); A9 wraps emit-path with hand-rolled validator.
@@ -87,8 +89,9 @@ The drafting session that produced this prompt resolved 7 open questions from th
 2. **Single-source policy doc:**
    - Add 5-10 line note at the head of `packages/core/synthesizer/recipes/recipe.schema.json` (`description` field) OR a `recipes/README.md` (whichever is more idiomatic per the existing layout): "Single-source: one synthesizer recipe per emitted ESLint rule. Collisions are resolved by deletion + research-store re-route, not layered emission. Phase 9 A6 closure (2026-05-08)."
 3. **§13.10 entry #2 trigger refinement** (apply principle to itself per Hard Constraint #11):
-   - Edit `docs/meta-factory/open-questions.md §13.10` table row "2 | Path A LLM gen («picks from menu»…)" `Trigger condition` column.
-   - **New wording:** "Phase 8 acceptance test passes deterministic; Phase 9 entry research validates ROI (closed negative 2026-05-08, [phase-9-entry-research.md §5 row A1](phase-9-entry-research.md)). **Next re-evaluation:** recipe count exceeds 15 (3× post-A6 baseline of ~5) AND ≥3 framework targets concurrently shipped (e.g. Next + Remix + SvelteKit) require per-framework rule namespace selection AND no single hand-curated preset fits all recipe surfaces."
+   - Edit `docs/meta-factory/open-questions.md §13.10` **table row** "2 | Path A LLM gen («picks from menu»…)" `Trigger condition` column. **Do not delete** the post-merge coverage-gap paragraph that commit `f92f60b` appended below the closure-criteria block — that paragraph stays as-is; the trigger-condition column is a separate edit surface.
+   - **New trigger-column wording:** "Phase 8 acceptance test passes deterministic; Phase 9 entry research validates ROI (closed negative 2026-05-08, [phase-9-entry-research.md §5 row A1](phase-9-entry-research.md)). **Next re-evaluation:** recipe count exceeds 15 (3× post-A6 baseline of ~5) AND ≥3 framework targets concurrently shipped (e.g. Next + Remix + SvelteKit) require per-framework rule namespace selection AND no single hand-curated preset fits all recipe surfaces."
+   - **Candidate-base note** (added below the closure-criteria block, after the f92f60b paragraph, NOT replacing it): "Next re-evaluation candidate base **must include** the original 5 (Cursor / Continue.dev / Factory ESLint Plugin / Cody / Aider) **plus** the two flagged in `f92f60b`: AIF `/aif-evolve` and the Oh My ClaudeCode family. Skipping any of the 7 = REVISE on the entry research." This makes the gap actionable for the next session, not just descriptive.
 
 **Verification:**
 ```bash
