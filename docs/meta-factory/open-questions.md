@@ -131,3 +131,86 @@ Decision matrix в [self-application.md](self-application.md) §3 фиксиру
 - **Audit-self job на наличие framework-self-install passing** — если автор закоммитил без локального запуска (любым путём, включая `--no-verify`), эту ситуацию ловит CI.
 
 Это не silver bullet (контрибьютор всё ещё может временно отключить hooks), но превращает bypass из «invisible» в «visible breach» через CI signal.
+
+### 13.10 LLM v2 trigger conditions
+
+**Status:** OPEN, v2 trigger.
+**Origin:** Phase 7 close (2026-05-08). EXECUTION-PLAN.md §6.0 locks deterministic-v1 stance and defers LLM extension as a strict-superset v2 trigger. This section is the SSOT for the trigger conditions per area.
+
+| # | v2 area | Layer | Trigger condition | Verification gate |
+|---|---|---|---|---|
+| 1 | LLM-driven research extension (context7 MCP + Anthropic `web_search_20250305` with allowed_domains) | L2 | First real consumer reports a research gap on a non-curated framework, OR Phase 8 acceptance shows curated store insufficient for Next 16 patterns | New gate: `framework-self-research --llm` returns drift = 0 against curated baseline + cost ≤$0.10 per `research --self` invocation |
+| 2 | Path A LLM gen («picks from menu» — LLM selects existing ESLint plugins / configures options) | L3 | Phase 8 acceptance test passes deterministic; Phase 9 entry research validates ROI | Two-AI review (gate 5) + cost ≤$1 per generated rule + diff with hand-authored ≤10% |
+| 3 | Path B AST gen (LLM writes ESLint rule TypeScript source) | L3 | Phase 9+ entry; new pattern with no existing ESLint plugin | Mutation testing (gate 3) green + paired bad/good corpus passes + human-review checkpoint before commit |
+| 4 | Gate 5 — two-AI review via AIF `review-sidecar` (`model: opus` override) | L4 | Phase 8 cost-scope decision (per-rule vs per-plan; advisory vs blocking; integration vs reimplementation) | Cost tracked per §13.11 + false-positive rate <20% on 10+ real PRs |
+| 5 | Gate 3 — mutation testing via Stryker | L4 | Path B activation (gate 3 only mutates AST; nothing to mutate in Path A) | Stryker score ≥80% on Path B rules + runtime ≤5 min per CI run |
+
+**Closure criteria.** Each v2 area closes when (a) trigger fires AND (b) verification gate passes for ≥1 real example AND (c) cost model in §13.11 reports a stable per-invocation budget. Until then: deterministic v1 ships.
+
+### 13.11 LLM cost model + tracking
+
+**Status:** OPEN, v2 trigger.
+**Origin:** Phase 8 verdict gate already mentions «cost ≤$5» (EXECUTION-PLAN §6 Phase 8 evaluation), but no tracking infrastructure exists. First LLM v2 invocation triggers this.
+
+**Trigger condition:** first LLM v2 invocation in any of L2/L3/L4 (per §13.10).
+
+**Open questions to answer at trigger time:**
+
+- Where are per-invocation cost records stored? (proposal: `<consumerRoot>/.ai-factory/synthesizer-output/llm-cost-log.json`, ring buffer 30 days)
+- Aggregation granularity — per rule, per plan, per phase, per consumer?
+- Budget cap enforcement — soft warn vs hard fail? At which threshold?
+- Authoritative source for token pricing — Anthropic billing API, hand-maintained constants, or both?
+- Cross-model accounting (Sonnet vs Opus when gate 5 overrides) — how is cost attributed?
+
+**Decision deferred** until first invocation; tracking shape emerges from real data, not speculation.
+
+### 13.12 Real-corpus validation strategy
+
+**Status:** OPEN, v2 trigger.
+**Origin:** Phase 7 close — gate 4 (tautology) ships with a 3-file negative corpus (`empty.ts`, `comment-only.ts`, `unrelated.tsx`). This is sanitary, not exhaustive. Polmness depends on gate 3 + gate 5 + a real-world corpus.
+
+**Trigger condition:** first real consumer onboard, OR Phase 8 acceptance test runs `meta-factory upgrade --from=next@15 --to=next@16` against a real Next 16 codebase.
+
+**Open questions:**
+
+- Corpus source — Vercel example apps, OSS Next.js projects on GitHub, hand-curated «representative» bundle?
+- Negative corpus expansion — what categories beyond empty/comment-only/unrelated? (proposal: minified output, generated code, vendored libs, monorepo-shared utils, test fixtures)
+- Corpus refresh policy — bound to framework version bumps (Next 15 → 16 = new corpus) or independent cadence?
+- False-positive budget — what fraction of corpus may trigger an existing rule before the rule is rejected as too aggressive?
+- Storage — in-repo fixtures, external git submodule, or pulled fresh from registry per CI run?
+
+**Decision deferred** until first real consumer or Phase 8 acceptance, whichever fires first.
+
+### 13.13 Versioning strategy для preset / recipes
+
+**Status:** OPEN, v2 trigger.
+**Origin:** Phase 7 retro — `rules-lock.json` ships with `schemaVersion` + `framework` + `version` fields (per [retros/phase-7.md L5 v1 scope](retros/phase-7.md)), but no policy yet on how recipe / preset versioning relates to consumer upgrades.
+
+**Trigger condition:** Phase 11 entry research, OR first consumer who needs to upgrade across a recipe-incompatible boundary.
+
+**Open questions:**
+
+- SemVer for recipes — what counts as breaking? (proposal: removing a rule = MAJOR; relaxing severity = MINOR; tightening severity = MAJOR; adding new rule = MINOR)
+- Preset versioning vs framework versioning — independent or coupled? (e.g. `preset-next-15-canonical@1.2.3` ↔ `next@15.4.x` — N:1 or 1:1?)
+- Recipe deprecation flow — how is a removed recipe communicated to consumers with active locks?
+- Channel discipline — stable / canary / nightly recipes, or single channel?
+- Backports — does `preset-next-15-canonical@1.x` continue to receive fixes after `preset-next-16-canonical` ships?
+
+**Decision deferred** to Phase 11 entry.
+
+### 13.14 Backwards compatibility / rules-lock.json migration
+
+**Status:** OPEN, v2 trigger.
+**Origin:** Phase 7 close — `rules-lock.json` v1 schema is `{ schemaVersion, framework, version, ruleIds[], emittedAt, sourceFingerprint }` (sha256/16). First schema bump (e.g. adding `cost` field per §13.11, or `diagnosticsVersion` per self-diagnostics-design.md) needs a migration story.
+
+**Trigger condition:** first additive change to `rules-lock.json` schema, OR first consumer with a v0 lock requesting upgrade.
+
+**Open questions:**
+
+- Schema bump policy — bump `schemaVersion`, write both fields during a deprecation window, drop old field after N releases?
+- Lock auto-migration — does `meta-factory install` rewrite the lock to the current schema, or refuse and require explicit `meta-factory migrate`?
+- Cross-version installer compatibility — can `meta-factory@1.2.0` read a lock written by `1.0.0`? Forward and/or backward?
+- Drift detection during migration — sourceFingerprint changes shape (e.g. sha256/16 → sha256/full) — does that count as drift or as a schema-only event?
+- Documentation locus — `rules-lock.json` reference doc separate from this open-question, or inline in `architecture.md §2.7`?
+
+**Decision deferred** until first additive schema change.
