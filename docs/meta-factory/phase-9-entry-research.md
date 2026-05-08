@@ -59,6 +59,20 @@ Each entry in [prior-art-evaluations.md](prior-art-evaluations.md) checked again
 
 **Verdict carry-forward:** [prior-art-evaluations.md#1](prior-art-evaluations.md) DEFER (unchanged). Final §5 row: A2 → DEFER.
 
+### §4.A1 — Path A LLM gen «picks from menu» (NEW SSOT entry #4)
+
+**context7 candidates checked (3, per Hard Constraint #5):** `/websites/cursor_fr` (query: «Cursor select existing ESLint plugin rules from menu LLM picks rule configuration for codebase Next.js»); `/websites/continue_dev` (resolve only); `/factory-ai/eslint-plugin` (query: «AI agent ESLint rules selection configuration from codebase context custom rules for AI-generated code Next.js framework»).
+
+**Findings:**
+- **Cursor rules** (`.mdc` files with YAML frontmatter, glob/description/manual selection) are **AI-agent prompt-rules**, not ESLint plugin selection. Different surface — guides the agent's behavior, doesn't lint code.
+- **Continue.dev** offers customizable assistants and rules, no ESLint-rule-pick-from-menu feature surfaced.
+- **`@factory/eslint-plugin`** — production-grade hand-curated ESLint plugin (21 rules, `base`/`recommended`/`frontend`/`backend` configs) explicitly «designed to improve AI coding agent output quality by enforcing custom lint rules». Includes Next.js-aware rules (e.g. `Require Middleware in Next.js Route Handlers`). Comprehensive per-rule Markdown for AI agent adaptation; explicit reuse pattern «projects publish own custom plugin using Factory as template». Not LLM-driven «picks from menu» (rules are hand-authored), but the closest production analog to the curated menu Path A LLM gen would select from.
+- **No production tool implements LLM-driven «picks from menu»** of existing ESLint rules given a codebase.
+
+**SSOT update:** new entry [#4](prior-art-evaluations.md) (Factory ESLint Plugin, WATCHLIST — potential reference / partial reuse target if Phase 9+ Path A LLM gen materialises and recipe inventory needs scaling).
+
+**Verdict outcome:** Path A LLM gen has no direct LLM-pick analog in production; the closest is hand-curated plugin pattern (Factory), which we already mirror via `preset-next-15-canonical`. Final §5 row: A1 priority decision in §5 (BUILD only if Phase 9 ROI thesis closes; else DEFER).
+
 ## §5. Build vs reuse matrix + Phase 9 priority — see T4 commit
 
 Populated in T4: final matrix table with verdict (BUILD / REUSE / DEFER / STOP) and Phase 9 priority (P0 / P1 / P2 / OUT) per area.
