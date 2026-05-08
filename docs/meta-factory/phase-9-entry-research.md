@@ -141,8 +141,38 @@ Final matrix per capability area; rationale grounded in §3 (SSOT consult) + §4
 
 **Phase 9 implementation scope (refined):** 4 BUILD areas (A6, A7, A8, A9 — all deterministic, all stop-rule-compliant); 5 DEFER areas (A1-A5, all LLM-bearing). The §13.10 entry #2 ROI re-evaluation that triggered this session **closes negative**: Phase 9 stays deterministic-v1, refines §13.10 entry #2 trigger to «recipe count exceeds N (TBD) AND new framework target requires plugin-menu pattern we don't yet ship», and ships the housekeeping + Phase 11.1 closure tail.
 
-## §6. Stop-rule audit + cost projection — see T5 commit
+## §6. Stop-rule audit + cost projection (per P0/P1 BUILD)
 
-Populated in T5: §6.0 stop-rule compliance projection per P0/P1 BUILD capability + cost model per [open-questions.md §13.11](open-questions.md) for any LLM-bearing area.
+Phase 9 implementation scope (per §5) is **4 BUILD areas, all deterministic, all stop-rule-compliant**. No P0/P1 BUILD area requires LLM at runtime; no §6.0 amendment needed for Phase 9 implementation.
+
+### §6.1 — Per-area stop-rule projection
+
+| Area (P0/P1) | §6.0 #1 NO LLM at runtime | §6.0 #2 NO new explicit deps | §6.0 #3 NO yargs/commander | §6.0 #4 NO Path B AST gen |
+|---|---|---|---|---|
+| A6 recipe duplication policy (P0) | ✓ doc + recipe consolidation only | ✓ no deps | ✓ no CLI changes | ✓ recipe-data only |
+| A7 `next/any/` resolution tier (P1) | ✓ pure load.ts code change | ✓ no deps | ✓ no CLI changes | ✓ load.ts is recipe-loading, not AST |
+| A8 glob-overlap calibration (P1) | ✓ test-corpus + calibration test | ✓ no deps (uses existing minimatch transitive) | ✓ no CLI changes | ✓ similarity metric is non-AST |
+| A9 AIF schema validation (P0) | ✓ pure JSON-schema validator | ✓ hand-rolled validator (no Ajv) per [§6.0 #2](EXECUTION-PLAN.md) | ✓ no CLI changes | ✓ validator is pure data-shape check |
+
+All 4 P0/P1 BUILD areas hold §6.0 stop-rules without amendment. **No conflict surfaces.** Phase 9 is a deterministic housekeeping + Phase 11.1 closure phase.
+
+### §6.2 — Cost projection
+
+| Area | LLM invocations | Phase 9 $ projection | §6 «cost ≤$10» gate |
+|---|---|---|---|
+| A6 / A7 / A8 / A9 (all P0/P1 BUILD) | **0** (deterministic) | **$0** | trivially held |
+| A1 / A2 / A3 / A4 / A5 (all DEFER) | n/a (not built) | $0 | n/a |
+
+**Total Phase 9 implementation cost projection: $0 LLM spend.** [open-questions.md §13.11](open-questions.md) gate-5 invocation shape (per-plan + Opus + advisory + cached) does NOT apply to Phase 9 — gate 5 build is DEFER per A4. §13.11 cost-tracking infrastructure stays a v2 deliverable per its own «emerges with first real invocation» policy.
+
+### §6.3 — Deferred-LLM stop-rule conflict surface (informational)
+
+For completeness, document conflicts that **would** surface if Phase 9 reversed any DEFER:
+
+- **A1 Path A LLM gen BUILD** would require [§6.0 #1](EXECUTION-PLAN.md) amendment (LLM-pick at synthesizer time = LLM at runtime). Phase 9 entry verdict DEFER avoids this conflict.
+- **A4 Gate 5 BUILD** would require [§6.0 #1](EXECUTION-PLAN.md) amendment + [open-questions.md §13.11](open-questions.md) cost-tracking infra. Phase 9 entry verdict DEFER avoids both.
+- **A3 / A5** similar — DEFER avoids §6.0 conflict.
+
+If a future Phase 9.X session decides to reverse a DEFER, the §6.0 amendment should land in a docs-only Phase 9.5 (mirroring Phase 7.5 pattern), with [retros/phase-7.5.md](retros/phase-7.5.md) as the structural reference. This entry-research file does NOT preempt that amendment per Hard Constraint #8 (DO NOT preemptively change §6.0).
 
 ---
