@@ -5,13 +5,15 @@
   "type": "module",
   "main": "./manifest/rules-manifest.json",
   "bin": {
-    "rules-as-tests-detect": "./detector/cli.ts"
+    "rules-as-tests-detect": "./detector/cli.ts",
+    "rules-as-tests-research": "./research/cli.ts"
   },
   "exports": {
     "./manifest": "./manifest/rules-manifest.json",
     "./manifest-schema": "./manifest/rules-manifest.schema.json",
     "./eslint-rules": "./eslint-rules/index.ts",
-    "./detector": "./detector/index.ts"
+    "./detector": "./detector/index.ts",
+    "./research": "./research/index.ts"
   },
   "scripts": {
     "test": "vitest run --reporter=default",
@@ -20,7 +22,8 @@
     "render-rules": "tsx render/render-rules.ts",
     "render-rules:check": "tsx render/render-rules.ts --check",
     "detect": "tsx detector/cli.ts",
-    "detect:install-rules": "tsx detector-v0/detect-applicable-rules.ts"
+    "detect:install-rules": "tsx detector-v0/detect-applicable-rules.ts",
+    "research": "tsx research/cli.ts"
   },
   "devDependencies": {
     "@typescript-eslint/rule-tester": "^8.59.0",
