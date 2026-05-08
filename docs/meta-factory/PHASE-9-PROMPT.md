@@ -222,3 +222,83 @@ grep -E "schema_version|blocking|suggested_next" packages/core/validator/aif-gat
 
 **Commit subject:** `docs(phase-9): T5 — retro + verdict for Phase 10 entry`
 
+## §5. Acceptance criteria
+
+```bash
+# Branch hygiene
+git diff main --name-only | grep -vE "^(docs/meta-factory/(PHASE-9-PROMPT|phase-9-entry-research|aif-comparison|open-questions|retros/phase-9)\.md|packages/core/(synthesizer/recipes/|research/(load\.ts|store/next/(any|15\.x|16\.x)/)|diff/preset-similarity|validator/(aif-gate-result-schema(\.snapshot)?(\.ts|\.md)|to-aif-gate-result\.test\.ts)|principles/.*|.*expected-.*-synth\.json))" | grep -v "^$" && echo "FAIL: unexpected files" || echo "OK"
+
+# Atomic commits — task list expands to 6-10 atomic + retro
+git log main..HEAD --oneline | wc -l                                                     # 7-12 expected
+
+# Conventional commits, English subjects, no emoji
+git log main..HEAD --pretty=format:'%s' | grep -cE '^(docs|feat|test|refactor|chore)(\(.+\))?: '   # = total commits
+git log main..HEAD --pretty=format:'%s' | grep -E '[\xF0-\xF7][\x80-\xBF]+' && echo "FAIL: emoji" || echo "OK"
+
+# Prior-art trailer compliance on capability commits (hook will block on push regardless)
+git log main..HEAD --pretty=format:'%H%n%B%n---%n' | grep -cE '^Prior-art:'              # ≥1 (T3 calibration; T4 validator)
+
+# Test suite — no regression from baseline 246/40
+cd packages/core && npm test --run 2>&1 | tail -3                                        # ≥246 pass
+
+# Self-audit
+make self-audit                                                                          # green
+
+# Principle 08 (citations)
+cd packages/core && npm test --run principles/08-prior-art-cited 2>&1 | tail -3          # green
+
+# Per-area smoke tests (cross-ref the §4 verification blocks)
+test ! -f packages/core/synthesizer/recipes/react-server-components.json                 # A6
+test -d packages/core/research/store/next/any                                            # A7
+test -f packages/core/diff/preset-similarity.calibration.test.ts                         # A8
+test -f packages/core/validator/aif-gate-result-schema.ts                                # A9
+test -f packages/core/validator/aif-gate-result-schema.snapshot.md                       # A9
+
+# Retro shipped
+test -f docs/meta-factory/retros/phase-9.md
+[ "$(wc -l < docs/meta-factory/retros/phase-9.md)" -le 200 ]
+```
+
+**Content acceptance:**
+- All 4 BUILD areas (A6/A7/A8/A9) closed; each verified per §4 sub-task verification block.
+- §13.10 #2 trigger wording updated with concrete N=15 + plugin-menu definition (A6 sub-task).
+- Phase 11.1 pointer updated to "CLOSED in Phase 9 A9" in [aif-comparison.md §7](aif-comparison.md).
+- No new SSOT entries (matrix closed; if one surfaces, halt + REVISE).
+- Retro carries forward Phase 9 entry Open Q #5 (principle 08 scope widening) as Phase 10 entry candidate.
+
+## §6. What NOT to do
+
+1. **DO NOT widen scope to A1-A5.** Phase 9 entry research closed those DEFER with refined triggers; reverting requires a new entry-research cycle, not Phase 9 implementation.
+2. **DO NOT preempt §6.0 stop-rule amendments.** All 4 BUILD areas pre-validated stop-rule-compliant per [phase-9-entry-research.md §6.1](phase-9-entry-research.md). If unforeseen conflict surfaces — halt + REVISE.
+3. **DO NOT add new SSOT entries casually.** The matrix is closed at 5 entries. If a fresh capability-area surfaces during implementation (unlikely; the matrix is exhaustive), apply [§5.5 Step 1.5](EXECUTION-PLAN.md) full discipline (≥3 phrasings + same-commit add) — do not skip.
+4. **DO NOT widen principle 08 scope.** [retros/phase-9-entry.md Open Q #5](retros/phase-9-entry.md) explicitly defers this past Phase 9. Adding retros / aif-comparison.md to principle 08 scope is a Phase 10+ decision.
+5. **DO NOT split a BUILD area into Phase 9.X.** All 4 are mandatory in this Phase per §1.1 row §3.6. P0/P1 distinction is retro-time fallback only — the prompt commits to the full 4.
+6. **DO NOT introduce yargs / commander / Ajv / ts-morph.** §6.0 #2 + #3 stop-rules. A8 corpus is JSON edits; A9 validator is hand-rolled.
+7. **DO NOT bypass `--no-verify` if pre-push hook blocks.** Investigate the trailer or capability-detection failure; fix the trailer body. Bypass = REVISE on the merging PR.
+8. **DO NOT silently change a §1.1 decision.** If the implementation strongly disagrees with a decision, surface it in T5 retro Open Q for the *next* session and continue with the decision as written.
+9. **DO NOT regenerate `prior-art-evaluations.md` `Last reviewed` dates wholesale.** Only entries that actively match a Phase 9 capability area (none expected). The closed-matrix invariant says no entries match.
+10. **DO NOT add emoji, no `--no-verify`, no force-push, no `git config` edits.**
+
+## §7. PR plan
+
+```bash
+gh pr create --base main --head docs/phase-9-implementation \
+  --title "feat: Phase 9 implementation — A6/A7/A8/A9 (housekeeping + Phase 11.1 closure)" \
+  --body "$(cat docs/meta-factory/retros/phase-9.md | head -60)"
+```
+
+PR description = retro head section (sections 1-3: header, scope, verification block). Reviewer (you / future Claude session / @Yhooi2) verifies acceptance criteria from §5.
+
+The PR title intentionally drops the `docs(...)` prefix — Phase 9 is mixed code+docs, primary surface is `feat(...)`-equivalent work in `packages/core/`. Branch name is the orchestrator's call; `docs/phase-9-implementation` mirrors the entry branch's `docs/phase-9-entry-research` pattern even though the surface is mixed.
+
+## §8. Post-merge
+
+1. **GO verdict** → next session opens Phase 10 entry research (not in scope here). Phase 10 candidates: real-corpus validation (per [§13.12](open-questions.md)); principle 08 scope widening (per [retros/phase-9-entry.md Open Q #5](retros/phase-9-entry.md)); preset versioning policy (per [§13.13](open-questions.md)). Trigger conditions per §13.1x SSOTs.
+2. **REVISE verdict** → re-open this Phase 9 implementation session to address findings; ≥1 atomic delta commit per finding addressed; new retro section appended.
+3. **STOP verdict** → unlikely (all 4 BUILD areas pre-validated). If it fires, document why; the Phase 8.8 mechanism + entry research artifacts remain authoritative for any future Phase N+.
+
+After Phase 9 close: archive [phase-9-entry-research.md](phase-9-entry-research.md) per its own §header transient-artifact policy (cross-referenced from `retros/phase-9.md`, not deleted).
+
+---
+
+**Reference materials packed for self-contained execution.** Branch from `main` HEAD `5c6f26f`. Atomic commits. 4 BUILD areas in order A6 → A7 → A8 → A9. Phase 8.8 mechanism is the live forward gate; this session is its **second downstream consumer** (cumulative observed-FP rate informs principle 08 scope widening Open Q for Phase 10).
