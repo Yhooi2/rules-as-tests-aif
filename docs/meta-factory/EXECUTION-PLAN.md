@@ -645,37 +645,63 @@ Manual baseline: 1-2 дня создание `preset-next-16-manual`. Затем
 
 **Output (full design):** см. dedicated session doc; structure mirrors Phase 7.5 (≈8-10 atomic commits, retro). Honest time estimate: 2-3 дня (документная база + Уровень 4c pre-push hook implementation + Уровень 5 CI gate skeleton + recursive validation tests). Brief scope:
 
-- **Уровень 0 — Promote prior-art consult to first-class framework principle.** Add new principle (provisional ID `P-build-vs-reuse`) to `skills/rules-as-tests/references/overview.md` (canonical principles SSOT per [self-application.md §2 row L2](self-application.md)): «before building any new capability or introducing a new dependency, MUST run context7 query for the capability area (≥3 phrasings per §5.5 discipline) AND consult [prior-art-evaluations.md](prior-art-evaluations.md); document results via `Prior-art:` commit trailer or explicit phase-N-research.md citation». Add matching entry to `factory/rules-manifest.json` with `check.type: "manual"` (process rule, not AST-checkable) + executable companion via Уровень 4c pre-push hook. Manifest entry makes the principle catalogued, renderable into RULES.md via existing `render-rules.ts`, and subject to Phase 2 meta-tests on principle drift. This elevates prior-art consult from «process discipline в CONTRIBUTING» to **framework-level invariant** on equal footing с «every rule has executable check» / «AST > grep» / «no tautology». Consumers of the framework inherit it via the same RULES.md emission pipeline.
+- **Уровень 0 — Promote ARTIFACT part to first-class framework rule (split design).** Concern: a single «P-build-vs-reuse» rule mixes **artifact validation** (research file content) with **process discipline** (commit metadata, developer behavior). Manifest schema (`applies-to`, `check.type`, `negative-test`) спроектирован под artifact rules; `check.type=manual` для process part — dodge не fit. Solution: **split into 2 entities by surface**.
+  - **(a) Artifact rule `IR7-research-cites-prior-art`** — promoted to manifest (fits naturally as IR slot после IR1-IR6 manifest invariants). Schema:
+    - `applies-to: ['docs/meta-factory/phase-*-research.md']`
+    - `check.type: 'command'` (executable script validates citations)
+    - Check: every capability area in research file MUST cite a `prior-art-evaluations.md` entry by ID; broken refs (citing non-existent entry ID) fail.
+    - `negative-test`: research file без citations OR с broken refs → check fails.
+    - Passes Gate 1 schema ✓, Gate 2 rule-tester ✓ (command-type), Gate 4 tautology ✓ (negative corpus = research files без/с-broken citations), Gate 6 cross-rule conflict ✓. Real artifact rule, не decoration. Subject to Phase 2 meta-tests on principle drift; rendered to RULES.md via `render-rules.ts`.
+    - Add to `skills/rules-as-tests/references/overview.md` as canonical principle (per [self-application.md §2 row L2](self-application.md)) — equal footing с «every rule has executable check» / «AST > grep» / «no tautology».
+  - **(b) Process discipline `Prior-art:` commit trailer** — NOT promoted to manifest. Lives в `CLAUDE.md` + `CONTRIBUTING.md`. Enforced via Уровень 4c pre-push hook (hard fail с structured escape hatch) + PR review. Different surface (process, not artifact); different enforcement model (developer-time + reviewer, not L4 validator). Naming process rule «principle» нарушит framework identity «manifest = artifact rules».
+  - **Why split:** preserves framework identity (manifest schema fits its target — artifact rules); each part lives в natural home (artifact в manifest, process в CONTRIBUTING); recursive self-validation работает чище (IR7 валидируется framework gates без circularity; process discipline валидируется PR review — orthogonal axis). Split рационально resolves user concern «правило выбивается from остальных» (2026-05-08 review): остальные rules — про artifact, IR7 too. Process discipline получает explicit acknowledgement как process rule, без декорированного manifest entry.
 - **Уровень 1** — `docs/meta-factory/prior-art-evaluations.md` SSOT (shipped reference, ≤500 lines) — table-driven entries `{Candidate, Capability matched, First seen, Last reviewed, Verdict (ADOPT/DEFER/WATCHLIST/REJECT), Rationale, Trigger to revisit}`. Initial entries: Autogrep, Netlify framework-info, fitness functions, plus what surfaced в Phase 8 capabilities.
 - **Уровень 2** — §5.5 Step 1.5 mandatory consult gate (вставляется между «List capability areas» и «Resolve candidates» в текущем Step 0).
 - **Уровень 3** — `PHASE-ENTRY-PROMPT-TEMPLATE.md` (или update ORCHESTRATOR-START-PROMPT.md) — Task 0 «consult prior-art-evaluations.md» as mandatory first step для Phase N entry session.
-- **Уровень 4** — process invariant в `CLAUDE.md` / `CONTRIBUTING.md`: build-vs-reuse mandatory check + `Prior-art:` commit trailer convention для capability commits + pre-push WARN hook (новый dep / новый module ≥50 LOC без trailer).
+- **Уровень 4** — process invariant в `CLAUDE.md` / `CONTRIBUTING.md`: build-vs-reuse mandatory discipline + `Prior-art:` commit trailer convention для capability commits + pre-push **HARD FAIL** hook с structured escape hatch (`Prior-art: skipped — <rationale>` permitted, `Prior-art:` absent → hook exit ≠ 0). Soft warn = «можно проигнорировать» = self-defeating если правило важно. Hard fail с opt-out trailer = invariant enforced, audit trail при principled skip, no quiet bypass. Friction fires только на capability commits (≈1 per 5-10 commits per capability commit definition ниже), не каждый commit.
 - **Уровень 5** — periodic staleness refresh routine spec (impl Phase 8.X+ tooling); CI gate `framework-prior-art-staleness` (Phase 8.X+ as well).
 
-**Recursive self-validation (P-build-vs-reuse must validate itself).** Per central thesis (recursive principles validation, see [aif-comparison.md §10 differentiator #4](aif-comparison.md)), новое правило подвергается тем же gates что и любое другое правило manifest'а. Three forms of recursion:
+**Recursive self-validation (split design — different axes для artifact vs process).** Per central thesis (recursive principles validation, see [aif-comparison.md §10 differentiator #4](aif-comparison.md)), each part validates через its appropriate model:
 
-| Recursion form | Mechanism | Status for P-build-vs-reuse |
+**(a) IR7-research-cites-prior-art (artifact rule) — passes framework's own gates clean:**
+
+| Recursion form | Mechanism | Status for IR7 |
 |---|---|---|
-| L4 6-gate validation | gate-by-gate per Phase 7 [retros/phase-7.md](retros/phase-7.md) L4 triage | Gate 1 (schema) ✓ — manifest entry conforms; Gate 2 (rule-tester) n/a — `check.type=manual` (G2 Pages-Router precedent); Gate 3 (mutation) n/a v1 — Path B only; **Gate 4 (tautology) ✓ MUST** — executable companion (Уровень 4c pre-push hook) обязан fire'ить при violation; meta-test: stage commit без `Prior-art:` trailer + new dep → hook warns; без рабочего companion = decorative/tautological; Gate 5 (two-AI review) DEFER per [§13.10 entry #4](open-questions.md); Gate 6 (cross-rule conflict) ✓ — verify no contradiction с existing principles |
-| Self-application at creation | принцип требует consult prior-art перед building → новая capability в Phase 8.8 (т.е. сам principle) тоже consulted | Chicken-and-egg: prior-art-evaluations.md рождается в той же session. **Resolution:** 2026-05-08 analog research session (которая surfaced Autogrep / Netlify framework-info / fitness functions) IS the consult evidence; документируется в Phase 8.8 retro как «self-application at-creation evidence» entry. Strongest form recursion — правило про prior-art consult самой создано через prior-art consult |
-| 6 Уровней as defense-in-depth | каждый уровень ловит свой класс violation failure mode | Уровень 0 (manifest) → render-rules drift detection; Уровень 1 (SSOT data) → "Last reviewed" staleness; Уровень 2 (§5.5 gate) → phase entry «забыл проверить»; Уровень 3 (prompt template) → session-start «не было в context'е»; Уровень 4 (commit hook + trailer) → implementation-time «не задокументировал»; Уровень 5 (periodic refresh + CI gate) → time-decay «новый analog появился, не пересмотрели». Violation must pass all 6 layers undetected to slip through |
+| L4 6-gate validation | gate-by-gate per Phase 7 [retros/phase-7.md](retros/phase-7.md) L4 triage | Gate 1 (schema) ✓ — manifest entry conforms; Gate 2 (rule-tester) ✓ — `check.type=command` runs validation script; Gate 3 (mutation) n/a v1 — Path B only; **Gate 4 (tautology) ✓ MUST** — negative corpus = research files без citations OR с broken refs → check fails; positive corpus = current Phase 8 research file с valid citations → check passes; Gate 5 (two-AI review) DEFER per [§13.10 entry #4](open-questions.md); Gate 6 (cross-rule conflict) ✓ — no contradiction с existing IR1-IR6 |
+| Self-application at creation | rule fires on phase-N-research.md → новый файл (the validation script itself? нет, validation script это код, не research). IR7 fires on **research files about capability decisions** | Chicken-and-egg отсутствует: IR7 validates research artifacts; phase-8.8-research.md (если будет) — first instance subject to validation. Phase 7.5 analog research from 2026-05-08 retroactively не subject to IR7 (предшествовало правилу), но Phase 8.8 retro может cite его как baseline reference |
+| Defense-in-depth (artifact validation surface) | каждый уровень ловит свой класс drift в research artifacts | Уровень 0 (manifest entry + overview.md) → render-rules drift detection; Уровень 1 (SSOT data) → "Last reviewed" staleness; Уровень 2 (§5.5 entry gate) → phase entry без research file = blocked; Уровень 5 (CI gate `framework-research-cites-prior-art`) → automated validation per push |
 
-Mutation testing (when gate 3 activates Phase 9+ Path B): mutate the pre-push trailer-check (e.g. invert the `Prior-art:` regex) → meta-test on staged-fake-commit MUST fail. Если не fails — meta-test тавтологичен (the test of the test is itself broken).
+Mutation testing (when gate 3 activates Phase 9+ Path B): mutate validation script (e.g. invert citation regex) → negative corpus must still fail, positive corpus must still pass; mutation must change one of these. Если не — script тавтологичен.
 
-**Task ordering (resolves chicken-and-egg structurally).** Phase 8.8 commits MUST execute в этом порядке:
+**(b) Process discipline (`Prior-art:` commit trailer) — validates через PR review + independent meta-test, не L4:**
+
+| Validation axis | Mechanism | Status for process discipline |
+|---|---|---|
+| PR review enforcement | Reviewer checks capability commits on PR for `Prior-art:` trailer presence | Hard mandate в CONTRIBUTING.md + PR template includes «Prior-art trailers verified» checkbox |
+| Local pre-push enforcement | `.husky/pre-push` detects capability commits + greps body для trailer; hard fail с structured escape hatch (`Prior-art: skipped — <rationale>`) | Уровень 4c — local fast feedback; escape hatch leaves audit trail для justified skip |
+| Independent meta-test (anti-tautology guard для самого hook'а) | `tests/principles/prior-art-trailer-hook.test.sh` instruments hook через subprocess в isolated tmpdir; mutation tests на hook itself catch broken enforcement | Уровень 5 (CI integration); 4 sub-tests (positive / negative / 2 mutations) per spec ниже |
+| Periodic staleness | quarterly cron re-runs context7 queries against existing capability areas; surfaces new analogs | Уровень 5 routine spec |
+
+Process discipline NOT subject to L4 6-gate validation — другой surface (commit metadata, developer behavior), другая enforcement model (local hook + PR review). Это intentional design boundary, не gap.
+
+**Task ordering (split design — IR7 артефакт сначала, потом process discipline).** Phase 8.8 commits MUST execute в этом порядке:
 
 1. **T1** — `prior-art-evaluations.md` skeleton: format spec + empty entry table + template для добавления entries. NO entries yet.
-2. **T2** — Add **first entry** в SSOT (Autogrep — closest single analog from 2026-05-08 research). Этот commit body использует `Prior-art:` trailer ссылающийся на 2026-05-08 research session. Commit IS the first instance of trailer convention.
-3. **T3** — Create P-build-vs-reuse principle в `skills/rules-as-tests/references/overview.md` + manifest entry в `factory/rules-manifest.json`. Этот commit body содержит `Prior-art: prior-art-evaluations.md#1 (Autogrep, verdict DEFER)` — то есть **сам principle создан через применение этого principle к existing SSOT entry**. Не retroactive — sequenced.
-4. **T4-T5** — Add 2 more initial entries (Netlify framework-info, fitness functions) применяя P-build-vs-reuse через trailer. Each entry-add = self-application instance.
-5. **T6** — §5.5 Step 1.5 mandatory consult gate.
-6. **T7** — `PHASE-ENTRY-PROMPT-TEMPLATE.md` с Task 0.
-7. **T8** — `CLAUDE.md` / `CONTRIBUTING.md` build-vs-reuse invariant + capability commit definition (см. ниже).
-8. **T9** — `.husky/pre-push` extension: capability-commit detection + trailer check (Уровень 4c).
-9. **T10** — Independent meta-test для Gate 4 anti-tautology (см. ниже) + CI integration.
-10. **T11** — Phase 8 retroactive audit + retro + GO verdict.
+2. **T2** — Add **first entry** в SSOT (Autogrep — closest single analog from 2026-05-08 research). Commit body uses `Prior-art:` trailer ссылающийся на 2026-05-08 research session — first instance of trailer convention demonstrated в самом commit'е.
+3. **T3** — Create **IR7-research-cites-prior-art** в `factory/rules-manifest.json` + `skills/rules-as-tests/references/overview.md`. Уровень 0 artifact part. Schema: `applies-to: ['docs/meta-factory/phase-*-research.md']`, `check.type: 'command'`, validation script. Add validation script + 3-file negative corpus (research files без citations / с broken refs / с valid citations) для Gate 4 anti-tautology. Run L4 validator on IR7 itself — passes Gates 1, 2, 4, 6.
+4. **T4-T5** — Add 2 more initial entries (Netlify framework-info, fitness functions) каждое c `Prior-art:` trailer. Each entry-add = process discipline instance (T8 не существует пока — но trailer convention starts здесь, в анticipation of T8).
+5. **T6** — §5.5 Step 1.5 mandatory consult gate update в EXECUTION-PLAN.md.
+6. **T7** — `PHASE-ENTRY-PROMPT-TEMPLATE.md` (or update ORCHESTRATOR-START-PROMPT.md) с Task 0 «consult prior-art-evaluations.md».
+7. **T8** — Process discipline в `CLAUDE.md` + `CONTRIBUTING.md`: capability commit definition + `Prior-art:` trailer convention + escape hatch syntax. PR template gets «Prior-art trailers verified» checkbox.
+8. **T9** — `.husky/pre-push` extension: capability-commit detection (per definition ниже) + trailer check (hard fail с escape hatch). Уровень 4c implementation.
+9. **T10** — Independent meta-test `tests/principles/prior-art-trailer-hook.test.sh` (4 sub-tests per spec ниже) + new CI job `framework-self-build-vs-reuse` depends on `principles-meta-tests`.
+10. **T11** — Periodic staleness routine spec (Phase 8.X+ tooling pointer) + CI gate `framework-research-cites-prior-art` skeleton (validates IR7 на existing phase-*-research.md files).
+11. **T12** — Phase 8 retroactive audit (post-hoc consult for each Phase 8 build-vs-reuse decision) + `retros/phase-8.8.md` + GO verdict.
 
-Sequence гарантирует что P-build-vs-reuse не существует до того как SSOT может его подкрепить evidence'ом. Self-application at creation = T3 commit body (real-time, не post-hoc).
+Sequence гарантирует:
+- T1-T2: SSOT существует ДО IR7 (T3) — IR7 валидирует existing artifacts, не self-bootstrapping
+- T3: IR7 passes own gates IMMEDIATELY (positive corpus = phase-7-research.md / phase-8-entry-research.md, если они cite SSOT — иначе они поставлены в exception list pre-T3 baseline)
+- T8-T9: process discipline added AFTER artifact rule shipped — no chicken-and-egg для process discipline either; first capability commit с trailer = T2 (already happened, retroactively legitimate per T8 convention)
 
 **Capability commit — formal definition.** Pre-push hook (Уровень 4c) detects capability commit via:
 
@@ -698,30 +724,43 @@ is_capability_commit() {
 
 Пороги (50 / 80 LOC) — initial guesses per [§5 numerical thresholds caveat](#section-5). Phase 8.8 retro фиксирует actual false-positive rate after first ≥10 commits; tune accordingly. False-positive >30% → review thresholds, не drop the layer.
 
-**Gate 4 independent meta-test (anti-tautology guard для самого правила).** Файл `tests/principles/p-build-vs-reuse-tautology.test.sh`:
+**Gate 4 independent meta-tests (anti-tautology guards — split design).** Two test files, each anti-tautology guard for its own enforcement surface:
+
+**(a) IR7 artifact rule meta-test** — `packages/core/validator/gate-tautology.test.ts` extended (existing Phase 7 pattern):
+- Positive corpus: research file с valid `[prior-art-evaluations.md#1]` citation → IR7 check passes.
+- Negative corpus 1: research file без citations → check fails («research file mentions capability area X but no prior-art entry cited»).
+- Negative corpus 2: research file с broken ref `[prior-art-evaluations.md#999]` (non-existent ID) → check fails («cited entry ID not found in SSOT»).
+- Mutation 1 (Phase 9+ Path B): invert citation regex в validation script → positive corpus must fail (catches inverted check).
+- Mutation 2 (Phase 9+ Path B): drop ID-existence verification → negative-corpus-2 must fail (catches removed check).
+
+**(b) Process discipline pre-push hook meta-test** — `tests/principles/prior-art-trailer-hook.test.sh`:
 
 ```bash
-# Setup: temp git repo + minimal package.json + .husky/pre-push from framework
+# Setup: temp git repo + minimal package.json + .husky/pre-push copied from framework
 # Test 1 (positive): commit с capability change + Prior-art: trailer → hook exit 0
-# Test 2 (negative): same capability change БЕЗ trailer → hook exit ≠ 0 (warn)
-# Test 3 (mutation): инвертировать regex check в pre-push hook (e.g. require ABSENCE of Prior-art:) → Test 1 must fail
-# Test 4 (mutation): убрать capability-commit detection → Test 2 must fail (false negative caught)
+# Test 2 (negative-no-trailer): same capability change БЕЗ trailer → hook exit ≠ 0 (hard fail)
+# Test 3 (positive-escape-hatch): commit с capability change + 'Prior-art: skipped — refactor only, no new capability' → hook exit 0 (escape hatch valid)
+# Test 4 (mutation-invert): инвертировать regex (require ABSENCE of Prior-art:) → Test 1 must fail
+# Test 5 (mutation-drop-detection): убрать capability-commit detection → Test 2 must fail (false negative caught)
 ```
 
-Test 3 + Test 4 = mutation guard. Без них P-build-vs-reuse pre-push hook потенциально тавтологичен (hook есть, но реально ничего не ловит). Эти 4 тесты — independent от pre-push hook'а самого: они инструментируют hook через subprocess в isolated tmpdir, не через self-call.
+Tests 4-5 = mutation guards. Без них pre-push hook потенциально тавтологичен (hook есть, но реально ничего не ловит). Все 5 тестов — independent от pre-push hook'а самого: instrument hook через subprocess в isolated tmpdir, не через self-call. Mutation pattern mirrors Phase 2 P4 anti-tautology guard, но для bash/process surface вместо TypeScript/AST.
 
-CI integration: новый job `framework-self-build-vs-reuse` в `audit-self.yml` — depends on `principles-meta-tests`, runs `tests/principles/p-build-vs-reuse-tautology.test.sh`. Failed mutation = CI red.
+CI integration: два новых job'а в `audit-self.yml`:
+- `framework-research-cites-prior-art` — depends on `principles-meta-tests`, runs IR7 validation script на existing `docs/meta-factory/phase-*-research.md` files. Failed = CI red.
+- `framework-prior-art-trailer-hook` — depends on `principles-meta-tests`, runs `tests/principles/prior-art-trailer-hook.test.sh`. Failed mutation guard = CI red.
 
 **Retroactive audit.** Phase 8.8 retro обязана содержать post-hoc consult для каждого build-vs-reuse decision Phase 8 (Next 16 detection, regen diff metric, recipe expansion strategy R12/R14/R20, gate 5 invocation mode). Если retro показывает gap (Phase 8 reinvented existing solution) → document как «Phase 8.8 retroactive finding» + add candidate в SSOT для Phase 9 evaluation.
 
 **Acceptance:**
-- `prior-art-evaluations.md` exists, ≤500 lines, ≥3 initial entries
-- §5.5 Step 1.5 added; phase-N-research.md template requires consult evidence
-- CLAUDE.md / CONTRIBUTING.md document `Prior-art:` trailer convention
-- Pre-push hook warns на capability commits без trailer
-- **P-build-vs-reuse passes applicable L4 gates** (1, 4, 6 ✓ MUST; 2, 3 n/a justified; 5 DEFER) — verified via Phase 7 validator
-- **Self-application at-creation evidence** documented in retro (2026-05-08 analog research session)
-- Phase 8 retroactive audit completed; gaps (если есть) документированы
+- `prior-art-evaluations.md` exists, ≤500 lines, ≥3 initial entries (Autogrep, Netlify framework-info, fitness functions vocabulary)
+- **IR7-research-cites-prior-art** в manifest + overview.md; passes Gates 1 (schema), 2 (rule-tester command-type), 4 (tautology positive + 2 negative corpora), 6 (cross-rule conflict) ✓ MUST; Gates 3 + 5 n/a / DEFER per §13.10
+- §5.5 Step 1.5 mandatory consult gate added; phase-N-research.md template requires citations to SSOT entries by ID
+- `PHASE-ENTRY-PROMPT-TEMPLATE.md` (or ORCHESTRATOR-START-PROMPT update) с Task 0
+- `CLAUDE.md` + `CONTRIBUTING.md` document `Prior-art:` trailer convention + escape hatch syntax + capability commit definition
+- `.husky/pre-push` extension implements **HARD FAIL с escape hatch** на capability commits без trailer
+- Two CI jobs green: `framework-research-cites-prior-art` (IR7 validates research files), `framework-prior-art-trailer-hook` (process discipline mutation guard)
+- Phase 8 retroactive audit completed; gaps (если есть) документированы как Phase 9 entry inputs
 - `retros/phase-8.8.md` written; **Verdict: GO к Phase 9 entry**
 
 **Self-reflection:**
