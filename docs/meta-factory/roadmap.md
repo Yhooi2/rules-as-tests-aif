@@ -1,5 +1,10 @@
 # Meta-Factory: Roadmap реализации
 
+> **OUTDATED — superseded by [EXECUTION-PLAN.md §6](EXECUTION-PLAN.md).**
+> Phase numbering here is pre-AIF-analysis (drafted 2026-05-07, before the 2026-05-08 AIF comparison reordering). Current authoritative numbering: Phase 5 = L2 Research Agent, Phase 6 = L3 Synthesizer Path A, Phase 7 = L4 Validator + L5 Installer, Phase 8 = Acceptance Next 15→16, Phase 9+ = Path B + AIF integration + niches. See [EXECUTION-PLAN.md §6 Phase 5/6/7 reordering note](EXECUTION-PLAN.md) for the mapping rationale.
+>
+> This file is kept for historical context (the original plan shape post-Phase-1.D split). For execution, read EXECUTION-PLAN.md.
+
 > Source: PROPOSAL.md §10 (split в Phase 1.D, 2026-05-07)
 > Companion: [PROPOSAL.md](PROPOSAL.md) (overview)
 

@@ -85,6 +85,8 @@ Layer 5 — Installer
 
 **Защита от prompt injection.** Жёсткий allowlist источников. WebSearch без allowlist для best practices — запрещён. Только официальные docs.
 
+> **v1 deterministic stance (2026-05-08):** Research Agent ships **deterministic-curated** in Phase 5 (`packages/core/research/store/`, hand-authored JSON entries; symbolic drift detection over 3 canonical sources). LLM extension (context7 MCP + Anthropic `web_search_20250305` with allowed_domains) deferred as v2 trigger per [open-questions.md §13.10](open-questions.md). The contract documented in §2.4 above describes the v1+v2 unified surface; v2 is a strict superset over the v1 store. v1 ships behaviorally identical to the contract for curated frameworks; v2 extends coverage to non-curated ones.
+
 ### 2.5 Layer 3 — Rule Synthesizer
 
 **Что делает.** На основе research'а выводит:
@@ -124,6 +126,8 @@ Layer 5 — Installer
 }
 ```
 
+> **v1 deterministic stance (2026-05-08):** Synthesizer ships **Path A only**, hand-authored recipes (`packages/core/synthesizer/recipes/*.json`); `synthesize(plan)` is a pure JSON-to-SynthesisPlan transform with no LLM calls. v1 is the «curated recipes on disk» case of «picks from menu»; v2 ships the actual LLM-driven menu picker per [open-questions.md §13.10 entry #2](open-questions.md). Path B AST gen is a separate v2 trigger per §13.10 entry #3 (Phase 9+). v2 ships as a strict superset — recipes remain authoritative for curated stacks even after LLM gen activates.
+
 ### 2.6 Layer 4 — Self-Validator
 
 **Что делает.** Прогоняет invariant-проверки против каждого сгенерированного правила:
@@ -139,6 +143,8 @@ Layer 5 — Installer
 
 **Это и есть применение собственных принципов пакета к LLM-output.**
 
+> **v1 deterministic stance (2026-05-08):** Validator ships **gates 1, 2, 4, 6 REQUIRED** in Phase 7. Gate 3 (mutation testing via Stryker) is a v2 trigger per [open-questions.md §13.10 entry #5](open-questions.md) — only mutates AST, so nothing to mutate in Path A; activates with Path B (Phase 9+). Gate 5 (two-AI review) is a v2 trigger per §13.10 entry #4 — maps to AIF `review-sidecar` (`model: opus`); cost-scope decision deferred to Phase 8. See [retros/phase-7.md L4 6-gate triage table](retros/phase-7.md) for v1 lock state. v2 expansion is strict-superset over v1 REQUIRED gates.
+
 ### 2.7 Layer 5 — Installer
 
 **Что делает.**
@@ -147,6 +153,8 @@ Layer 5 — Installer
 3. Создаёт `rules-lock.json` для воспроизводимости.
 4. Устанавливает npm deps, husky, скрипты.
 5. После установки запускает Layer 4 ещё раз против установленного — финальная meta-проверка.
+
+> **v1 deterministic stance (2026-05-08):** Installer ships **artifact write only** in Phase 7 — validated rules + 3 emit artifacts + `rules-lock.json` + post-validate. Items 4 (npm deps install / husky / GHA generation) deferred as v2 trigger; `install.sh` already handles those at the bash level. **v1.5 self-diagnostics** (item between v1 and v2) — `diagnostics-init` write hook per [self-diagnostics-design.md](self-diagnostics-design.md), Phase 8.X parallel sub-phase. v2 ships full installer scope per [open-questions.md §13.13](open-questions.md) versioning + [§13.14](open-questions.md) BC migration.
 
 ---
 
@@ -185,3 +193,5 @@ LLM получает описание паттерна → генерит `eslin
 ```
 
 Default — `conservative`.
+
+> **v1 deterministic stance (2026-05-08):** the `synthesis-mode` config is **v2-only**. v1 ships implicit `conservative`-equivalent — recipes on disk, no toggle, no `meta-factory.config.json` consumed. The toggle activates with Path A LLM gen (per [open-questions.md §13.10 entry #2](open-questions.md)) and Path B (entry #3). In v1, attempting to set this field is a no-op; the synthesizer reads recipes regardless.

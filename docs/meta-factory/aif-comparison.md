@@ -147,6 +147,8 @@ Convergent rule format (§2 ↔ rules-manifest.json) делает touchpoint 3 *
 
 Mitigation: header `> Auto-generated from manifest. Authoritative source: factory/rules-manifest.json. /aif-rules-check is advisory only.`
 
+**Closure pointer:** see Phase 11.1 deliverable if absorbing this into `aif-gate-result` shape; alternatively → L5 v2 (RULES.md emission) per [open-questions.md §13.13](open-questions.md). Either path resolves the «full enforcement spec vs. advisory downgrade» framing — no action in v1.
+
 ### 6.3 Skill-context generation feedback loop
 
 `aif-evolve` mining накапливает project rules из patches. Если meta-factory тоже пишет в `skill-context/`, нужна reconciliation strategy — кто owns какие rules, как избежать конфликтов.
@@ -155,14 +157,56 @@ Defer: операционализация в Phase 6 (Research Agent) или 11 
 
 ---
 
-## §7. Phase deferrals
+## §7. Phase 11 backlog
+
+> **Status:** SSOT for AIF-integration backlog referenced from [EXECUTION-PLAN.md §11](EXECUTION-PLAN.md).
+> **Trigger:** Phase 8 + 9 stable + first real consumer onboard.
+> **Scope:** 3 subtasks. Touchpoint 4 already closed in Phase 4; `/aif-verify` spike routed to Phase 8 entry, not Phase 11.
+
+### Closed-elsewhere pointers (NOT Phase 11 subtasks)
+
+- **Touchpoint 4** (`.ai-factory/skill-context/<skill>/SKILL.md` per-skill overrides) — **closed Phase 4** (commit `b5e16b7`, [retros/phase-4.md](retros/phase-4.md) Reuse posture #4.6). Extension (L2-research-derived skill-context content) tracked as Phase 11 watchlist item, not subtask.
+- **`/aif-verify` integration spike** — routed to **Phase 8 entry research** per [retros/phase-7.md](retros/phase-7.md) Open Q #5. Aim: forward-spike whether L4 + L5 already produce `aif-gate-result`-compatible JSON shape. Decision moves up to Phase 8 if cost is low; otherwise stays in Phase 11.
+
+### Phase 11 subtasks
+
+#### 11.1 — `aif-gate-result` emission from L4 + L5
+
+**Scope.** Emit `aif-gate-result` JSON shape from L4 `ValidationReport` and L5 `InstallReport`. Shape per AIF GATE-RESULT-CONTRACT.md (resolve via `mcp__context7__query-docs` against `/lee-to/ai-factory` at Phase 11 entry — schema may have evolved past current snapshot).
+
+**Acceptance.**
+- L4 `validate(plan)` returns `ValidationReport` with optional `aifGateResult` field matching AIF schema.
+- L5 `install(plan, opts)` returns `InstallReport` with optional `aifGateResult` field.
+- Round-trip: parse L4/L5 output → AIF gate result → AIF consumer (`/aif-implement` dispatcher) accepts without parse error.
+- Schema validation against AIF GATE-RESULT-CONTRACT.md schema (fetched fresh via context7).
+
+#### 11.2 — `/aif-loop` RULE-SCHEMA convertor
+
+**Scope.** JSON-to-JSON mapping `rules-manifest.json` → AIF `aif-loop` RULE-SCHEMA (§2 above). Bidirectional if needed; one-direction first.
+
+**Acceptance.**
+- Convertor: `convert-to-aif-rules.ts` reads `factory/rules-manifest.json`, emits AIF RULE-SCHEMA JSON.
+- Round-trip on 3 existing R-rules: R1 (TS hygiene), R7 (async correctness), R12 (Server vs Client Components).
+- Each round-trip preserves `id`, `severity`, `check`, paired bad/good examples (where AIF schema supports them; degrade gracefully where it doesn't, per §6.2 RULES.md downgrade pattern).
+- AIF EVALUATE phase consumes the converted JSON and runs checks without modification.
+
+#### 11.3 — `contributing-recipes.md` onboarding guide
+
+**Scope.** New doc `docs/meta-factory/contributing-recipes.md` — external-author onboarding for adding new recipes to `packages/core/synthesizer/recipes/`. ≤300 lines (shipped reference invariant), examples-driven.
+
+**Acceptance.**
+- Step-by-step: clone → write recipe JSON → wire into synthesis plan → run validator → snapshot test.
+- Worked example: walk through adding a hypothetical recipe (e.g. for a Next 16 pattern not in the canonical preset).
+- Sections: recipe schema reference (link), `appliesTo` semantics (link to m3 authoring note), negative-test field requirements, snapshot stability expectations.
+- Onboarding test: a fresh contributor can add a recipe end-to-end without internal knowledge.
+
+### Earlier deferrals (still valid)
 
 | Item | Defer to | Rationale |
 |---|---|---|
-| Convertor manifest → AIF RULE-SCHEMA | Phase 11 | AIF integration phase |
-| `aif-evolve` ↔ skill-context reconciliation | Phase 6 | Research Agent territory |
-| RULES.md downgrade projection format | Phase 7 | Synthesizer + Installer |
-| Cross-validation policy (rules-check advisory + tests authoritative) | Phase 11 | Documented in PROPOSAL §14 by then |
+| `aif-evolve` ↔ skill-context reconciliation | Phase 6 | Research Agent territory; reconciliation policy (who owns which rules) needs L2 design context |
+| RULES.md downgrade projection format | Phase 7 | Synthesizer + Installer (closure pointer: see Phase 11.1 deliverable if absorbing this into `aif-gate-result` shape; alternatively → L5 v2 «RULES.md emission» per [open-questions.md §13.13](open-questions.md)) |
+| Cross-validation policy (rules-check advisory + tests authoritative) | Phase 11 | Becomes part of Phase 11.1 acceptance (the `aif-gate-result` shape encodes which gate is authoritative) |
 
 ---
 
