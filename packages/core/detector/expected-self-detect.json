@@ -1,0 +1,20 @@
+{
+  "stack": "ts-server",
+  "framework": {
+    "name": null,
+    "version": null,
+    "major": null
+  },
+  "runtime": {
+    "name": "node",
+    "major": null
+  },
+  "severity": "warn",
+  "weight": 1,
+  "confidence": "medium",
+  "source": "package.json",
+  "rules": {
+    "applicable": [],
+    "skipped": []
+  }
+}
