@@ -48,7 +48,11 @@ function globToRegex(g: string): RegExp {
   let r = '^';
   for (let i = 0; i < g.length; i += 1) {
     const c = g[i];
-    if (c === '*' && g[i + 1] === '*') { r += '.*'; i += 1; }
+    // `**/` matches zero or more directory segments (incl. the trailing `/`).
+    // Distinct from `**` alone: the latter is consumed by `.*` and may cross
+    // path separators, but cannot stand in for the literal `/` that follows.
+    if (c === '*' && g[i + 1] === '*' && g[i + 2] === '/') { r += '(?:.*/)?'; i += 2; }
+    else if (c === '*' && g[i + 1] === '*') { r += '.*'; i += 1; }
     else if (c === '*') r += '[^/]*';
     else if (c === '?') r += '[^/]';
     else if (c === '{') {

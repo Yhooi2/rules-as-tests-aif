@@ -8,8 +8,6 @@
         "react-next"
       ],
       "applies-to": [
-        "src/app/**/*.tsx",
-        "src/components/**/*.tsx",
         "src/**/*.tsx"
       ],
       "check": {
@@ -47,7 +45,6 @@
         "react-next"
       ],
       "applies-to": [
-        "src/app/**/actions.ts",
         "src/app/**/*.ts",
         "src/lib/actions/**/*.ts"
       ],
@@ -86,7 +83,6 @@
         "react-next"
       ],
       "applies-to": [
-        "src/app/**/actions.ts",
         "src/app/**/*.ts",
         "src/lib/actions/**/*.ts"
       ],

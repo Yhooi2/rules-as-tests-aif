@@ -4,7 +4,7 @@
   "rule": {
     "title": "Forbid server-only imports in `'use client'` files (R12)",
     "stack": ["react-next"],
-    "applies-to": ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/**/*.tsx"],
+    "applies-to": ["src/**/*.tsx"],
     "check": {
       "type": "eslint",
       "rule": "rules-as-tests/no-server-imports-in-client"

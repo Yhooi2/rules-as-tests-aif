@@ -4,7 +4,7 @@
   "rule": {
     "title": "Server Action files must start with `'use server'` directive (R20)",
     "stack": ["react-next"],
-    "applies-to": ["src/app/**/actions.ts", "src/app/**/*.ts", "src/lib/actions/**/*.ts"],
+    "applies-to": ["src/app/**/*.ts", "src/lib/actions/**/*.ts"],
     "check": {
       "type": "eslint",
       "rule": "rules-as-tests/require-use-server-directive"

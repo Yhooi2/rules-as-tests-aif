@@ -4,7 +4,7 @@
   "rule": {
     "title": "Validate `FormData` parameters via `.safeParse(...)` (R14)",
     "stack": ["react-next"],
-    "applies-to": ["src/app/**/actions.ts", "src/app/**/*.ts", "src/lib/actions/**/*.ts"],
+    "applies-to": ["src/app/**/*.ts", "src/lib/actions/**/*.ts"],
     "check": {
       "type": "eslint",
       "rule": "rules-as-tests/require-form-safe-parse"

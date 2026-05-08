@@ -101,7 +101,11 @@ describe('presetSimilarity', () => {
     expect(score.components.eslintKeys).toBeCloseTo(1 / 2, 5);
   });
 
-  it('glob-overlap edge: different globs that hit the same file in corpus', () => {
+  it('glob-overlap edge: src/app/**/*.tsx ⊂ src/**/*.tsx — Jaccard 3/5', () => {
+    // src/app/**/*.tsx hits {src/app/page.tsx, src/app/layout.tsx,
+    //   src/app/(group)/post/[id]/page.tsx} = 3 files in FILE_CORPUS.
+    // src/**/*.tsx additionally hits src/components/{Card,Header}.tsx — 5 total.
+    // Jaccard = 3/5.
     const a = plan({
       rules: [rule({ 'applies-to': ['src/app/**/*.tsx'] })],
     });
@@ -109,10 +113,19 @@ describe('presetSimilarity', () => {
       rules: [rule({ 'applies-to': ['src/**/*.tsx'] })],
     });
     const score = presetSimilarity(a, b);
-    // Both globs match all .tsx files under src/app/** in FILE_CORPUS;
-    // src/**/*.tsx additionally matches src/components/*.tsx — partial overlap.
-    expect(score.components.globOverlap).toBeGreaterThan(0);
-    expect(score.components.globOverlap).toBeLessThan(1);
+    expect(score.components.globOverlap).toBeCloseTo(3 / 5, 5);
+  });
+
+  it('`**/` matches zero or more directory segments (src/app/page.tsx must hit)', () => {
+    // Regression guard: pre-fix `globToRegex` required at least one `/` between
+    // `src/app/` and the leaf, missing src/app/page.tsx + src/app/layout.tsx.
+    const a = plan({ rules: [rule({ 'applies-to': ['src/app/**/*.tsx'] })] });
+    const b = plan({ rules: [rule({ 'applies-to': ['src/app/page.tsx'] })] });
+    const score = presetSimilarity(a, b);
+    // a: {src/app/page.tsx, src/app/layout.tsx, src/app/(group)/post/[id]/page.tsx}
+    // b: {src/app/page.tsx}
+    // Jaccard = 1/3.
+    expect(score.components.globOverlap).toBeCloseTo(1 / 3, 5);
   });
 
   it('full canonical-shape fixture: similarity ≥ ACCEPTANCE_THRESHOLD on identical regen', () => {
