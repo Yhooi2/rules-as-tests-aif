@@ -11,6 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv } from 'ajv';
 import semver from 'semver';
+import { validateProvenance } from './allowlist.ts';
 import type { ResearchEntry } from './types.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -43,7 +44,14 @@ function tryLoad(filePath: string): ResearchEntry | null {
       ajv.errorsText(validateEntry.errors),
     );
   }
-  return raw as ResearchEntry;
+  const entry = raw as ResearchEntry;
+  for (const p of entry.provenance) {
+    const v = validateProvenance(p);
+    if (!v.ok) {
+      throw new ResearchEntryError(filePath, `provenance violation — ${v.reason}`);
+    }
+  }
+  return entry;
 }
 
 function candidatePaths(
