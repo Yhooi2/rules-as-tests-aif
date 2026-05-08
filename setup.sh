@@ -14,6 +14,7 @@
 #   bash setup.sh --stack=react-next       # force React/Next stack
 #   bash setup.sh --skip-deps              # skip npm install
 #   bash setup.sh --skip-aif-init          # if ai-factory init already ran
+#   bash setup.sh --stack=ts-server --dry-run  # report planned ops, no fs changes
 #
 # Exit codes: 0 on success, 1 on any error.
 
@@ -24,8 +25,19 @@ STACK=""
 SKIP_DEPS=false
 SKIP_AIF=false
 FORCE=""
+DRY_RUN=0
 PKG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(pwd)"
+
+# Helper: in dry-run mode, report planned op and skip; otherwise execute "$@".
+# Use as a wrapper: `dryguard cp src dst` instead of bare `cp src dst`.
+dryguard() {
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "[dry-run] would: $*"
+    return 0
+  fi
+  "$@"
+}
 
 # ───── Color output ─────
 if [ -t 1 ]; then
@@ -48,8 +60,9 @@ for arg in "$@"; do
     --skip-deps)      SKIP_DEPS=true ;;
     --skip-aif-init)  SKIP_AIF=true ;;
     --force)          FORCE="--force" ;;
+    --dry-run)        DRY_RUN=1 ;;
     -h|--help)
-      head -22 "$0" | sed 's/^# *//'
+      head -23 "$0" | sed 's/^# *//'
       exit 0
       ;;
     *)
@@ -73,7 +86,7 @@ NODE_VER=$(node --version | sed 's/^v//' | cut -d. -f1)
 
 command -v ai-factory >/dev/null 2>&1 || {
   warn "ai-factory not installed. Installing globally..."
-  npm install -g ai-factory || fail "Failed to install ai-factory globally"
+  dryguard npm install -g ai-factory || fail "Failed to install ai-factory globally"
 }
 ok "Prerequisites OK"
 
@@ -110,8 +123,12 @@ if [ "$SKIP_AIF" = false ]; then
     warn "If you want to re-init, run: ai-factory init --force"
   else
     log "Running: ai-factory init --agents claude"
-    (cd "$PROJECT_DIR" && ai-factory init --agents claude) \
-      || fail "ai-factory init failed"
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "[dry-run] would: ai-factory init --agents claude (in $PROJECT_DIR)"
+    else
+      (cd "$PROJECT_DIR" && ai-factory init --agents claude) \
+        || fail "ai-factory init failed"
+    fi
     ok "AI Factory initialized"
   fi
 else
@@ -124,7 +141,9 @@ header "Step 2/5 — Applying rules-as-tests overlay"
 log "Running install.sh..."
 # install.sh expects positional STACK as $1 and runs from cwd.
 # Call it from the project dir so $(pwd) resolves correctly.
-if [ -n "$FORCE" ]; then
+if [ "$DRY_RUN" = "1" ]; then
+  echo "[dry-run] would: bash $PKG_DIR/install.sh $STACK ${FORCE:-} (in $PROJECT_DIR)"
+elif [ -n "$FORCE" ]; then
   (cd "$PROJECT_DIR" && bash "$PKG_DIR/install.sh" "$STACK" "$FORCE") \
     || fail "install.sh failed"
 else
@@ -149,6 +168,11 @@ cd "$PROJECT_DIR"
 if [ ! -f .dependency-cruiser.cjs ]; then
   log "No .dependency-cruiser.cjs found. Running 'npx depcruise --init' for project-specific scaffolding..."
   warn "  (You can choose 'yes' or 'no' to TypeScript/preset prompts as fits your project.)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "[dry-run] would: npx -y depcruise --init"
+    echo "[dry-run] would: cp $PKG_DIR/templates/ts-server/dependency-cruiser.cjs .dependency-cruiser.cjs (fallback)"
+    echo "[dry-run] would: append rules-as-tests:layered block to .dependency-cruiser.cjs"
+  else
   npx -y depcruise --init || {
     warn "  depcruise --init failed or was cancelled — falling back to template config"
     cp "$PKG_DIR/templates/ts-server/dependency-cruiser.cjs" .dependency-cruiser.cjs
@@ -184,6 +208,7 @@ EOF
       log ".dependency-cruiser.cjs already contains rules-as-tests:layered marker — skipping"
     fi
   fi
+  fi  # close DRY_RUN guard
 else
   log ".dependency-cruiser.cjs already exists — leaving as-is"
 fi
@@ -194,6 +219,11 @@ if [ "$STACK" = "react-next" ]; then
 
   if [ ! -d .storybook ]; then
     log "Scaffolding Storybook (10.x for Next.js + Vite)..."
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "[dry-run] would: npx -y storybook@latest init --skip-install --no-dev"
+      echo "[dry-run] would: scrub @storybook/addon-onboarding from .storybook/main.ts"
+      echo "[dry-run] would: merge storybook-package-additions.json into package.json"
+    else
     npx -y storybook@latest init --skip-install --no-dev || {
       warn "  storybook init failed — falling back to template scaffold"
       mkdir -p .storybook
@@ -216,6 +246,7 @@ if [ "$STACK" = "react-next" ]; then
       "
       ok "Storybook scripts and devDeps merged"
     fi
+    fi  # close DRY_RUN guard
   else
     log ".storybook/ already exists — leaving as-is"
   fi
@@ -273,13 +304,17 @@ if [ "$SKIP_DEPS" = false ]; then
   fi
 
   log "Installing ${#ALL_DEPS[@]} dev dependencies (this takes a minute)..."
-  npm install -D --prefer-offline --no-audit "${ALL_DEPS[@]}" \
-    || warn "Some dev dependencies failed to install. Check npm output. You may need to run npm install manually."
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "[dry-run] would: npm install -D --prefer-offline --no-audit ${#ALL_DEPS[@]} packages"
+  else
+    npm install -D --prefer-offline --no-audit "${ALL_DEPS[@]}" \
+      || warn "Some dev dependencies failed to install. Check npm output. You may need to run npm install manually."
+  fi
   ok "Dev dependencies installed"
 
   # Production deps
   log "Installing zod (production dependency)..."
-  npm install zod@^3.24.0 || warn "Failed to install zod"
+  dryguard npm install zod@^3.24.0 || warn "Failed to install zod"
   ok "Production dependencies installed"
 else
   log "Skipping npm install (--skip-deps)"
@@ -295,7 +330,7 @@ cd "$PROJECT_DIR"
 # install.sh get clobbered by husky's defaults.
 if [ ! -d ".husky" ]; then
   log "Initializing Husky..."
-  npx husky init || warn "husky init failed — install husky manually"
+  dryguard npx husky init || warn "husky init failed — install husky manually"
 else
   warn ".husky already exists, skipping init"
 fi
@@ -303,14 +338,14 @@ fi
 # Re-install our hooks from the package (absolute paths — cwd is project root).
 if [ -f "$PKG_DIR/templates/shared/husky-pre-commit.sh" ]; then
   log "Installing pre-commit hook..."
-  cp "$PKG_DIR/templates/shared/husky-pre-commit.sh" "$PROJECT_DIR/.husky/pre-commit"
-  chmod +x "$PROJECT_DIR/.husky/pre-commit"
+  dryguard cp "$PKG_DIR/templates/shared/husky-pre-commit.sh" "$PROJECT_DIR/.husky/pre-commit"
+  dryguard chmod +x "$PROJECT_DIR/.husky/pre-commit"
 fi
 
 if [ -f "$PKG_DIR/templates/shared/husky-pre-push.sh" ]; then
   log "Installing pre-push hook..."
-  cp "$PKG_DIR/templates/shared/husky-pre-push.sh" "$PROJECT_DIR/.husky/pre-push"
-  chmod +x "$PROJECT_DIR/.husky/pre-push"
+  dryguard cp "$PKG_DIR/templates/shared/husky-pre-push.sh" "$PROJECT_DIR/.husky/pre-push"
+  dryguard chmod +x "$PROJECT_DIR/.husky/pre-push"
 fi
 ok "Husky configured"
 
@@ -325,6 +360,9 @@ if command -v jq >/dev/null 2>&1 && [ -f package.json ]; then
     AUDIT_SCRIPT="bash scripts/audit-ai-docs.react-next.sh"
   fi
 
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "[dry-run] would: jq-mutate package.json scripts (lint/test/typecheck/audit:docs/...)"
+  else
   jq --arg audit "$AUDIT_SCRIPT" \
      '.scripts.lint                = "eslint . --max-warnings=0" |
       .scripts["lint:fix"]         = "eslint . --fix" |
@@ -340,6 +378,7 @@ if command -v jq >/dev/null 2>&1 && [ -f package.json ]; then
       .scripts.validate            = "npm-run-all --parallel typecheck lint format:check arch:check test" |
       .scripts.prepare             = "husky"
      ' package.json > package.json.tmp && mv package.json.tmp package.json
+  fi  # close DRY_RUN guard
   ok "package.json scripts added"
 else
   warn "jq not installed or no package.json. Add scripts manually:"
