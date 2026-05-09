@@ -388,3 +388,32 @@ This is feature scope (Phase 9.x or 10.x), not goal-hierarchy fix. Shipping L3 i
 **Out of scope for v1:** continuous polling (Option C — over-engineered for 1-3 maintainer scale, conflicts with own §6.0 #2 build-vs-reuse discipline); custom drift-detection tool (open research problem, disproportionate cost for one class of drift).
 
 **Cross-references:** [`.claude/rules/phase-research-coverage.md` §4 anti-patterns](../../.claude/rules/phase-research-coverage.md) — `adopted-pattern-drift` tag added in same branch; [`prior-art-evaluations.md` §5 staleness policy](prior-art-evaluations.md) — extends to entries #6-#10; [open-questions.md §13.16](open-questions.md) — discipline-layer SSOT (parallel cadence-trigger pattern).
+
+### 13.23 Pre-push hook layer for §1.7 — deferred (4th layer of enforcement ladder)
+
+**Status:** deferred 2026-05-09. Recorded during §1.7 introduction (commit `2f00e76`).
+**Origin:** [`.claude/rules/phase-research-coverage.md §1.7`](../../.claude/rules/phase-research-coverage.md) introduced 4-layer enforcement ladder for `#recommendation-skips-own-discipline`: (1) process rule, (2) [`.claude/skills/self-reflection/`](../../.claude/skills/self-reflection/SKILL.md) assistant-side trigger, (3) [`.github/workflows/discipline-self-check.yml`](../../.github/workflows/discipline-self-check.yml) build-side PR-description gate, (4) `.husky/pre-push` per-commit trailer check. Layers 1-3 ship in branch `process/recommendation-self-discipline`; layer 4 deferred — see «Why deferred».
+
+**Why deferred:** per-commit `Forward-check`/`Backward-check` trailer enforcement is a non-trivial design problem unresolved at bootstrap:
+
+- *Scope predicate.* Not every commit on a branch with rule changes is itself rule-introducing (refactor commits, typo fixes, dependency-update commits inherit the file-glob match). Need a way to distinguish «this commit introduces/extends a rule» from «this commit happens to live on a branch that introduces a rule».
+- *Bootstrap chicken-and-egg.* Push range is `<upstream>..HEAD`. The very commit that adds the hook is in that range. Without retroactive amend (forbidden by orchestrator no-amend convention) or explicit bootstrap exemption marker, hook fails on its own introduction commit.
+- *Trailer-format interaction.* Existing `Prior-art:` trailer enforced by current pre-push for capability commits. New `§1.7 Forward-check applied:` / `§1.7 Backward-check applied:` trailers — separate stanzas or merged with `Prior-art:`? Order matters for parser; both options have downsides.
+- *Discipline-theatre risk.* Without a clean scope predicate the hook is either over-strict (false positives blocking legitimate refactors that touch rule files) or trivially bypassable (loose enough to be theatre). Either failure mode is worse than not having the layer.
+
+3-layer ladder (rule + skill + CI workflow) ships now. The unprotected path is **direct push to remote feature branch without PR** — local push bypasses CI workflow's `discipline-self-check.yml`. This is the documented gap.
+
+**Trigger condition for revisit:** any of —
+
+- A 3rd documented case-study of `#recommendation-skips-own-discipline` originating from the local-push-without-PR gap (i.e., a discipline-bearing change reached `main` without going through the workflow gate).
+- Per-commit trailer enforcement design proposal materialises in a separate research session (e.g. mirrors [Conventional Commits](https://www.conventionalcommits.org) + `commit-msg` hook patterns).
+- Phase 10+ pre-push surface widening — if `.husky/pre-push` gains other §1.7-adjacent checks (e.g. `principle 09` extension to templates per [§13.21](#1321-doc-authority-discipline-applied-to-generated-user-facing-docs-deferred-l3) closure), the hook scope already covers discipline files; adding §1.7 trailer check is incremental.
+
+**Promotion path when triggered:**
+
+1. Research session: per-commit §1.7 trailer format compatible with `Prior-art:` trailer; scope predicate for which commits require it; bootstrap exemption mechanism (e.g. first commit on a branch may introduce a new hook without retroactive trailer requirement).
+2. Update [`.husky/pre-push`](../../.husky/pre-push) (≤50 LOC) with the new check; place after existing actionlint / zizmor / audit-ai-docs checks.
+3. Update [`.claude/skills/self-reflection/SKILL.md`](../../.claude/skills/self-reflection/SKILL.md) ladder description to reflect 4-layer reality (currently documents 3 active layers + 1 deferred).
+4. Self-review patch under [`research-patches/`](research-patches/) demonstrating pre-push hook catches the `local-push-bypasses-CI` failure mode.
+
+**Cross-references:** [`.claude/rules/phase-research-coverage.md §1.7`](../../.claude/rules/phase-research-coverage.md) (rule); [`.claude/skills/self-reflection/SKILL.md`](../../.claude/skills/self-reflection/SKILL.md) (layer 2); [`.github/workflows/discipline-self-check.yml`](../../.github/workflows/discipline-self-check.yml) (layer 3); [`research-patches/2026-05-09-recommendation-skips-own-discipline.md`](research-patches/2026-05-09-recommendation-skips-own-discipline.md) (bootstrap exemplar).
