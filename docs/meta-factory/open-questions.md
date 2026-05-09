@@ -334,3 +334,31 @@ per-rule × 26: 78K input · $5/M + 13K output · $25/M = $0.39  + $0.325 = $0.7
 3. Future supersedes ship as ADR files; EXECUTION-PLAN inline supersede notes link to ADRs by ID.
 
 **Cross-references:** [research-patches/2026-05-08-phase-8.8-ssot-format-vs-adr.md](research-patches/2026-05-08-phase-8.8-ssot-format-vs-adr.md); [EXECUTION-PLAN.md §6.0 #2 supersede block](EXECUTION-PLAN.md); [prior-art-evaluations.md §3](prior-art-evaluations.md) entry-trigger criteria.
+
+### 13.21 Doc-authority discipline applied to generated user-facing docs (deferred L3)
+
+**Status:** deferred 2026-05-09. Recorded during goal-hierarchy follow-up (L1 + L2 shipped this branch; L3 = generated docs scope).
+**Origin:** L1 of the goal-hierarchy follow-up shipped `.claude/rules/doc-authority-hierarchy.md` (rule) + `packages/core/principles/09-doc-authority-hierarchy.test.ts` (executable principle). L2 audited all project-internal docs and added Authoritative-for headers to 30 canonical authority-bearing docs. **L3** — applying the same discipline to docs the framework GENERATES for consumer projects — is feature work, not docs-restructure.
+
+**Why deferred:** L3 requires changes across multiple shipped surfaces:
+- `templates/shared/AGENTS.md.template` and stack-specific templates under `templates/{ts-server,react-next}/`
+- `.ai-factory/` shipped sub-agent prompts (`best-practices-sidecar.md`, `review-sidecar.md`, `docs-auditor.md`)
+- Generated artifacts in consumer projects: `RULES.md`, `CLAUDE.md`, `AGENTS.md`, `DESCRIPTION.template.md`, `ARCHITECTURE.*.md`
+- `install.sh` step 5 (husky setup) and step 6 (npm-script injection) — extend to write `> **Authoritative for:**` headers into consumer-facing files
+- Possibly: `synthesizer/emit.ts` to inject Authoritative-for in generated `RULES.md`
+
+This is feature scope (Phase 9.x or 10.x), not goal-hierarchy fix. Shipping L3 in this branch would conflate documentation discipline (L1 + L2) with installer feature work (L3) — bad atomicity.
+
+**Trigger condition for revisit:** any of —
+- A real consumer adopts the framework via `install.sh` AND reports doc-authority drift in their consumer project (i.e. their AI agents read EXECUTION-PLAN-equivalent file as goal source).
+- Framework starts generating consumer-facing AI docs programmatically (currently most are static templates copied verbatim — programmatic generation is L3 Synthesizer evolution, Phase 9+).
+- Phase 9.x or 10.x feature work explicitly targets template enhancement / installer evolution.
+
+**Promotion path when triggered:**
+1. Audit all `templates/` files; add `> **Authoritative for:**` headers per the rule §3 format. Where the template will be filled with project-specific content (e.g. `DESCRIPTION.template.md`), the header points to consumer's `README.md` (not framework's).
+2. Audit `.ai-factory/` sub-agent prompts; add headers declaring sub-agent scope (e.g. `> **Authoritative for:** best-practices validation against consumer's `RULES.md`; NOT authoritative for project goal — consumer's own `README.md` owns it`).
+3. Update `install.sh` to verify headers in shipped artifacts pre-install (sanity check) AND inject consumer-pointing headers into generated files.
+4. Extend `principles/09-doc-authority-hierarchy.test.ts` canonical list with template/`.ai-factory/` files; CI gate flips from project-internal-only to project-internal + shipped-artifact verification.
+5. Document the consumer-side convention in `INSTALL-FOR-AI.md` so AI agents installing the framework understand that consumer's `README.md` is the goal source for the consumer project.
+
+**Cross-references:** [.claude/rules/doc-authority-hierarchy.md §2](../../.claude/rules/doc-authority-hierarchy.md) «Not required for: generated user-facing docs» exemption; [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) canonical list (will widen at L3 trigger); [README.md](../../README.md) §«What gets installed automatically» enumerates shipped surfaces.
