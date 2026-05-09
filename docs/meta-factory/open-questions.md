@@ -265,3 +265,69 @@ per-rule × 26: 78K input · $5/M + 13K output · $25/M = $0.39  + $0.325 = $0.7
 **Verification gate:** the rule applies recursively to itself per Phase 8.8.1 retro §7 — the rule's §1 checklist must, in retrospect, catch the AIF + Oh-My gap that triggered its creation. If self-review fails, the rule is REVISE not GO. (Outcome of the recursive check lives in [retros/phase-8.8.1-coverage-discipline.md](retros/phase-8.8.1-coverage-discipline.md).)
 
 **Closure criteria.** v1 closes when (a) ≥3 phase entry research sessions consume the rule with observed-zero-FP AND (b) no tag accumulates above the distillation threshold over the same window AND (c) no 6th-item candidate is proposed via §2.3 self-reflection. Until then: v1 carries forward, distillation pass at each accumulation threshold.
+
+### 13.17 Three-tier hot/warm/cold context tiering (deferred, arxiv pattern)
+
+**Status:** deferred 2026-05-09 (recorded during goal-hierarchy restructure as «include in plan, do not implement now»).
+**Origin:** [arxiv:2602.20478, «Codified Context: Infrastructure for AI Agents in a Complex Codebase»](https://arxiv.org/html/2602.20478v1) — 283-session production study describing three-tier architecture (hot ~660-line constitution + warm 19 domain-specialist agents + cold 34 on-demand spec docs ~16k LOC). Surfaced in goal-hierarchy research 2026-05-09 §9.4 as state-of-the-art compaction-resilience pattern.
+
+**Why deferred:** current scale (9 phases, 1-3 maintainers, single-domain) does not warrant tier-loading infrastructure. Implementing tier-routing mechanism for a problem we don't have = over-engineering. The two-tier hot/cold split (per user's `~/.claude/skills/ai-docs/SKILL.md`) plus Step 0 read-first pattern (per [.claude/session-bootstrap.md](../../.claude/session-bootstrap.md)) cover current needs.
+
+**Trigger condition for revisit:** any of —
+- Phase count exceeds 12 (currently 9), with each phase having distinct invariant set.
+- Project gains ≥3 distinct domains (parallel to arxiv's 19 specialists scenario).
+- Observed compaction events lose load-bearing context ≥2× per quarter despite Step 0 pattern.
+- Session length routinely exceeds 50k tokens (compaction frequency dominates).
+
+**Cross-references:** [research-patches/](research-patches/) (AI-doc lens analyses); [.claude/session-bootstrap.md](../../.claude/session-bootstrap.md) (current two-tier implementation).
+
+### 13.18 AIF deep alignment — rules hierarchy adoption (deferred, Option I)
+
+**Status:** deferred 2026-05-09. Recorded during goal-hierarchy restructure.
+**Origin:** goal-hierarchy research 2026-05-09 §9.7 surfaced AIF's three-level rules hierarchy (`AGENTS.md` + `.ai-factory/RULES.md` axiom tier + `rules/base.md` project tier + `rules.<area>` area-specific) and proposed Option I — `rules-as-tests-aif` declares principles as entries in AIF's structure rather than maintaining own.
+
+**Why deferred:** AIF integration is Phase 11 work per [PROPOSAL.md §1.4](PROPOSAL.md). Tight alignment NOW = premature lock-in to AIF release lifecycle, weakens standalone-CLI use case (Q4 super-linter dual-positioning pattern). The package currently ships standalone with own install.sh + CLI; alignment decision belongs at Phase 11 entry research, not as a Phase 9.x doc-restructure side-effect.
+
+**Trigger condition for revisit:** any of —
+- Phase 11 (AIF integration) entry research kicks off — alignment vs independence is then a primary entry-research question.
+- AIF ships `extension.json` schema finalization (currently «in active development» per [README.md §Forward-compatibility note](../../README.md)) — the schema may dictate alignment shape.
+- Real consumer adopts the package as AIF plug-in (currently 0 consumers per [no-consumers caveat in §1](EXECUTION-PLAN.md)) — usage signal would clarify whether plug-in framing or standalone framing is the dominant mode.
+
+**Cross-references:** [PROPOSAL.md §1.4](PROPOSAL.md), [aif-comparison.md §9](aif-comparison.md), [README.md `Forward-compatibility note`](../../README.md).
+
+### 13.19 Cline Memory Bank full pattern adoption (deferred)
+
+**Status:** deferred 2026-05-09. Recorded during goal-hierarchy restructure.
+**Origin:** goal-hierarchy research 2026-05-09 §9.3 surfaced [Cline Memory Bank](https://docs.cline.bot/) — 6-file hierarchy (`projectbrief.md`, `productContext.md`, `activeContext.md`, `systemPatterns.md`, `techContext.md`, `progress.md`) + Mermaid diagrams in instructions + explicit re-read protocol enforced by Cline's own code.
+
+**What was adopted now:** Step 0 re-read pattern (per [.claude/session-bootstrap.md](../../.claude/session-bootstrap.md)) + Mermaid drift-prevention diagram. This is the load-bearing subset.
+
+**What was deferred:** the 6-file hierarchy itself. For a 1-3 maintainer single-domain project, 6 always-read files is heavier than current need. Risk: «every doc is a drift surface» (matklad) — adding 5 more files to maintain may produce more drift than it prevents.
+
+**Trigger condition for revisit:** any of —
+- Project gains multi-domain structure (e.g. separate domains for «framework core» + «consumer-facing presets» + «meta-factory generator») — Cline's productContext / systemPatterns / techContext separation maps directly.
+- Active context (current task / focus area) becomes dominant maintenance burden in retros — `activeContext.md` would extract that load.
+- Session-bootstrap file approaches 200 LOC (currently ~50) — split into multiple targeted files becomes natural.
+
+**Cross-references:** [.claude/session-bootstrap.md](../../.claude/session-bootstrap.md) (current load-bearing subset implementation); [Cline Memory Bank docs](https://docs.cline.bot/).
+
+### 13.20 ADR formal adoption (deferred — `docs/adrs/` directory + first ADR file)
+
+**Status:** deferred 2026-05-09. Recorded during goal-hierarchy restructure.
+**Origin:** [research-patches/2026-05-08-phase-8.8-ssot-format-vs-adr.md](research-patches/2026-05-08-phase-8.8-ssot-format-vs-adr.md) noted prior-art-evaluations.md format converged with ADR/MADR fields without consult; goal-hierarchy research 2026-05-09 §6 OQ2 surfaced ADR-supersede as the canonical pattern for the §6.0 #2 trigger change.
+
+**What was adopted now:** ADR-supersede *semantics* applied inline in [EXECUTION-PLAN.md §6.0 #2](EXECUTION-PLAN.md) — original rule retained, supersede note states new evaluative trigger, no automatic unblock. AWS ADR practice cited inline. **No `docs/adrs/` directory created**, no separate ADR file format adopted.
+
+**Why deferred:** project's existing pattern is SSOT entries + research-patches (similar functional outcome to ADRs per the 2026-05-08 patch finding). Adopting a separate ADR format for a single supersede = adding format-surface for one event. Per the same patch's recommendation: if a future session promotes ADR/MADR to a 6th SSOT entry («Decision Records, ADOPT VOCABULARY»), the SSOT itself can carry the precedent.
+
+**Trigger condition for revisit:** any of —
+- 3rd structural supersede or revisit-decision needed — pattern accumulation justifies dedicated format. Threshold mirrors the project's «3 patches per tag → distill» convention.
+- A consumer requests formal ADRs (e.g. for compliance / audit purposes).
+- Phase 11 AIF integration wants `aif-gate-result`-shaped decisions (cross-tooling format requirement).
+
+**Promotion path when triggered:**
+1. Add prior-art-evaluations.md entry «ADR / MADR Decision Records, ADOPT VOCABULARY» with retroactive citation of the §6.0 #2 supersede + this §13.20 entry.
+2. Create `docs/adrs/` directory + ADR-001 backfilling the §6.0 #2 supersede.
+3. Future supersedes ship as ADR files; EXECUTION-PLAN inline supersede notes link to ADRs by ID.
+
+**Cross-references:** [research-patches/2026-05-08-phase-8.8-ssot-format-vs-adr.md](research-patches/2026-05-08-phase-8.8-ssot-format-vs-adr.md); [EXECUTION-PLAN.md §6.0 #2 supersede block](EXECUTION-PLAN.md); [prior-art-evaluations.md §3](prior-art-evaluations.md) entry-trigger criteria.
