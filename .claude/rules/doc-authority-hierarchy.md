@@ -27,20 +27,25 @@ Conflicting authority claims become detectable at review time and at session-sta
 
 **Required for:**
 - Project-root docs: `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `INSTALL.md`, `INSTALL-FOR-AI.md`
-- Operational docs declaring project-wide scope or invariants: anything under `docs/meta-factory/*.md` (excluding sub-folders for retros/research-patches)
+- Operational reference docs under `docs/meta-factory/*.md` (excluding the transient-by-naming subset below)
 - Skill primary docs + cold references: `skills/*/SKILL.md`, `skills/*/references/*.md`
 - Hot operational docs: `.claude/session-bootstrap.md`, `.claude/rules/*.md`
-- Phase orchestration prompts: `*-PROMPT.md` files (declare scope: «Phase N orchestration; transient artifact»)
 
-**Folder-level authority (single header in folder README):**
-- `docs/meta-factory/retros/` — folder README declares «closed historical artifacts post-merge; individual files scope-bound by phase ID»
-- `docs/meta-factory/research-patches/` — folder README declares «one patch per coverage gap, append-only; individual files scope-bound by gap»
-- `.claude/orchestrator-prompts/` — historical orchestration prompts; folder README sufficient
+**Folder-level authority (single header in folder README, individual files inherit):**
+- `docs/meta-factory/retros/` — closed historical artifacts post-merge; individual files scope-bound by phase ID
+- `docs/meta-factory/research-patches/` — one patch per coverage gap, append-only; individual files scope-bound by gap
+
+**Filename-convention authority (no per-file header required — filename itself establishes scope):**
+- `docs/meta-factory/PHASE-*-PROMPT.md` and `docs/meta-factory/*-PROMPT.md` (orchestrator/reviewer prompts) — filename indicates phase + transient nature; per-file authority is implicit
+- `docs/meta-factory/phase-*-research.md` and `docs/meta-factory/phase-*-entry-research.md` — filename indicates phase entry research scope
+- Such filename conventions are **established at the rule level** (this section) rather than at the per-file level. Adding a per-file Authoritative-for header is permitted but not required when the filename is unambiguous about scope. If a transient doc's content unexpectedly extends beyond filename-implied scope, it should grow a per-file header (escape hatch).
 
 **Not required for:**
 - Generated artifacts (rules-lock.json, snapshots, fixtures) — they have schema, not prose
 - Tests (test names ARE the documentation per «documents lie; tests don't»)
 - Code files (TypeScript/JS) — JSDoc comments serve different purpose
+- Gitignored files (`.claude/orchestrator-prompts/` etc.) — out of project doc surface
+- Generated user-facing docs (`templates/*`, `.ai-factory/*` shipped to consumer projects) — see [open-questions.md §13.21](../../docs/meta-factory/open-questions.md) trigger for L3 work
 
 ## §3 Header format
 
