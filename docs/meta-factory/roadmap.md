@@ -7,6 +7,9 @@
 
 > Source: PROPOSAL.md §10 (split в Phase 1.D, 2026-05-07)
 > Companion: [PROPOSAL.md](PROPOSAL.md) (overview)
+>
+> **Authoritative for:** historical record of the original Phase 0–11 plan shape post-Phase-1.D split (2026-05-07). **OUTDATED** — current phase scope is owned by [EXECUTION-PLAN.md §6](EXECUTION-PLAN.md).
+> **NOT authoritative for:** current phase scope (see EXECUTION-PLAN), project goal (see [README.md#why-this-exists](../../README.md#why-this-exists)).
 
 ---
 

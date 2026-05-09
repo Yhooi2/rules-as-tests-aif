@@ -4,6 +4,9 @@
 > **Audience:** Phase 8 acceptance designers, Phase 11 contributors, future fresh sessions.
 > **Status:** design only (Phase 7.5 close 2026-05-08). Implementation deferred to Phase 8.X (parallel with Phase 8 acceptance verdict).
 > **Cross-refs:** [self-application.md §2 row L5](self-application.md), [self-application.md §7](self-application.md), [EXECUTION-PLAN.md §6 Phase 8](EXECUTION-PLAN.md), [open-questions.md §13.12 real-corpus](open-questions.md), [open-questions.md §13.14 BC migration](open-questions.md).
+>
+> **Authoritative for:** Phase 7.5 self-diagnostics design intent — `diagnostics-log.json` schema, write-hook semantics in L5, CI gate `framework-self-diagnose`, L5 (c) invariant. Implementation phasing.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). L5 installer artifact contracts — see [architecture.md §2.7](architecture.md).
 
 ---
 

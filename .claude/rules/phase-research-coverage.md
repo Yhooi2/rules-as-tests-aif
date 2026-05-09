@@ -9,6 +9,9 @@ paths:
 
 # Phase research coverage — searching discipline
 
+> **Authoritative for:** searching-layer discipline rule — §1 6-item coverage methodology checklist, §2 self-reflection prompts for retros, §3 research-patches/ accumulator format (mirrors AIF /aif-evolve), §4 named anti-patterns for fast pattern-match.
+> **NOT authoritative for:** project goal — see [../../README.md#why-this-exists](../../README.md#why-this-exists). Recording-layer discipline (Prior-art trailer + SSOT + principle 08) — see [CLAUDE.md `Build-vs-reuse invariant`](../../CLAUDE.md). Discipline-layer SSOT (re-evaluation triggers for this rule) — see [open-questions.md §13.16](../../docs/meta-factory/open-questions.md).
+
 Phase 8.8 mechanism (SSOT + principle 08 + `Prior-art:` trailer + pre-push hook) formalises **recording**: every claim cites prior art, every capability commit carries provenance. Phase 8.8.1 adds the **searching** layer on top: a rule + patch loop that catches false-negative coverage gaps before they ship as load-bearing claims.
 
 The rule is invoked at the surfaces declared in `paths:` above — entry research files, the SSOT, and the `research-patches/` accumulator. It is consumed by phase research sessions before closing any [EXECUTION-PLAN.md §5.5](../../docs/meta-factory/EXECUTION-PLAN.md) Step 1.5 lookup, and by retros writing the Self-reflection block.
@@ -60,6 +63,7 @@ Pre-named for fast pattern-matching during retros. When a Self-reflection findin
 - **`#recursive-self-application-gap`** — the discipline being established in a phase is not applied to that phase's own design choices. Catches shape «we forced future phases to do X but did not do X for our own X-introducing phase». Surfaced via §2.5 self-reflection prompt.
 - **`#scope-not-formal-trigger`** — a process gate (e.g. [§5.5 Step 1.5](../../docs/meta-factory/EXECUTION-PLAN.md)) is scoped to a specific phase shape (entry research) and does not fire on adjacent shapes (implementation phase format-decision moments). Coverage is procedurally compliant but methodologically incomplete.
 - **`#trigger-sweep`** — push-based health-check anti-pattern: armed §13.x triggers sit indefinitely if no session does the sweep. The complement to pull-based discipline. Mitigation: §1.6.
+- **`#adopted-pattern-drift`** — own-convention drift anti-pattern. Adopted external pattern (Arc42, AGENTS.md spec, AIF Step 0, Cline, matklad — see SSOT entries #6-#10) shifts at the source; project's adoption stays static; AI agents pattern-match on stale framing. Mitigation: SSOT velocity tags + 180-day staleness (slow patterns) / 90-day check (fast patterns) per [`prior-art-evaluations.md` entries #6-#10 «Trigger to revisit» lines](../../docs/meta-factory/prior-art-evaluations.md). Surfaces via `research-patches/YYYY-MM-DD-adopted-pattern-drift-<source>.md` on incidental observation; fold into systematic when L2 Research Agent ships per [open-questions.md §13.22](../../docs/meta-factory/open-questions.md).
 
 ## See also
 

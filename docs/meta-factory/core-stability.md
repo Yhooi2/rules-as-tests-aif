@@ -2,6 +2,9 @@
 
 > Source: PROPOSAL.md §7 (split в Phase 1.D, 2026-05-07)
 > Companion: [PROPOSAL.md](PROPOSAL.md) (overview)
+>
+> **Authoritative for:** invariant core stability boundaries — what is immutable, what may evolve under semver, CI `core-stability` job design, principle-immutability tests.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
 
 ---
 

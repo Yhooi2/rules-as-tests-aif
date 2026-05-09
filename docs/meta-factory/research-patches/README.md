@@ -1,5 +1,8 @@
 # Research patches
 
+> **Authoritative for:** folder convention — accumulator format for prior-art coverage gaps, file naming (`YYYY-MM-DD-<slug>.md`), required sections (Problem / Root Cause / Solution / Prevention / Tags), aggregation threshold (≥3 patches per tag → distill into [phase-research-coverage rule §1](../../../.claude/rules/phase-research-coverage.md)). Individual patch files inherit this folder authority — they are scope-bound by the gap they document and do **not** need their own Authoritative-for headers.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Discipline-layer SSOT trigger conditions for the rule itself — see [open-questions.md §13.16](../open-questions.md).
+
 Accumulator for prior-art coverage gaps surfaced after a phase entry research session has merged. Each file documents one gap, mirrored from the AIF `/aif-evolve` skill-context patch format.
 
 ## Why this exists

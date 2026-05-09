@@ -2,6 +2,9 @@
 
 > Source: PROPOSAL.md §9 (split в Phase 1.D, 2026-05-07)
 > Companion: [PROPOSAL.md](PROPOSAL.md) (overview)
+>
+> **Authoritative for:** migration plan from the current monolithic package shape to canonical-example role inside the meta-factory monorepo (new role definition, monorepo structure, 11-step migration sequence).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Current monorepo shape after Phase 3 — see [architecture.md](architecture.md) and [EXECUTION-PLAN.md §6](EXECUTION-PLAN.md).
 
 ---
 

@@ -5,6 +5,8 @@
 > Authors: Art + AI discussion
 > Audience: будущие реализаторы, фреш-сессии Claude/Cursor, контрибьюторы
 > Version: `0.4.0-draft` (2026-05-07; Phase 1.D split per §14.1 на 9 sub-docs)
+>
+> **Authoritative for:** design history and original architectural proposal (Phase 0.5 – 1.D snapshot, May 2026). **FROZEN** — do not retroactively rewrite. Current goal hierarchy is owned by [README.md#why-this-exists](../../README.md#why-this-exists); §1.2 / §1.3 / §1.4 below carry the historical phrasing that pre-dates the 2026-05-09 goal-hierarchy fix. Read as design context, not as the project's current goal statement.
 
 Этот документ — **проектная заявка** на следующее архитектурное направление пакета `rules-as-tests-aif`. Текущий пакет станет одним из компонентов мета-фабрики (canonical example), а новое ядро превратится в генератор, который умеет собирать аналогичные «фабрики правил» под произвольный стек.
 

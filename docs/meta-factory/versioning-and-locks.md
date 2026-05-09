@@ -2,6 +2,9 @@
 
 > Source: PROPOSAL.md §4 (split в Phase 1.D, 2026-05-07)
 > Companion: [PROPOSAL.md](PROPOSAL.md) (overview)
+>
+> **Authoritative for:** reproducibility model — `rules-lock.json` schema + diff-mode upgrade flow + organization-level research-cache strategy.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Versioning strategy under semver — see [open-questions.md §13.13](open-questions.md). BC migration — see [open-questions.md §13.14](open-questions.md).
 
 ---
 

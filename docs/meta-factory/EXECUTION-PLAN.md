@@ -5,21 +5,24 @@
 > **Source:** обсуждение между Art и AI, итерации 1-7
 > **Companion:** `docs/meta-factory/PROPOSAL.md` (architecture), `docs/meta-factory/ORCHESTRATOR-START-PROMPT.md` (запускающий промпт)
 >
+> **Authoritative for:** phase scope, sequencing, acceptance criteria, operational decisions.
+> **NOT authoritative for:** project goal, methodology, design invariants — see [README.md#why-this-exists](../../README.md#why-this-exists). §1 below is a pointer, not a goal-bearing section.
+>
 > **Этот файл — transient artifact**. Живёт пока план не выполнен; после релиза 1.0 — архивируется в `docs/audits/`. Размер может превысить 500-строчный лимит, действующий для shipped framework docs (RULES.md и т.д.).
 
 ---
 
-## 1. Цель проекта (north star)
+## 1. Цель проекта
 
-**Рекурсивное применение собственного главного тезиса.**
+> **Pointer (2026-05-09 goal-hierarchy fix):** project goal, methodology, and design invariants are owned by [README.md#why-this-exists](../../README.md#why-this-exists). This §1 is a pointer + operational acceptance criteria; it does **not** redefine the goal. Earlier framing of recursive self-application as «north star» drifted from README; the corrected hierarchy and Artifact Ownership Contract live in [README.md#why-this-exists](../../README.md#why-this-exists), [.claude/session-bootstrap.md](../../.claude/session-bootstrap.md), and [CLAUDE.md `Artifact Ownership Contract`](../../CLAUDE.md). Restructure rationale: see commits on branch `docs/goal-hierarchy-restructure`.
 
-Текущий пакет декларирует «documents lie; tests don't». Мета-уровень — следующий шаг: «preset-ы устаревают, принципы — нет». Опираться на принципы вместо preset-ов = тот же сдвиг от документов к тестам, только на уровень выше.
+**Operational restatement (do not edit unless README changes):**
 
-Если получится — пакет становится не «ещё одним шаблоном», а **живой системой**, остающейся релевантной по мере смены стеков. Это ровно тот principle: **best documentation is working code**.
+- **Goal** — AI agents can't silently bypass undocumented conventions; every codified rule fails CI on violation.
+- **Methodology** — generate enforcement rules from principles (presets устаревают, принципы — нет). Recursive self-application = quality signal (GCC bootstrap precedent), **not** the goal. Re-elevation to «north star» in any phase doc = drift; surface as a coverage-gap patch under [research-patches/](research-patches/).
+- **Operational acceptance criterion (this plan):** мета-фабрика регенерирует canonical Next 15 preset с diff ≤5%, обновляет его до Next 16 с diff к manual baseline ≤15%, валидирует собственный output набором meta-tests, выведенных из тех же принципов которые она проповедует. This is *how we know the methodology works on the way to the user-facing goal* — not the goal itself.
 
-**Success criterion:** мета-фабрика регенерирует canonical Next 15 preset с diff ≤5%, обновляет его до Next 16 с diff к manual baseline ≤15%, валидирует собственный output набором meta-tests, выведенных из тех же принципов которые она проповедует. **Без self-application весь тезис — пустой**.
-
-> **No-consumers caveat (m4 finding 2026-05-07):** на момент 2026-05-07 у пакета нет downstream consumers. Этот ~4-month plan justified как **proof-of-concept для recursive-self-validation thesis**, не как user-driven roadmap. Priority decisions внутри фаз должны учитывать: «если consumer'ов нет — какие decisions можно отложить до первого реального installation».
+> **No-consumers caveat (m4 finding 2026-05-07):** на момент 2026-05-07 у пакета нет downstream consumers. Этот ~4-month plan justified как initial proof of methodology — generates rules from principles such that recursive self-application is satisfied. Priority decisions внутри фаз должны учитывать: «если consumer'ов нет — какие decisions можно отложить до первого реального installation». User-value goal (per README) remains primary; methodology validation is a quality gate on the path to the goal.
 
 ---
 
@@ -258,7 +261,7 @@ Self-application — **не отдельный шаг**, а cross-cutting invari
 ### §6.0 v1 deterministic stance (locked Phase 4-7)
 
 > **Date:** 2026-05-08 (Phase 7 close).
-> **Scope:** durable, all 5 layers L1-L5. Supersedes the v1+v2 unified phrasing in §6 Phase 5/6/7 descriptions below (Phase 4-9 caveat in §5.5 already flags this drift).
+> **Scope:** durable, all 5 layers L1-L5 (stop-rules apply to every `packages/*` workspace's `package.json`, not only the L1-L5 architectural code paths). Supersedes the v1+v2 unified phrasing in §6 Phase 5/6/7 descriptions below (Phase 4-9 caveat in §5.5 already flags this drift).
 > **Origin:** four retros (Phase 4/5/6/7) converged on the same architectural decision — ship deterministic-curated v1, defer LLM extension as a strict-superset v2 trigger.
 
 **What shipped deterministic in v1:**
@@ -273,6 +276,10 @@ Self-application — **не отдельный шаг**, а cross-cutting invari
 
 1. **NO LLM at runtime in v1** — zero Anthropic SDK / OpenAI / context7 calls in any of L1-L5 hot paths. Research store is curated on disk.
 2. **NO new explicit deps** — only transitive ones (ESLint, TS-ESLint parser, preset plugin); `package.json` diffs are bin entries + scripts + exports.
+
+   > **Supersede 2026-05-09 (goal-hierarchy fix).** Under the user-value goal as restated in [README.md#why-this-exists](../../README.md#why-this-exists), the trigger changes from absolute «no new deps» to evaluative: *does the hand-rolled version create friction for users vs. a widely-adopted, well-maintained alternative?* If yes — adopt with `Prior-art:` trailer + SSOT entry update. If no — keep hand-rolled. Original absolute rule retained above as historical record per AWS ADR practice; new evaluative trigger applies forward.
+   >
+   > **No automatic unblock.** Existing [prior-art-evaluations.md](prior-art-evaluations.md) WATCHLIST/DEFER entries (#1 Autogrep, #2 Netlify CLI, #4 Factory ESLint Plugin, #5 Anthropic web_search) carry forward their existing primary blockers — the supersede unblocks NONE automatically. Each needs separate re-evaluation under the new trigger; Phase 9.x retro is the natural cadence.
 3. **NO yargs/commander** — CLIs use `process.argv` parsing (≤60 LOC each).
 4. **NO Path B AST gen** — Phase 9+ trigger; Path A only through Phase 8.
 
