@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 
-const AUTHORITY_HEADER_RE = /> \*\*Authoritative for:\*\*/;
+const AUTHORITY_HEADER_RE = /^> \*\*Authoritative for:\*\*/m;
 
 /**
  * Canonical list of authority-bearing docs per `.claude/rules/doc-authority-
@@ -91,8 +91,12 @@ function readFile(p: string): string {
   return readFileSync(p, 'utf8');
 }
 
+function stripFencedCodeBlocks(content: string): string {
+  return content.replace(/```[\s\S]*?```/g, '');
+}
+
 function hasAuthorityHeader(content: string): boolean {
-  return AUTHORITY_HEADER_RE.test(content);
+  return AUTHORITY_HEADER_RE.test(stripFencedCodeBlocks(content));
 }
 
 describe('Principle 9 — every authority-bearing doc declares Authoritative-for header', () => {
@@ -120,6 +124,12 @@ describe('Principle 9 — every authority-bearing doc declares Authoritative-for
   it('mutation: doc without authority header fails check (anti-tautology)', () => {
     const fake = '# Fake doc\n\nSome content without authority header.\n';
     expect(hasAuthorityHeader(fake)).toBe(false);
+  });
+
+  it('mutation: example-only header inside fenced code block does NOT count as compliant', () => {
+    const fakeWithExampleOnly =
+      '# Doc title\n\nProse without real header.\n\n```markdown\n# Example\n\n> **Authoritative for:** illustrative example only\n```\n\nMore prose.\n';
+    expect(hasAuthorityHeader(fakeWithExampleOnly)).toBe(false);
   });
 
   it('positive: doc with valid authority header passes check', () => {
