@@ -1,6 +1,6 @@
 # Rules — automatically enforced after every /aif-implement
 
-> **Authoritative for:** canonical R1–R11 rule list enforced by `best-practices-sidecar` in the preset-next-15 preset.
+> **Authoritative for:** canonical R1–R11 rule list enforced by `best-practices-sidecar` in the preset-next-15 preset (consumer-customisable).
 > **NOT authoritative for:** project goal — see consumer's README.md.
 
 These rules are checked by `best-practices-sidecar` after every implementation,
