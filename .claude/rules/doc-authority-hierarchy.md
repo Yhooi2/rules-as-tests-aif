@@ -14,7 +14,7 @@ This rule formalises **doc-authority hierarchy** as a project invariant, paralle
 - decision-level discipline (Prior-art trailers + SSOT)
 - search-level discipline ([phase-research-coverage.md](phase-research-coverage.md))
 
-The rule applies to canonical project docs **and** to docs the framework generates for consumer projects (templates under `templates/`, sub-agent prompts under `.ai-factory/`, generated `RULES.md` / `CLAUDE.md` / `AGENTS.md`). Generated-doc compliance is deferred per [open-questions.md §13.21](../../docs/meta-factory/open-questions.md) — current rule scope is project-internal docs only.
+The rule applies to **(a)** canonical project-internal docs and **(b)** shipped consumer-facing artefacts copied to consumer projects via `install.sh` (framework templates, preset rules + arch, sub-agent prompts — see canonical list in [`packages/core/principles/09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) `REQUIRED_HEADER_DOCS`). Compliance for **runtime-generated** consumer docs (e.g. `RULES.md` produced by AI-driven recipes, not static-copied) remains deferred per [open-questions.md §13.21](../../docs/meta-factory/open-questions.md) — that surface is L3 work for Phase 11+.
 
 ## §1 Problem this solves
 
@@ -33,6 +33,7 @@ Conflicting authority claims become detectable at review time and at session-sta
 - Operational reference docs under `docs/meta-factory/*.md` (excluding the transient-by-naming subset below)
 - Skill primary docs + cold references: `skills/*/SKILL.md`, `skills/*/references/*.md`
 - Hot operational docs: `.claude/session-bootstrap.md`, `.claude/rules/*.md`
+- Shipped consumer-facing artefacts copied to consumer projects via `install.sh:138-152`: framework templates under `packages/core/templates/shared/`, preset shared rules + arch under `packages/preset-next-15-canonical/`, sub-agent prompts under `agents/`. Canonical list lives in [`packages/core/principles/09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) `REQUIRED_HEADER_DOCS`. Generated-doc compliance trigger ([§13.21](../../docs/meta-factory/open-questions.md)) — Wave 1 + Wave 2 closure (2026-05-09).
 
 **Folder-level authority (single header in folder README, individual files inherit):**
 - `docs/meta-factory/retros/` — closed historical artifacts post-merge; individual files scope-bound by phase ID
@@ -48,7 +49,6 @@ Conflicting authority claims become detectable at review time and at session-sta
 - Tests (test names ARE the documentation per «documents lie; tests don't»)
 - Code files (TypeScript/JS) — JSDoc comments serve different purpose
 - Gitignored files (`.claude/orchestrator-prompts/` etc.) — out of project doc surface
-- Generated user-facing docs (`templates/*`, `.ai-factory/*` shipped to consumer projects) — see [open-questions.md §13.21](../../docs/meta-factory/open-questions.md) trigger for L3 work
 
 ## §3 Header format
 
