@@ -1,6 +1,9 @@
 # Project context for Claude Code
 
 > Pointer file. Real context lives in `AGENTS.md` and `.ai-factory/`.
+>
+> **Authoritative for:** Claude Code session-load pointer format directing agents to `AGENTS.md` / `.ai-factory/`.
+> **NOT authoritative for:** project goal — see consumer's README.md.
 
 This project follows the AGENTS.md standard. Claude Code reads BOTH this file AND `AGENTS.md` at session start. To avoid drift between them, this file contains no rules — only pointers.
 
