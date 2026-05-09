@@ -1,5 +1,7 @@
 # Independent Reviewer Prompt — Opus Orchestrator (Cold-start, Sceptic Mode)
 
+> **Historical artifact (2026-05-07).** Do not use as project goal source. Project goal is owned by [README.md#why-this-exists](../../README.md#why-this-exists); the «Project goal (north star)» framing in §«Project Context» below predates the 2026-05-09 goal-hierarchy fix. Read as design context only — anti-pattern `#operational-doc-redefines-goal` per [.claude/rules/doc-authority-hierarchy.md §4](../../.claude/rules/doc-authority-hierarchy.md). Filename-exempt from §2 header rule (`*-PROMPT.md` convention); explicit disclaimer per same rule's escape hatch.
+
 > **Назначение:** запустить **вторую Opus сессию** для independent review работы первого orchestrator'а на ветке `chore/self-application`. Two-AI review pattern из PROPOSAL §11 и self-application.md §3.
 > **Версия:** 0.1.0 — 2026-05-07
 > **Используется:** Art копирует этот промпт в новую Opus сессию (manual handoff, не Agent tool — independent context критичен).
@@ -53,7 +55,7 @@ CI status (after push):
 ### Phase 1: Контракты и planning (что обещалось)
 
 1. `docs/meta-factory/ORCHESTRATOR-START-PROMPT.md` — контракт первого orchestrator'а: Stage 1 review → Stage 2 execution, communication protocol, stop conditions.
-2. `docs/meta-factory/EXECUTION-PLAN.md` v0.1.1 — план execution. Особенно §1 (north star), §3 (self-application gap), §6 (phase decomposition Phase 0.5 → 9), §10 (fresh-review checklist).
+2. `docs/meta-factory/EXECUTION-PLAN.md` v0.1.1 — план execution. Особенно §1 (goal pointer per 2026-05-09 fix), §3 (self-application gap), §6 (phase decomposition Phase 0.5 → 9), §10 (fresh-review checklist).
 3. `docs/meta-factory/PROPOSAL.md` v0.2.0-draft — architecture мета-фабрики. Особенно §6 (acceptance test), §11 (risks), §13 (open questions, especially §13.7-13.10).
 4. `docs/meta-factory/self-application.md` v0.1.0 — reference document, 8 секций (тезис → invariant table → decision matrix → epistemological gap → audit cross-refs → anti-patterns → acceptance criteria → 6-month projection).
 5. `docs/audits/2026-05-07-self-application-gap.md` — original audit snapshot (PR #1).
