@@ -2,6 +2,9 @@
 
 > Replace placeholders below. This file is loaded by every AI agent at session start.
 > Keep ≤150 lines. Cold content goes to `.claude/skills/` and `.claude/rules/`.
+>
+> **Authoritative for:** consumer-project description template — domain / stack / constraints / non-goals scaffolding.
+> **NOT authoritative for:** project goal — see consumer's README.md.
 
 ## What it is
 
