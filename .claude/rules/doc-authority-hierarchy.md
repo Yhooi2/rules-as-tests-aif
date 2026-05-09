@@ -1,5 +1,8 @@
 # Doc authority hierarchy — discipline rule
 
+> **Authoritative for:** doc-authority-hierarchy discipline rule — §2 doc categorisation, §3 header format spec, §4 four anti-patterns, §5 folder-level authority pattern, §6 promotion / demotion / retirement triggers.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion principle test — see [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts).
+
 > **Origin:** 2026-05-09 goal-hierarchy restructure incident — `EXECUTION-PLAN.md §1` silently re-defined the project's goal as «recursive self-application is the north star», overriding `README.md#why-this-exists`. The drift went uncaught for months because the project had code-level discipline (R1-R20, principles 01-08, build-vs-reuse SSOT, search-coverage rule) but no doc-authority discipline.
 >
 > **Self-reflection:** the project's own thesis — «documents lie; tests don't» — was scoped to *user code*, never to *its own documentation structure*. Pain-driven discipline accumulation finally surfaced this layer when the drift bit a reviewer cycle. Recursive-self-application gap (anti-pattern `#recursive-self-application-gap` in [phase-research-coverage.md §4](phase-research-coverage.md)) — discipline applied bottom-up to user code, not top-down to own design.
