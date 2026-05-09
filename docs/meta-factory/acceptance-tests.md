@@ -2,6 +2,9 @@
 
 > Source: PROPOSAL.md §6 (split в Phase 1.D, 2026-05-07)
 > Companion: [PROPOSAL.md](PROPOSAL.md) (overview)
+>
+> **Authoritative for:** acceptance test design — installer self-validates through the 5-layer enforcement framework; reproduction scenario for canonical Next 15; acceptance test for invariant core itself.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
 
 ---
 
