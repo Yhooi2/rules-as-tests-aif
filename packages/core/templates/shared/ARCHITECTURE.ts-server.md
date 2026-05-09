@@ -4,6 +4,9 @@
 > For React/Next.js projects, see `ARCHITECTURE.react-next.md` instead.
 >
 > Drop into `.ai-factory/ARCHITECTURE.md` and override only what your project needs. For React/Next.js projects, see `ARCHITECTURE.react-next.md`.
+>
+> **Authoritative for:** hexagonal layer structure and dependency direction template for server-side TypeScript projects (consumer-customisable).
+> **NOT authoritative for:** project goal — see consumer's README.md.
 
 ## Layer structure (hexagonal / clean)
 
