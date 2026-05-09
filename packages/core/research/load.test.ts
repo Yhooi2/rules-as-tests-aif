@@ -49,8 +49,8 @@ describe('loadEntries — semver-aware research store lookup', () => {
       'react-server-components',
     ]);
     expect(entries.map((e) => e.id)).toEqual([
+      'next-r12-no-server-imports-in-client',
       'nextjs-app-router',
-      'react-server-components',
       'tailwind-v4-css-tokens',
     ]);
   });
