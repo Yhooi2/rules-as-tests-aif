@@ -11,6 +11,9 @@ paths:
 
 # Integration Rules — apply to ALL services in microservice systems
 
+> **Authoritative for:** cross-service integration template — API contracts, CDC, event schemas, mTLS, observability, resilience patterns.
+> **NOT authoritative for:** project goal — see consumer's README.md.
+
 These rules govern communication between services. They live in a shared file
 (linked via symlink or git submodule across all services in the system) so
 every service has the same integration contract.
