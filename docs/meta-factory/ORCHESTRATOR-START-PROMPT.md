@@ -1,5 +1,7 @@
 # Orchestrator Start Prompt — fresh-session entry
 
+> **Historical artifact (2026-05-07).** Do not use as project goal source. Project goal is owned by [README.md#why-this-exists](../../README.md#why-this-exists); the «Главная цель проекта (north star)» framing in §«Cold-start contract» below predates the 2026-05-09 goal-hierarchy fix. Read as design context only — anti-pattern `#operational-doc-redefines-goal` per [.claude/rules/doc-authority-hierarchy.md §4](../../.claude/rules/doc-authority-hierarchy.md). Filename-exempt from §2 header rule (`*-PROMPT.md` convention); explicit disclaimer per same rule's escape hatch.
+
 > **Модель:** Opus 4.7 (orchestrator). Junior tasks выполняются одним из двух способов (выбор по объёму работы):
 > 1. **`Agent` tool → Opus subagent** — для mechanical edits, independent review, multi-file refactor когда нужно изолировать context старшей. Subagent наследует Opus, не Sonnet.
 > 2. **Готовый промпт для Sonnet** — старшая пишет self-contained промпт текстом, Art сам открывает новую Sonnet-сессию и вставляет. Для крупных объёмов / явного manual handoff / экономии Opus-квоты.
