@@ -1,6 +1,9 @@
 # Architecture — React 19 + Next.js 15 (App Router)
 
 > Layer rules + Server/Client boundary. Enforced by `dependency-cruiser` + ESLint + `server-only`/`client-only` packages.
+>
+> **Authoritative for:** Feature-Sliced + hexagonal layer structure with Server/Client boundary for React 19 + Next.js 15 projects (consumer-customisable).
+> **NOT authoritative for:** project goal — see consumer's README.md.
 
 ## Layer structure (Feature-Sliced + hexagonal)
 
