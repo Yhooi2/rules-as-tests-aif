@@ -2,6 +2,19 @@
 
 This file is auto-loaded by Claude Code when sessions run inside this repo.
 
+> **Authoritative for:** AI-tooling conventions, capability-commit gates, build-vs-reuse discipline, Artifact Ownership Contract.
+> **NOT authoritative for:** project goal, methodology, design invariants — see [README.md#why-this-exists](README.md#why-this-exists).
+
+## Read-first (Step 0)
+
+At session start, read [.claude/session-bootstrap.md](.claude/session-bootstrap.md) — it re-states the project goal + invariants from README in compaction-resilient form. Implements the AIF Step 0 / Cline Memory Bank re-read pattern: anchors goal across context-loss events that compaction cannot guarantee to preserve.
+
+## Project goal pointer (do not elevate methodology to goal)
+
+**Goal:** AI agents can't silently bypass undocumented conventions — every codified rule fails CI on violation. Full statement: [README.md#why-this-exists](README.md#why-this-exists).
+
+**Methodology:** recursive self-application — framework validates itself with its own logic. *Quality signal* (per GCC bootstrap precedent, `rustc` compile-self analogy), not the project's goal. **Do not elevate to «north star» in any operational doc.** If you find yourself reasoning under a goal that contradicts README — stop. The contradicting doc has drifted, not README. Surface as a coverage-gap patch under [docs/meta-factory/research-patches/](docs/meta-factory/research-patches/).
+
 ## Build-vs-reuse invariant (Phase 8.8)
 
 Before introducing any **capability commit** (definition below), **MUST**:
@@ -49,6 +62,24 @@ This convention is enforced via three layers, each validating a different artifa
 | 3 — developer-time | `.husky/pre-push` + commit trailer | capability commits carry `Prior-art:` line | T7 + T8 |
 
 The convention applies to its own implementation: Phase 8.8 commits T2-T11 carry `Prior-art:` trailers, and principle 08 validates the SSOT it builds on.
+
+## Artifact Ownership Contract
+
+Each artifact has one owner. Cross-owner edits require explicit handoff (separate atomic commit + rationale, not side-effect of operational work). Reviewer agents are read-only for any artifact they don't own.
+
+| Artifact | Owner | Read-only for | Why |
+|---|---|---|---|
+| [README.md](README.md) (`§Why this exists`) | maintainers (deliberate edit) | all reviewer / implementation / planning sessions | goal-redefinition is structural change |
+| [docs/meta-factory/EXECUTION-PLAN.md](docs/meta-factory/EXECUTION-PLAN.md) | maintainers + planning sessions | reviewer agents, implementation agents | operational; does not own goal |
+| [docs/meta-factory/PROPOSAL.md](docs/meta-factory/PROPOSAL.md) | frozen — historical artifact | all sessions | design-history record; do not retroactively rewrite |
+| [docs/meta-factory/prior-art-evaluations.md](docs/meta-factory/prior-art-evaluations.md) | phase research sessions, capability-commit authors | reviewer agents | append-only register per [§3](docs/meta-factory/prior-art-evaluations.md) |
+| [docs/meta-factory/retros/](docs/meta-factory/retros/) `*` | phase orchestrator at retro time | all subsequent sessions | closed historical artifact post-merge |
+| [docs/meta-factory/research-patches/](docs/meta-factory/research-patches/) `*` | session that discovered the gap | all subsequent sessions | one patch per gap, append-only |
+| [.husky/pre-push](.husky/pre-push), [.claude/rules/](.claude/rules/) `*` | maintainers | all session agents | enforcement layer |
+| [.claude/session-bootstrap.md](.claude/session-bootstrap.md) | maintainers (deliberate edit) | reviewer agents | operational restatement; modify only when invariants/reading-order change |
+| [packages/core/principles/](packages/core/principles/) `*` | meta-tests CI | implementation agents | enforcement code |
+
+The contract addresses the exact mechanism of the 2026-05-09 incident: reviewer agents pattern-matching on language in [docs/meta-factory/EXECUTION-PLAN.md](docs/meta-factory/EXECUTION-PLAN.md) §1 («north star»), then reinforcing the wrong goal across reviewer cycles. Read-only constraint on goal-bearing artifacts (README) prevents reviewer agents from silently re-establishing a different goal.
 
 ## See also
 
