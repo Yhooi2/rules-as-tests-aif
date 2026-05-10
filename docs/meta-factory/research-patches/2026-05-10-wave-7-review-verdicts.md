@@ -24,26 +24,31 @@
 
 ## §2 Closure of §9 open decisions (7 items)
 
-### Decision 1 — §13.23 vs harness-hook (REVISED 2026-05-10b — see §7 Revision note)
+### Decision 1 — §13.23 vs harness-hook (REVISED 2026-05-10b → REVISED 2026-05-11 per independent re-review)
 
-**CLOSED: SHIP BOTH IN WAVE 7. §13.23 4th-layer pre-push trailer check ships as new sub-wave 7.6 with full research → review → implementation discipline.**
+**CONDITIONALLY CLOSED: sub-wave 7.6 ships IFF 7.6.b review returns GO on Problems 1 and 3. Otherwise — fallback decisions per §8.**
 
 Rationale: harness-hook (5th layer, Claude Code PostToolUse) catches editor write-time defects BEFORE any git checkpoint — covers `git commit --no-verify` bypass for Claude Code sessions. §13.23 (4th layer, pre-push trailer check) catches local-push-without-PR bypass — covers direct push to feature branch sidestepping `discipline-self-check.yml`. Different bypass surfaces; layered defense.
 
-Wave 7 sub-waves 7.1.b (lychee in pre-push) + 7.1.c (principle 09 changed-files) satisfy §13.23 trigger condition #3 (per [open-questions.md:412](../open-questions.md)) — trigger is firing now, Wave 7 owns the closure.
+Wave 7 sub-waves 7.1.b (lychee in pre-push) + 7.1.c (principle 09 changed-files) satisfy §13.23 trigger condition #3 (per [open-questions.md:412](../open-questions.md)) — trigger is firing now, Wave 7 **provisionally** owns the closure.
 
-**Initial deferral was false** (caught by user adversarial pushback 2026-05-10 — see §7 Revision note). The 4 «unresolved design problems» have tractable solutions:
+**Two-step revision history:**
+1. **2026-05-10 v1** (commit `e75019a`): Decision 1 = «defer §13.23 to Wave 8» — accepted §13.23's 4 «unresolved design problems» as load-bearing without §1.4 adversarial check on each.
+2. **2026-05-10b** (commit `4ede6ae`): Decision 1 = «CLOSED: SHIP BOTH» — overcorrected after user pushback; claimed all 4 problems tractable without verification.
+3. **2026-05-11 (this revision)**: Decision 1 = «CONDITIONALLY CLOSED» — independent re-review (agent task `a618b8a650eb3b627`) flagged Problems 1+3 as still unverified. Per-problem tractability re-assessed honestly:
 
-| §13.23 problem | Tractable solution direction (validated in 7.6.a research) |
-|---|---|
-| **Scope predicate** | Smart predicate: file-glob match (`.claude/rules/*.md`, `packages/core/principles/*.test.ts`) **AND** diff content includes a `## §` section heading change OR `+/-` lines inside such sections. Refactors and typo fixes touching prose outside numbered sections pass. |
-| **Bootstrap chicken-and-egg** | Explicit bootstrap marker — first-commit-on-branch carrying `§1.7 Bootstrap: <reason>` trailer (≥20 chars rationale). Verified via `git rev-list --count <upstream>..HEAD` = 1 OR commit subject prefix matches `chore(bootstrap-§1.7):`. Mirrors `Prior-art: skipped — ...` escape-hatch pattern from CLAUDE.md. |
-| **Trailer-format interaction** | Separate stanzas. Existing `Prior-art:` parser uses `grep -E '^Prior-art:'` (line-anchored, single-key). New parser adds `grep -E '^§1\.7 Forward-check:'` and `grep -E '^§1\.7 Backward-check:'` independently. Order in commit body irrelevant per `git interpret-trailers` semantics. **Not actually a problem under closer inspection.** |
-| **Discipline-theatre risk** | Same risk applies to ALL hooks (markdownlint, lychee, principle 09 — all bypassable via `--no-verify`). Accept as universal hook tradeoff, not §13.23-specific blocker. Mitigation: warn-only mode for first 30 days post-ship to calibrate FP rate before promoting to hard-fail. |
+| §13.23 problem | Tractability (per independent re-review) | Solution status |
+|---|---|---|
+| **Problem 1 — Scope predicate** | **UNCERTAIN — design sketch, pending 7.6.a verification** | Candidate solution: file-glob match (`.claude/rules/*.md`, `packages/core/principles/*.test.ts`) **AND** diff content includes a `## §` section heading change OR `+/-` lines inside such sections. **Hard case untested**: refactor commit that touches a rule file AND happens to shift a numbered-section heading. 7.6.a must run adversarial test against existing commit history (last 50 commits on `main`) to measure FP rate. |
+| **Problem 2 — Bootstrap chicken-and-egg** | **TRACTABLE (high confidence)** | Direct structural mirror of existing `Prior-art: skipped — ...` escape-hatch from [CLAUDE.md `Prior-art: trailer syntax`](../../../CLAUDE.md). Same parser semantics, same ≥20-char rationale requirement. New trailer: `§1.7 Bootstrap: <reason>` on first commit of branch. Verified via `git rev-list --count <upstream>..HEAD = 1` OR commit subject prefix `chore(bootstrap-§1.7):`. Tractable by clean analogy. |
+| **Problem 3 — Trailer-format interaction** | **UNCERTAIN — design sketch, pending 7.6.a verification of parser mechanism** | Original §13.23 says «order matters for parser; both options have downsides». My v2 claim «NOT a problem because git interpret-trailers is order-irrelevant» rests on **unverified implementation assumption**: existing pre-push hook uses `grep -E '^Prior-art:'` line-anchored, NOT `git interpret-trailers`. Whether new §1.7 trailer parser uses `git interpret-trailers` (order-irrelevant) or grep-based line-anchored (order-sensitive) is an implementation choice, not a fact. 7.6.a must commit to one parser approach + verify it doesn't break existing `^Prior-art:` parsing. |
+| **Problem 4 — Discipline-theatre risk** | **TRACTABLE (high confidence)** | Universal hook tradeoff — applies to markdownlint, lychee, principle 09 (all bypassable via `--no-verify`). Mitigation pattern «warn-only mode for first N days» is standard and used elsewhere in project. Tractable by clean analogy. |
+
+**Conditional closure rule:** Decision 1 is CLOSED-as-«SHIP-IN-7.6» **only if** 7.6.b review session returns GO verdict on Problems 1 + 3 specifically. If 7.6.b returns REVISE on either — fallback per §8 (likely defer §13.23 to Wave 8 with this audit cycle as evidence). Problems 2 + 4 are independently tractable and survive any fallback.
 
 These solutions need formal research-prior-art consult (≥3 phrasings on git-trailer enforcement frameworks; Conventional Commits + commitlint + semantic-release + commitizen as primary candidates) per [phase-research-coverage §1](../../../.claude/rules/phase-research-coverage.md). Sub-wave 7.6 ships full discipline cycle: 7.6.a research → 7.6.b review → 7.6.c implementation → 7.6.d open-questions §13.23 closure.
 
-Operator-confirm: §13.23 status note in [open-questions.md §13.23](../open-questions.md) → «closed by Wave 7 sub-wave 7.6» (NOT deferred to Wave 8) at sub-wave 7.5.c. Sub-wave 7.6 dependencies: nothing — runs in parallel with 7.1-7.4. Sub-wave 7.5 (Wave closeout) depends on 7.1-7.6 ship.
+Operator-confirm: §13.23 status note in [open-questions.md §13.23](../open-questions.md) updates per 7.6.b verdict outcome (closed-by-Wave-7-sub-wave-7.6 IFF GO; deferred-to-Wave-8-with-evidence-bundle IF REVISE) at sub-wave 7.5.c. Sub-wave 7.6 dependencies: nothing — runs in parallel with 7.1-7.4. Sub-wave 7.5 (Wave closeout) depends on 7.1-7.6 ship.
 
 ### Decision 2 — Vale adoption now or DEFER
 
@@ -177,22 +182,64 @@ Estimated total: ~8-12 days (revised from 6-9 days; +2.5-3.5 days for sub-wave 7
 Next step (GO): operator confirms §5 ATTN action items, then opens orchestrator-kickoff per filled .claude/orchestrator-prompts/wave-7-hot-checks-joint-closure/orchestrator-kickoff.md (operator-side, gitignored).
 ```
 
-## §7 Revision note — 2026-05-10b adversarial-check correction
+## §7 Revision note — TWO-STEP correction (2026-05-10b + 2026-05-11)
 
-This verdict patch was originally committed as `b9b19ed` with Decision 1 routing «§13.23 4th-layer DESIGN scheduled separately, NOT Wave 7 scope». User adversarial pushback («ты просто отложил потому что поленился делать?») triggered §1.4 adversarial check on the load-bearing claim «§13.23 has 4 unresolved design problems unfit for Wave 7 scope».
+This patch went through two revisions; both corrections are documented here for symmetry.
 
-**Adversarial check result:** the original deferral was **false**. Closer inspection of each of the 4 problems revealed tractable solutions (per Decision 1 revised table above):
-- Problem 1 (scope predicate): smart predicate with `## §`-section diff content match — solvable in research session
-- Problem 2 (bootstrap chicken-and-egg): explicit `§1.7 Bootstrap:` trailer or commit-subject prefix pattern — mirrors existing `Prior-art: skipped — ...` escape-hatch
-- Problem 3 (trailer-format interaction): NOT a problem — separate stanzas work fine; existing `^Prior-art:` parser is line-anchored and unaffected
-- Problem 4 (discipline-theatre risk): universal hook tradeoff (applies to markdownlint/lychee/principle-09 too), not §13.23-specific blocker; warn-only-first-30-days mitigation
+### Step 1 — 2026-05-10b correction (commit `4ede6ae`)
 
-**Anti-pattern identified:** `#deferral-by-pattern-match-on-deferred-status` — reviewer (this session) read «Status: deferred» + 4 listed problems in [open-questions.md §13.23](../open-questions.md) and accepted the deferral as load-bearing without running §1.4 adversarial check on each problem individually. Same shape as `#own-stack-blind-spot` but applied to negative-existence claims about design tractability (not capability existence).
+Original v1 (commit `e75019a`) had Decision 1 = «defer §13.23 to Wave 8 — 4 unresolved design problems unfit for Wave 7 scope». User adversarial pushback («ты просто отложил потому что поленился делать?») triggered re-examination of the load-bearing claim.
 
-**Surface to coverage methodology:** this incident is a candidate for §4 anti-pattern catalog promotion ([phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md)) under tag `#deferral-by-pattern-match-on-deferred-status` — sample size 1/3 (this incident); two more to trigger formal §3 distillation per AIF-aggregation threshold. Track here to seed the count.
+v2 revision (`4ede6ae`) overcorrected: Decision 1 became «CLOSED: SHIP BOTH IN WAVE 7 — 4 problems have tractable solutions». Tractability table inserted with one-sentence solution per problem.
 
-**Forward-check on this revision** (per §1.7):
-- Authoritative-for header: existing patch header still applies (Decision 1 + §3 sub-wave outline within scope).
-- Self-reflexive trigger: this revision IS a discipline-bearing change (modifies verdict routing) — §7 itself is the §1.7 forward+backward documentation per «every new discipline-bearing artefact ships with self-review patch».
-- Backward-check: no existing artefacts are retroactively affected (revision is forward-looking); sub-wave 7.6 is the addition; §13.23 status note in open-questions.md updates from «trigger #3 fired, design separate» (would have been written by 7.5.c per original Decision 1) to «closed by Wave 7 sub-wave 7.6».
-- Build-vs-reuse: 7.6.a research session itself runs ≥3 phrasings on git-trailer enforcement frameworks per `phase-research-coverage §1.5`; SSOT consult discipline applied at write-time.
+### Step 2 — 2026-05-11 correction (this commit)
+
+Independent re-review (Agent task `a618b8a650eb3b627`, fresh session, read-only) flagged Step 1 as **partial repeat of original error in opposite direction**. Findings:
+
+- Problems **2 + 4**: genuinely tractable — clean structural analogy to existing project patterns (`Prior-art: skipped` escape-hatch + warn-only-first-30-days). Confidence: high.
+- Problems **1 + 3**: design sketches, NOT verified.
+  - Problem 1 (scope predicate): hard case «refactor commit that touches rule file AND shifts numbered-section heading» untested. FP rate unmeasured against existing commit history.
+  - Problem 3 (trailer-format): claim «order irrelevant per `git interpret-trailers`» rests on unverified implementation assumption. Existing pre-push hook uses `grep -E '^Prior-art:'` (line-anchored, NOT `git interpret-trailers`). Whether new §1.7 trailer parser uses one mechanism or the other is an implementation choice, not a fact.
+
+Decision 1 in this revision: **CONDITIONALLY CLOSED** — sub-wave 7.6 ships IFF 7.6.b review returns GO on Problems 1+3. Otherwise fallback per §8.
+
+### Anti-patterns identified (symmetric pair)
+
+- **`#deferral-by-pattern-match-on-deferred-status`** — reviewer reads «Status: deferred» + listed problems in `open-questions.md` and accepts deferral as load-bearing without running §1.4 adversarial check on each problem individually. v1 → v2 transition surfaced this.
+- **`#tractability-by-pattern-match-on-claim-acceptance`** — reviewer reads «closer inspection reveals problem N is solvable» and accepts tractability as load-bearing without running §1.4 adversarial check on the claim itself. v2 → v3 transition (this revision) surfaced this.
+
+**Both are the same cognitive shortcut**: pattern-match-by-claim-acceptance. The direction (toward defer or toward tractable) is irrelevant — the failure mode is closing decision before adversarial check on the claim that closes it.
+
+**Generalised anti-pattern**: `#claim-acceptance-without-§1.4-on-the-claim-itself`. Future reviewers must run §1.4 on **whichever claim closes the decision** — whether «X is unsolvable» (defer) or «X is tractable» (proceed). Symmetry rule.
+
+### Surface to coverage methodology
+
+Both anti-pattern instances are candidates for [phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md) catalog promotion under tag `#claim-acceptance-without-§1.4`. Sample size 2/3 in this incident (one v1→v2 + one v2→v3); one more to trigger formal §3 distillation per AIF-aggregation threshold.
+
+Distillation candidate Prevention rule: «**Before closing a decision based on a tractability or untractability claim, run §1.4 adversarial check on the claim itself, regardless of direction. Symmetry: «X is unsolvable» and «X is tractable» have equal §1.4 burden.»**
+
+### Forward-check on this revision (per §1.7)
+
+- Authoritative-for header: existing patch header still applies.
+- Self-reflexive trigger: this revision IS a discipline-bearing change (modifies verdict routing + adds anti-pattern + adds fallback decisions §8) — §7 itself is the §1.7 forward+backward documentation.
+- Backward-check: §13.23 status note in `open-questions.md` updates conditionally per 7.6.b outcome — does not pre-commit to closure or deferral.
+- Build-vs-reuse: 7.6.a research runs ≥3 phrasings on git-trailer enforcement frameworks per `phase-research-coverage §1.5`; SSOT consult discipline applied at write-time. Independent re-review (agent task `a618b8a650eb3b627`) acted as adversarial check on tractability claims — surfaced Problems 1+3 as unverified, Problems 2+4 as confirmed tractable.
+
+## §8 Fallback decisions for sub-wave 7.6.a research outcomes
+
+Operator pre-approved decision tree — orchestrator does NOT escalate during 7.6.a/b execution if outcome matches a pre-decided branch. Escalation only on outcomes outside this tree.
+
+| 7.6.a / 7.6.b outcome | Pre-decided branch | Wave 7 timeline impact |
+|---|---|---|
+| **F1 — All 4 problems verified tractable** (clean GO from 7.6.b) | Proceed to 7.6.c implementation as planned | None (8-12 day estimate holds) |
+| **F2 — Problem 1 (scope predicate) FP rate >5% on `last-50-commits-on-main` adversarial test** | Ship as **warn-only mode permanent** (NOT 30-day promotion); document FP rate in 7.6.c commit message; §1.7 ladder layer 4 = «advisory only» | None (warn-only mode is simpler implementation) |
+| **F3 — Problem 3 (trailer-format) requires `git interpret-trailers` AND existing `^Prior-art:` parser refactor** | Ship as 2 atomic commits in 7.6.c: (a) refactor existing parser to `git interpret-trailers` first; (b) add §1.7 trailer check second. Each commit independently passes pre-push. | +0.5 day (6 commits in 7.6.c block, not 4) |
+| **F4 — No production-grade analog surfaces** (commitlint/semantic-release/commitizen don't fit) | SSOT BUILD entry; budget +1 day for hand-roll bash implementation. **If hand-roll cost exceeds 3 days** — escalate to operator: defer §13.23 to Wave 8. | +1 day OR defer §13.23 (operator escalation) |
+| **F5 — Problem 2 (bootstrap) reveals chicken-and-egg has no clean solution** (e.g. `§1.7 Bootstrap:` trailer triggers itself) | Use environment variable `SKIP_§1.7_BOOTSTRAP=1` for one-time bootstrap commit; document in [.husky/pre-push](../../../.husky/pre-push) as explicit one-shot exemption. | None |
+| **F6 — Problem 1 OR Problem 3 returns REVISE from 7.6.b after one iteration** | **Defer §13.23 to Wave 8** with this 2-cycle audit (v1→v2→v3) as evidence bundle. Original Decision 1 v1 routing returns to force: «trigger #3 fired, design scheduled separately». | -2.5 to -3.5 days (sub-wave 7.6 absent); Wave 7 ships in 5 sub-waves |
+| **F7 — Problem 1 OR Problem 3 returns REVISE from 7.6.b after second iteration** | Hard escalate to operator: «§13.23 is structurally hard; recommend: (a) accept as permanent gap with documentation in [open-questions.md §13.23](../open-questions.md) Promotion-path-when-triggered re-design, OR (b) re-scope to a narrower problem (e.g. trailer-presence-check only, no semantic check)». | Operator escalation |
+
+**Escalation triggers (outside this tree):**
+- 7.6.a research finds a 5th unforeseen problem not in §13.23 original list — escalate to operator.
+- 7.6.b reviewer (fresh session) flags a BLOCKER outside Problems 1-4 — escalate to operator.
+- 7.6.c implementation cost exceeds estimate by >50% (>2 days for ~1-2 day estimate) — escalate to operator.
