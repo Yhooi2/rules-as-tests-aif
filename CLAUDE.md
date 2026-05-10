@@ -27,6 +27,8 @@ If no SSOT entry matches and context7 surfaces no production-grade analog, add a
 
 The phase entry consult gate is the same enforcement at planning time — see [EXECUTION-PLAN.md §5.5 Step 1.5](docs/meta-factory/EXECUTION-PLAN.md).
 
+For the **consumer-side authority model** governing how shipped artefacts may be customised after install (three-layer model + `<file>.override.md` escape hatch), see [INSTALL-FOR-AI.md `Three-layer authority for shipped artefacts`](INSTALL-FOR-AI.md#three-layer-authority-for-shipped-artefacts). This is the consumer-facing companion to the build-vs-reuse discipline above.
+
 ## What is a capability commit?
 
 A commit that does **any** of the following (mirrors `.husky/pre-push` detection — the prose definition and the hook stay in sync):

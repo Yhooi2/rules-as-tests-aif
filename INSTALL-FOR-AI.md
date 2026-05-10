@@ -220,6 +220,43 @@ project/
 
 ---
 
+## Three-layer authority for shipped artefacts
+
+Wave 4 of [§13.21](docs/meta-factory/open-questions.md) defines the authority model for files shipped by `install.sh` (templates, sub-agents, preset rules). Every consumer interaction with a shipped artefact happens at one of three layers:
+
+| Layer | What it is | Who owns it | When AI agents pick it |
+|---|---|---|---|
+| **1. Framework default** | The file as shipped from the framework (`$PKG_ROOT/...` before copy) — e.g. `packages/core/templates/shared/AGENTS.md.template`. | Framework maintainers. Read-only for consumers; changes flow upstream via PR. | Read during install only (`install.sh` copies it to the consumer). After install, the consumer has a local copy at the destination path; the framework copy is no longer consulted. |
+| **2. Consumer in-place edit** (default) | The installed copy edited in the consumer project — e.g. the consumer's own `AGENTS.md` with placeholders filled in. | Consumer. Re-running `install.sh` without `--force` skips existing files, preserving these edits. | This is the file the AI sees during normal work. Default behaviour, no opt-in needed. |
+| **3. `<file>.override.md` escape hatch** | A sibling file with the `.override.md` suffix that wholesale-replaces the consumer copy — e.g. `AGENTS.override.md` next to `AGENTS.md`. | Consumer. Lives next to the file it overrides. | If `<file>.override.md` exists, AI agents should read it **instead of** `<file>`. Use only when in-place edits cannot express the divergence. |
+
+### When to use which layer
+
+- **Default → Layer 2.** Edit the file in place, commit it, move on. Most consumers stop here.
+- **Layer 3** only when:
+  - The consumer's pre-existing `<file>` predates framework adoption and has structural divergence too large for in-place merging.
+  - The consumer wants to swap the framework's conventions wholesale (e.g. a different rule-numbering scheme in `AGENTS.md`) while keeping the framework-shipped baseline as historical reference.
+- **Layer 1 is never edited by consumers.** Modifications travel upstream as PRs to the framework repo.
+
+### `<file>.override.md` convention
+
+- **Location:** same directory as the file being overridden.
+- **Naming:** base name + `.override.md` suffix. Examples: `AGENTS.override.md` next to `AGENTS.md`; `RULES.override.md` next to `RULES.md`.
+- **Resolution rule for AI agents:** if `<file>.override.md` exists, read it instead of `<file>`. The framework-shipped file remains on disk for historical reference but contributes nothing to the agent's working context.
+- **Prose-only convention in this Wave.** No lint rule, no install-time check enforces the precedence. Promotion to enforcement is triggered by **the 2nd consumer reporting a manual-override conflict** (e.g. an agent partially honoured both files and produced contradictory guidance). At that point a follow-up wave introduces a check (e.g. an `audit-ai-docs.sh` probe) that fails if both files exist and disagree.
+
+### Prior art
+
+Vocabulary adopted from three production patterns (see [prior-art-evaluations.md](docs/meta-factory/prior-art-evaluations.md) entries #11, #12, #15):
+
+- **ESLint shareable config `extends:`** (entry #11) — canonical "framework default + consumer override" composition; the consumer's `eslint.config.mjs` extends a shareable preset and last-write-wins for any rule.
+- **Tailwind CSS `presets`** (entry #12) — same compose-then-extend semantics; the consumer extends a preset and overrides locally.
+- **Codex `AGENTS.override.md`** (entry #15) — direct precedent for the `.override.md` suffix + wholesale-replacement primitive in cumulative-inheritance AI-doc ecosystems.
+
+The three-layer model maps onto these patterns: Layer 1 ≈ the shareable preset, Layer 2 ≈ the consumer's local config (the canonical extension point), Layer 3 ≈ the override primitive for wholesale replacement when in-place extension is insufficient.
+
+---
+
 ## Expected first-run failures (this is OK)
 
 After `bash install.sh` on a fresh project, these checks **fail intentionally** until you populate the project. Do NOT try to "fix" them by suppressing the rule:
