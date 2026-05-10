@@ -228,4 +228,38 @@ describe('Principle 9 — every authority-bearing doc declares Authoritative-for
     expect(hasAuthorityHeader(content)).toBe(false); // confirms fixture truly lacks header
     expect(isExempt(fixtureRel)).toBe(true); // confirms exemption is what hides it from violations
   });
+
+  // §13.21 Wave 4 / M1 — drift detection between install.sh SHIPPED_DOCS and
+  // the Wave 2 subset of REQUIRED_HEADER_DOCS (paths under packages/core/
+  // templates/shared/, packages/preset-next-15-canonical/, agents/). Both
+  // lists must remain identical: install.sh is the release-time check,
+  // principle 09 is the PR-time check; drift between them defeats Wave 3's
+  // purpose (catching header drift between PR-side and release-time copy).
+  it('§13.21 Wave 4 — install.sh SHIPPED_DOCS matches Wave 2 subset of REQUIRED_HEADER_DOCS', () => {
+    const installShPath = resolve(REPO_ROOT, 'install.sh');
+    expect(existsSync(installShPath)).toBe(true);
+    const installSh = readFile(installShPath);
+
+    const arrayMatch = installSh.match(/SHIPPED_DOCS=\(\s*([\s\S]*?)\s*\)/);
+    expect(arrayMatch, 'install.sh: SHIPPED_DOCS array not found').not.toBeNull();
+    const installShipped = arrayMatch![1]
+      .split('\n')
+      .map((line) => {
+        const stripped = line.replace(/^\s*#.*$/, '').trim();
+        const m = stripped.match(/^"([^"]+)"$/);
+        return m ? m[1] : '';
+      })
+      .filter(Boolean);
+
+    const WAVE_2_PREFIXES = [
+      'packages/core/templates/shared/',
+      'packages/preset-next-15-canonical/',
+      'agents/',
+    ];
+    const wave2Subset = REQUIRED_HEADER_DOCS.filter((p) =>
+      WAVE_2_PREFIXES.some((pref) => p.startsWith(pref)),
+    );
+
+    expect(new Set(installShipped)).toEqual(new Set(wave2Subset));
+  });
 });
