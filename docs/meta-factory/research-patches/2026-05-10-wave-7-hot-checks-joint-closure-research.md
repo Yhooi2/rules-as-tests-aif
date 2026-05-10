@@ -37,7 +37,7 @@ Probed (production-grade unified harness-hook + code-lint + doc-lint frameworks)
 | **pre-commit framework** (`/pre-commit/pre-commit.com`, v3.x 2026) | Git-lifecycle only (`pre-commit` / `pre-push` / `commit-msg` / `post-checkout` / `manual`). Language-agnostic stages; Python-driven hook orchestrator. **No** harness-hook (PostToolUse / on-save AI editor) integrations. | Partial — git-lifecycle primitive only |
 | **Trunk Code Quality** (`/trunk-io/docs`) | Universal `trunk check` for linters; integrated in git hooks + CI; supports doc + code lint composition. No harness-hook integration with AI editors. | Partial — composition primitive only |
 | **MegaLinter** (`/oxsecurity/megalinter`) | All-in-one Docker linter aggregator; ships ~50+ linters incl. markdown/YAML/code; runs in CI primarily. No harness-hook layer; no AI-editor integration. | Partial — CI-side composition only |
-| **Husky v9 + lint-staged** (already in stack) | Node-native git-hook orchestrator + staged-files filter. We use it. No doc-lint or harness-hook layer. | Partial — primitive we already use |
+| **Husky v9** (already in stack — via `make install-hooks` → `git config core.hooksPath .husky`; raw bash scripts, no npm dep) | Node-native git-hook orchestrator (raw bash). lint-staged is **NOT installed** — root `package.json` has only workspaces + npm-test/typecheck scripts; no lint-staged dep. No doc-lint or harness-hook layer. | Partial — git-lifecycle primitive we already use (Husky only) |
 | **Cursor Hook (community)** + **Cline hooks** + **Codex CLI hooks** + **Claude Code hooks** | Each editor ships its own PreToolUse/PostToolUse surface; **no** unifying framework composes them with code+doc lint in a single config. | Per-editor primitives, no unifier |
 
 **Build-vs-reuse honor (per [CLAUDE.md `Build-vs-reuse invariant`](../../../CLAUDE.md)):**
@@ -67,9 +67,11 @@ Per [phase-research-coverage.md §1.6](../../../.claude/rules/phase-research-cov
 | §13.9 (no-verify bypass) | STILL ARMED | **MEDIUM** — harness-hooks fire at editor write-time, before `git commit --no-verify` can bypass; partially closes §13.9 for write-time defects. |
 | §13.18 (AIF deep alignment) | STILL ARMED | LOW — AIF has no hook layer of its own (workflow framework over host runtime); hooks remain host-runtime concern. |
 | §13.22 (own-conventions evolution → L2 Research Agent) | STILL ARMED | LOW — Wave 7 doc-linting integrates with adopted-pattern drift surface; folded into L2 work later. |
-| §13.23 (4th-layer pre-push for §1.7) | STILL ARMED | **HIGH** — Wave 7 harness-hook could be (a) 5th layer **on top of** §13.23's proposed 4th pre-push layer, **or** (b) supersedes §13.23 as the better control point. Review-session decision required. |
+| §13.23 (4th-layer pre-push for §1.7) | STILL ARMED | **HIGH** — Wave 7 harness-hook could be (a) 5th layer **on top of** §13.23's proposed 4th pre-push layer, **or** (b) supersedes §13.23 as the better control point. Review-session decision required. NOTE: Wave 7's own sub-waves 7.1.b (lychee in pre-push) + 7.1.c (principle 09 changed-files) satisfy §13.23 trigger condition #3 (pre-push surface widening, per open-questions.md:412). Review session must frame decision sharply — trigger is firing now, not in some future Phase 10+. |
 | §13.21 (doc-authority L3 generated docs) | CLOSED 2026-05-09 | Parent of §13.27 (functional fitness of templates). |
 | §13.26 (cold-context audit) | CLOSED 2026-05-10 | Feeder — D-1 (UserPromptSubmit injection) and D-5 (probe adaptation) flow into Wave 7. |
+
+*STILL ARMED includes «deferred entries with armed trigger condition» (§13.18, §13.23). §13.22 is v1-shipped with L2 promotion deferred.*
 
 **ATTN — §13.23 cascade HIGH.** Review session must decide whether harness-hooks subsume §13.23's proposed 4th pre-push layer (eliminating the §13.23 work) or ship alongside as a parallel surface (different bypass profiles: harness-hook catches editor write-time; pre-push catches local-push bypass after `git commit --no-verify`).
 
@@ -81,7 +83,7 @@ Matrix: Stage × Tool × What-catches × Cost × Maturity × MUST/SHOULD/MAY.
 
 | Stage | Tool | Catches | Cost | Maturity | Verdict |
 |---|---|---|---|---|---|
-| Pre-commit (staged) | `lint-staged` + globs → ESLint/tsc/prettier | TS errors, lint, formatting | <2s | High (npm prod-grade) | **MUST** baseline (project ESLint config exists) |
+| Pre-commit (staged) | `lint-staged` + globs → ESLint/tsc/prettier | TS errors, lint, formatting | <2s | High (npm prod-grade) | **PRECONDITION for sub-wave 7.1** — lint-staged + root ESLint flat config are NOT yet installed; sub-wave 7.1 must bootstrap them OR ship bash-driven hot-check without lint-staged |
 | Pre-commit | `simple-git-hooks` / Husky v9 | hook orchestration | <100ms | High | **MUST** — Husky already installed ([.husky/](../../../.husky/)) |
 | Editor on-save | ESLint flat config + VSCode/IDE extension | TS/lint diagnostics inline | <1s | High | **SHOULD** — recommend in [INSTALL-FOR-AI.md](../../../INSTALL-FOR-AI.md) for consumers |
 | Build-time | `tsc --noEmit --watch`, `vitest --watch` | type drift, broken tests | continuous | High | **MAY** — author-side, not shipped to consumers |
@@ -134,7 +136,7 @@ Editor × Hook surface × Native? × Events × Blocking semantics × Maturity.
 
 → Proposed: **MUST** for project-side (Claude Code primary); **MAY** for consumer-side (editor-agnostic — we can ship only Claude Code variant as reference; consumers with Cursor/Cline/Codex port the logic themselves). Demote to **SHOULD** if review session decides «not load-bearing because §13.23 4th-pre-push covers same surface».
 
-**ATTN — Claude-first bias.** Project [README.md](../../../README.md) frames «AI agents (Claude, Cursor, Copilot, Aider) write plausible-looking code» as multi-editor; in practice this package ships only Claude Code skill ([.claude/skills/rules-as-tests/](../../../.claude/skills/rules-as-tests/)) and sub-agents ([.claude/agents/](../../../.claude/agents/)). Harness-hook proposal continues this de-facto bias; review session must explicitly acknowledge (multi-editor parity = consumer task, framework ships Claude Code reference only).
+**ATTN — Claude-first bias.** Project [README.md](../../../README.md) frames «AI agents (Claude, Cursor, Copilot, Aider) write plausible-looking code» as multi-editor. The framework's PRIMARY artefacts — [`skills/rules-as-tests/`](../../../skills/rules-as-tests/) and [`agents/`](../../../agents/) (best-practices-sidecar, docs-auditor, review-sidecar) — are harness-agnostic per AGENTS.md spec convention and exist at the repo root, not under `.claude/`. The Claude-first bias is narrower: it concentrates in `.claude/skills/self-reflection/` (Claude Code specific) and the harness-hook layer proposed in sub-wave 7.2 (PostToolUse / `settings.json` — Claude Code API). Multi-editor parity in those two narrow slots is the consumer task; review session must explicitly acknowledge this scope.
 
 ---
 
@@ -197,7 +199,7 @@ Per [phase-research-coverage.md §1.4](../../../.claude/rules/phase-research-cov
 | Doc-linting style conflicts with existing prose (Russian + English mixed) | MEDIUM | Vale config with `[*.{md}] BasedOnStyles = Vale` only (no Microsoft/Google jargon rules); whitelist project glossary. |
 | §13.28 trigger «2nd incident» ambiguity — what counts as incident | MEDIUM | Operationalise: «discovered defect in `.claude/orchestrator-prompts/*.md` that would have been caught by `validate-batch-spec.ts` had it run» (file:line + verification fingerprint required). |
 | Cursor Hook is community-built — upstream risk if community CLI dies | LOW | Document explicitly; do not use as load-bearing; reference only as «one option Cursor users may explore». |
-| §13.23 4th-layer pre-push competing with harness-hook 5th-layer | MEDIUM | Review session decision: either kill §13.23 (harness-hook subsumes) or ship both (different bypass surfaces). |
+| §13.23 4th-layer pre-push competing with harness-hook 5th-layer | MEDIUM | Review session decision: either kill §13.23 (harness-hook subsumes) or ship both (different bypass surfaces). NOTE: Wave 7's own sub-waves 7.1.b (lychee in pre-push) + 7.1.c (principle 09 changed-files) satisfy §13.23 trigger condition #3 (pre-push surface widening, per open-questions.md:412). Review session must frame decision sharply — trigger is firing now, not in some future Phase 10+. |
 
 ---
 
@@ -219,7 +221,7 @@ Append to [prior-art-evaluations.md](../prior-art-evaluations.md) after existing
 
 | ID | Candidate | Capability matched | Verdict | Rationale (≤500 chars; condensed for this preview — full text lands at write-time per commit T-7.5.b) |
 |---|---|---|---|---|
-| 16 | `pre-commit` framework (`/pre-commit/pre-commit.com`, v3.x 2026) | Multi-language git-hook orchestration | WATCHLIST | Production-grade Python-driven hook orchestrator; supports `pre-commit` + `pre-push` + `commit-msg` + `post-checkout` stages. Currently we use Husky+lint-staged (Node-native, simpler). pre-commit offers language-agnostic stages but adds Python dep. **Velocity: SLOW (~2yr major cadence).** Re-evaluate if consumer-side stack diversifies beyond Node OR Husky hits stage-matching limitations. |
+| 16 | `pre-commit` framework (`/pre-commit/pre-commit.com`, v3.x 2026) | Multi-language git-hook orchestration | WATCHLIST | Production-grade Python-driven hook orchestrator; supports `pre-commit` + `pre-push` + `commit-msg` + `post-checkout` stages. Currently we use Husky only (raw bash scripts via `make install-hooks`; lint-staged not yet installed). pre-commit offers language-agnostic stages but adds Python dep. **Velocity: SLOW (~2yr major cadence).** Re-evaluate if consumer-side stack diversifies beyond Node OR Husky hits stage-matching limitations. |
 | 17 | `markdownlint-cli2` (`/davidanson/markdownlint-cli2`, v0.x 2026) | Hot-check structure of docs (pre-commit) | ADOPT WHEN TRIGGERED | High-coverage Markdown linter; pre-commit hook + Docker image; CLI flag schema stable since 2024. ADOPT after Wave 7 review-session decision; ships in §11 sub-wave 7.1.a for «hot-check docs» Decision-matrix row. **Velocity: STABLE.** |
 | 18 | `vale` (`/errata-ai/vale`, v3.x 2026) | Prose style linting | DEFER | False-positive risk ≥30% on Russian+English mixed prose per §6. DEFER until corpus-replay evidence shows <10% FP rate. **Velocity: FAST (style packages evolve).** Trigger to revisit: 2nd documented doc-prose-drift incident that `markdownlint` cannot catch. |
 | 19 | `lychee` (`/lycheeverse/lychee`, Rust-based, 2026) | Async link integrity checking | ADOPT WHEN TRIGGERED | Production-grade fast async link checker; supports MD + HTML + .txt; offline-first via `--offline`. ADOPT after Wave 7 review; ships at pre-push stage in §11 sub-wave 7.1.b. **Velocity: MEDIUM.** |
@@ -264,6 +266,7 @@ Per [open-questions.md §13.8 4-criteria gate](../open-questions.md). Proposed r
 ## §11 Implementation outline (sub-waves)
 
 ### Sub-wave 7.1 — hot-check primitives (code + docs)
+- **Precondition**: install `lint-staged` + root ESLint flat config OR ship raw-bash hot-check variant (no lint-staged) — neither is currently in-stack.
 - **7.1.a**: `markdownlint-cli2` + `.markdownlint.json` (Decision row «Markdown structure»).
 - **7.1.b**: `lychee` in pre-push (`--offline`).
 - **7.1.c**: principle 09 changed-files mode (extract).
@@ -312,7 +315,7 @@ Per [open-questions.md §13.8 4-criteria gate](../open-questions.md). Proposed r
 
 Per [phase-research-coverage.md §1](../../../.claude/rules/phase-research-coverage.md).
 
-- **§1.1 own-stack sweep** — ✅ Husky / lint-staged / render-rules / principles already used by project; verified they appear in §1-§3 matrices as «existing». `pre-commit` framework NOT in stack — surfaced as SSOT #16 WATCHLIST. AIF dependency surveyed in §3 (no hook layer of its own).
+- **§1.1 own-stack sweep** — ✅ Husky (raw bash, no npm dep) / render-rules / principles already used by project; verified they appear in §1-§3 matrices as «existing». lint-staged is NOT in-stack (root `package.json` has no lint-staged dep — noted as PRECONDITION for sub-wave 7.1). `pre-commit` framework NOT in stack — surfaced as SSOT #16 WATCHLIST. AIF dependency surveyed in §3 (no hook layer of its own).
 - **§1.2 category sweep** — ✅ surveyed git-lifecycle frameworks (pre-commit, husky), all-in-one linters (megalinter, trunk), AI-harness hooks (Claude / Cursor / Cline / Codex / Aider / AIF), doc linters (markdownlint, vale, lychee), template render harnesses (cookiecutter, copier, hygen, plop, yeoman).
 - **§1.3 semantic-distance** — ✅ probed beyond «pre-commit framework» term to «harness-hook» (different paradigm: editor write-time vs git lifecycle) and «template render test» (different category: fixture testing vs template-output testing).
 - **§1.4 adversarial check** — ✅ counter-prompt «if a unified hot-check + harness-hook + doc-lint tool existed, where?» → trunk.io closest but does NOT include harness-hook layer. Confirms NULL result for O0.
@@ -340,4 +343,4 @@ Per [phase-research-coverage.md §1](../../../.claude/rules/phase-research-cover
 - **ATTN**:
   - Branch base is `wave-6/ai-doc-cold-audit` (not `main`) — Wave 6 closure not yet merged. Operator should merge Wave 6 → `main` before Wave 7 PR.
   - §13.23 cascade-HIGH: review session must decide harness-hook supersedes §13.23 OR ships in parallel.
-  - Project is Claude-first de facto though README implies multi-editor — Wave 7 amplifies this bias; explicit acknowledgement required in [INSTALL-FOR-AI.md](../../../INSTALL-FOR-AI.md) during sub-wave 7.2.
+  - Claude-first bias is real but narrower than a full-package claim: primary artefacts (`skills/rules-as-tests/`, `agents/`) are harness-agnostic at repo root; bias concentrates in `.claude/skills/self-reflection/` + the proposed harness-hook layer (sub-wave 7.2). Multi-editor parity in those two narrow slots = consumer task; explicit acknowledgement required in [INSTALL-FOR-AI.md](../../../INSTALL-FOR-AI.md) during sub-wave 7.2.
