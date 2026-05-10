@@ -318,6 +318,8 @@ Caveats: needs «first-prompt-only» state-tracking to avoid every-turn duplicat
 
 **Rank 1.** Closes Probe 2 FAIL; structurally helps Probe 6 if injection includes 5-layer link.
 
+**Cross-reference:** P-1 overlaps with [open-questions.md §13.28](../open-questions.md) (operator-side discipline / harness-level hooks as 5th enforcement layer) and falls under the [§13.8 Decision matrix expansion](../open-questions.md) mechanism. Per source prompt CLOSEOUT pointer — overlap noted, not absorbed into Wave 6 scope; Wave 7 (`.claude/orchestrator-prompts/wave-7-hot-checks-joint-closure/`) handles as atomic step.
+
 ### P-2 — CLAUDE.md links to README 5-layer framework + disambiguation (HIGH / LOW)
 
 Add to CLAUDE.md «Project goal pointer» or new «Framework structure» pointer: «Framework taxonomy: [README.md#the-5-layer-framework](README.md#the-5-layer-framework). Do NOT confuse with the 3-layer recursive self-application enforcement table below.» Companion update in [doc-authority-hierarchy.md](../../../.claude/rules/doc-authority-hierarchy.md) parallel-disciplines list (same disambiguation).
