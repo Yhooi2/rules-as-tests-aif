@@ -220,6 +220,16 @@ project/
 
 ---
 
+## Tool bootstrapping — MCP and skill recommendations at install time
+
+`setup.sh` Step 2d seeds `.ai-factory/tool-decisions.md` with a baseline entry for **context7** (the doc-fetching MCP that powers the `/aif-*` commands) and adds it to your `.mcp.json`. This file is **committed** — it serves as the team-shared record of which tools are accepted, rejected, or pending.
+
+The **`tool-bootstrapping`** skill (auto-loaded via `.claude/skills/tool-bootstrapping/SKILL.md`) extends this at runtime: when your `package.json` deps change, the UserPromptSubmit hook injects a one-line warning prompting re-evaluation. Use `/tool-bootstrapping` to trigger the full AIF `/aif` analysis → proposal → confirmation loop.
+
+Decision persistence schema: `.ai-factory/tool-decisions.md` — see `.claude/skills/tool-bootstrapping/references/decision-format.md` for the `deps-hash` frontmatter, `## Accepted` / `## Rejected` / `## Pending review` sections, and version-drift policy.
+
+---
+
 ## Three-layer authority for shipped artefacts
 
 Wave 4 of [§13.21](docs/meta-factory/open-questions.md) defines the authority model for files shipped by `install.sh` (templates, sub-agents, preset rules). Every consumer interaction with a shipped artefact happens at one of three layers:
