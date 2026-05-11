@@ -306,3 +306,4 @@ If a check fails for a reason not in this table — **stop and report**, do not 
 | Pre-commit hook | `git commit --allow-empty -m "test"` (in test branch) | Lint-staged runs |
 | Pre-push hook | `git push --dry-run` | Typecheck + tests + audit run |
 | `/aif-verify` works | in Claude Code: `/aif-verify` | best-practices-sidecar + review-sidecar + docs-auditor produce output |
+| Harness hooks active (Claude Code only) | `jq .hooks .claude/settings.json` | `UserPromptSubmit` + `PostToolUse` entries present (sub-wave 7.2.a/b/c) |
