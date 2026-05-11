@@ -97,6 +97,20 @@ export function isExempt(relPath: string): boolean {
   return EXEMPT_PATTERNS.some((re) => re.test(relPath));
 }
 
+/**
+ * Filter argv-style path list to entries that the rule cares about:
+ * - paths enumerated in REQUIRED_HEADER_DOCS (authority-bearing docs), OR
+ * - paths matching an EXEMPT_PATTERNS glob (fixtures intentionally headerless).
+ *
+ * Used by the CLI shim (sub-wave 7.1.c, M1 fix 2026-05-11) so PostToolUse hooks
+ * fired on non-doc edits (.ts/.json/package.json) no longer surface FAIL noise.
+ * Empty result → caller should exit 0 silently.
+ */
+export function selectRequiredPaths(paths: string[]): string[] {
+  const requiredSet = new Set<string>(REQUIRED_HEADER_DOCS);
+  return paths.filter((p) => requiredSet.has(p) || isExempt(p));
+}
+
 function readFile(p: string): string {
   return readFileSync(p, 'utf8');
 }

@@ -35,6 +35,7 @@ import {
   isExempt,
   hasAuthorityHeader,
   checkDocsHaveAuthorityHeader,
+  selectRequiredPaths,
 } from './09-doc-authority-hierarchy.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -173,6 +174,54 @@ describe('Principle 9 — every authority-bearing doc declares Authoritative-for
     const result = checkDocsHaveAuthorityHeader(['does-not-exist.md'], REPO_ROOT);
     expect(result.ok).toBe(false);
     expect(result.violations[0]?.reason).toContain('does not exist');
+  });
+
+  // M1 fix (Wave 7 Round 1 review 2026-05-11) — CLI shim filter contract:
+  // PostToolUse hook was firing FAIL noise on every Edit/Write of non-doc files
+  // (.ts, .json, package.json) because the bin shim passed argv straight to
+  // checkDocsHaveAuthorityHeader. Filter now lives in selectRequiredPaths and
+  // the bin shim consults it BEFORE the check. Tests describe the bin shim's
+  // observable behaviour via the extracted pure function.
+  it('bin shim: silently exits 0 when no paths match REQUIRED_HEADER_DOCS', () => {
+    // Non-doc paths like package.json / source files should be filtered out
+    // entirely — the bin shim's empty-filtered branch returns exit 0 silently.
+    const filtered = selectRequiredPaths([
+      'package.json',
+      'packages/core/principles/09-doc-authority-hierarchy.ts',
+      'unrelated/source.ts',
+    ]);
+    expect(filtered).toEqual([]);
+  });
+
+  it('bin shim: exits 1 when required doc missing header', () => {
+    // Required doc paths must survive the filter so checkDocsHaveAuthorityHeader
+    // can catch missing-header violations. selectRequiredPaths preserves them;
+    // checkDocsHaveAuthorityHeader (covered elsewhere) is what produces the
+    // FAIL stderr + exit 1 the bin shim emits.
+    const filtered = selectRequiredPaths([
+      'README.md',
+      'CLAUDE.md',
+      'docs/meta-factory/EXECUTION-PLAN.md',
+    ]);
+    expect(filtered).toEqual([
+      'README.md',
+      'CLAUDE.md',
+      'docs/meta-factory/EXECUTION-PLAN.md',
+    ]);
+    // Mutation arm: a fake required-shaped path stripped of header would FAIL
+    // (proves the filter does not muffle real violations).
+    const fakeContent = '# Fake required doc\n\nNo header.\n';
+    expect(hasAuthorityHeader(fakeContent)).toBe(false);
+  });
+
+  it('bin shim: exits 0 when exempt path passed', () => {
+    // Exempt fixture paths survive the filter (so callers can pass mixed lists)
+    // and then are skipped inside checkDocsHaveAuthorityHeader → no violation.
+    const exemptPath = 'packages/core/research/fixtures/drift/with-drift/skills/rules-as-tests/SKILL.md';
+    const filtered = selectRequiredPaths([exemptPath]);
+    expect(filtered).toEqual([exemptPath]);
+    const result = checkDocsHaveAuthorityHeader(filtered, REPO_ROOT);
+    expect(result.violations).toHaveLength(0);
   });
 
   it('EXEMPT_PATTERNS exported and matches known fixture paths', () => {

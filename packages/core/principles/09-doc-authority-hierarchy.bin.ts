@@ -7,11 +7,17 @@
  *     path/to/doc.md another/doc.md
  *
  * Reads paths from argv (relative to repo root = process.cwd()).
- * Prints violations to stderr; exits non-zero if any violation found.
+ * Filters to REQUIRED_HEADER_DOCS ∪ EXEMPT_PATTERNS — non-doc paths exit 0
+ * silently so PostToolUse hooks do not surface FAIL noise on .ts/.json edits.
+ * Prints violations to stderr; exits non-zero if any required-doc violation found.
  *
  * Wired into pre-push / harness-hook PostToolUse by sub-waves 7.2.c / 7.4.
  */
-import { checkDocsHaveAuthorityHeader } from './09-doc-authority-hierarchy.ts';
+import {
+  checkDocsHaveAuthorityHeader,
+  isExempt,
+  selectRequiredPaths,
+} from './09-doc-authority-hierarchy.ts';
 
 const paths = process.argv.slice(2);
 
@@ -20,7 +26,13 @@ if (paths.length === 0) {
   process.exit(0);
 }
 
-const result = checkDocsHaveAuthorityHeader(paths);
+const filtered = selectRequiredPaths(paths);
+
+if (filtered.length === 0) {
+  process.exit(0);
+}
+
+const result = checkDocsHaveAuthorityHeader(filtered);
 
 if (!result.ok) {
   for (const v of result.violations) {
@@ -29,5 +41,6 @@ if (!result.ok) {
   process.exit(1);
 }
 
-process.stdout.write(`OK  ${paths.length} path(s) checked — all have Authoritative-for header\n`);
+const requiredCount = filtered.filter((p) => !isExempt(p)).length;
+process.stdout.write(`OK  ${requiredCount} required path(s) checked — all have Authoritative-for header\n`);
 process.exit(0);
