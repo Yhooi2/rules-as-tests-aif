@@ -59,6 +59,7 @@ Self-application — **не отдельный шаг**, а cross-cutting invari
 | Manifest render drift | Hard fail (pre-push, scoped) | **SHOULD** | Drift между manifest.json и RULES.md — тот же класс «documents lie». Скоупировано на `*.json` + `*.md` diff. SHOULD: дорогостоящий typecheck. |
 | Spec validation (SHAs) | Soft warn (pre-commit, scoped) | **MAY** | GitHub API rate-limit, требует `gh auth login`. Soft warn, не hard fail: контрибьютор без токена не должен быть заблокирован. |
 | Framework-self-install | CI only | **MAY in CI** | ~30s, требует tmp-dir setup. Только CI: нет смысла запускать при каждом локальном push. MAY: не на критическом пути автора. |
+| *(preview — full row in 7.5.a)* Harness-hook layer (5th lifecycle stage, PostToolUse / UserPromptSubmit) | Real-time invariant enforcement at tool-call time (Claude Code only; cross-editor parity WATCHLIST per SSOT #21) | **SHOULD** (project-side) / **MAY** (consumer-side) | per §13.8 4-criteria gate: failure-cost HIGH (silent bypass at edit-time), local-cost LOW (session-bound, no CI), detectability MEDIUM (hook fires post-tool, not pre-commit), lifecycle-stage 5 (edit-time). Full row with rationale and promote-to-MUST trigger lands in sub-wave 7.5.a. |
 
 ---
 
@@ -66,7 +67,7 @@ Self-application — **не отдельный шаг**, а cross-cutting invari
 
 **Template path vs runtime path:**
 
-```
+```text
 templates/shared/husky-pre-commit.sh   ← автор видит как ШАБЛОН
                ↓ install.sh копирует в потребителя
 .husky/pre-commit                        ← потребитель видит как СВОЙ hook

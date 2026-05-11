@@ -42,7 +42,7 @@ cd /tmp/rules-as-tests-aif
 
 ## Quick install — copy-paste prompt
 
-```
+```text
 Install rules-as-tests-aif into this project. Follow these steps exactly:
 
 1. Verify prerequisites:
@@ -101,7 +101,7 @@ After all this, tell me:
 
 After running the prompt, the AI should give you a structured summary like:
 
-```
+```text
 ✓ Installed: 27 files
   - 3 sub-agents in .claude/agents/
   - 5 reference docs in .ai-factory/references/
@@ -127,7 +127,7 @@ To verify: npm run validate && npm run audit:docs
 
 If the AI reports errors during setup, copy this follow-up prompt:
 
-```
+```text
 The setup encountered issues. Please:
 
 1. Show me the full error output (don't summarize, paste raw output).
@@ -178,7 +178,7 @@ npm run audit:docs
 
 After successful setup, your project has:
 
-```
+```text
 project/
 ├── AGENTS.md                          ← copied from templates/shared/AGENTS.md.template (edit)
 ├── CLAUDE.md                          ← optional, points to AGENTS.md
@@ -254,6 +254,26 @@ Vocabulary adopted from three production patterns (see [prior-art-evaluations.md
 - **Codex `AGENTS.override.md`** (entry #15) — direct precedent for the `.override.md` suffix + wholesale-replacement primitive in cumulative-inheritance AI-doc ecosystems.
 
 The three-layer model maps onto these patterns: Layer 1 ≈ the shareable preset, Layer 2 ≈ the consumer's local config (the canonical extension point), Layer 3 ≈ the override primitive for wholesale replacement when in-place extension is insufficient.
+
+---
+
+## Harness-hook layer and AI-assisted workflow requirements
+
+### Editor coupling (Claude Code only)
+
+The **harness-hook layer** (5th lifecycle stage) ships as `.claude/settings.json` hooks (`UserPromptSubmit`, `PostToolUse`). This layer is **Claude Code-specific**: hooks are executed by the Claude Code harness and have no equivalent in the current shipped artefacts for Cursor, Cline, or Codex. Cross-editor parity for this layer stays on the WATCHLIST pending cross-editor hook-API convergence — see [prior-art-evaluations.md SSOT #21](docs/meta-factory/prior-art-evaluations.md) (verdict: WATCHLIST — «cross-editor hook-API divergence; revisit when Cursor/Cline ship stable PostToolUse-equivalent»).
+
+**What this means for consumers:**
+- If you run Claude Code: `PostToolUse` and `UserPromptSubmit` hooks activate automatically on install.
+- If you run Cursor, Cline, or Codex: hooks are inert; you still get layers 1-4 (pre-commit, pre-push, CI, skills). No functionality is lost for those layers.
+
+### Subscription requirement
+
+AI-assisted workflows require a Claude Code subscription:
+
+> **AI-assisted workflows (PostToolUse hook validation, local advisory skills) require Claude Code subscription.** The harness-hook layer and session-bound skills (e.g. `self-reflection`, `rules-as-tests`) run inside your active Claude Code session — covered by the subscription bundle, zero per-token cost. They do not run in CI and do not call the Anthropic API independently. See [docs/meta-factory/research-patches/2026-05-11-llm-usage-audit.md §5](docs/meta-factory/research-patches/2026-05-11-llm-usage-audit.md) for the full cost classification (FREE / PAID-CI / HYBRID / N/A per touchpoint).
+
+Consumers without a Claude Code subscription: deterministic layers (pre-commit, pre-push, CI jobs) work without any subscription. Only session-bound features are affected.
 
 ---
 
