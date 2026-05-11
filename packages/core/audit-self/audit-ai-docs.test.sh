@@ -170,6 +170,28 @@ EOF
   rm -rf "$d"
 }
 
+# ─── D4: tool-decisions.md staleness (warns, not fails) ──────────────
+# D4 emits WARN when .ai-factory/tool-decisions.md is absent despite package.json.
+# Checks exit 0 (WARN does not fail) + "WARN" in output.
+test_D4() {
+  should_skip D4 && return 0
+  local d; d=$(new_workdir); enter "$d"
+  # Create package.json without tool-decisions.md → should WARN
+  printf '{"name":"test","dependencies":{},"devDependencies":{}}\n' > package.json
+  local out
+  out=$(bash "$AUDIT_SH" --only=D4 2>&1)
+  local rc=$?
+  if [ $rc -eq 0 ] && echo "$out" | grep -q "^WARN"; then
+    echo -e "${GREEN}PASS${NC}: D4 — WARN correctly emitted on missing tool-decisions.md"
+    PASS=$((PASS + 1))
+  else
+    echo -e "${RED}FAIL${NC}: D4 — expected WARN (exit 0). Got rc=$rc:"
+    echo "$out" | sed 's/^/      /'
+    FAIL=$((FAIL + 1))
+  fi
+  rm -rf "$d"
+}
+
 # ─── React-Next probes ───────────────────────────────────────────
 # R12, R14, R20 are now enforced by ESLint (rules-as-tests plugin):
 #   R12 → no-restricted-globals + no-server-imports-in-client
@@ -204,6 +226,7 @@ test_R4
 test_R4_partial
 test_D1
 test_D2
+test_D4
 test_R17
 
 echo ""

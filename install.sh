@@ -192,6 +192,38 @@ else
   echo "  ✓ .claude/skills/tool-bootstrapping/"
 fi
 
+# ─── 1b. Hooks ──────────────────────────────────────────
+echo "▶ Claude hooks → .claude/hooks/"
+mkdir_safe "$PROJECT_ROOT/.claude/hooks"
+HOOK_SRC="$PKG_ROOT/packages/core/hooks/deps-hash-check.sh"
+HOOK_DST="$PROJECT_ROOT/.claude/hooks/deps-hash-check.sh"
+if [ -f "$HOOK_SRC" ]; then
+  copy_safe "$HOOK_SRC" "$HOOK_DST"
+  chmod_safe +x "$HOOK_DST" 2>/dev/null || true
+fi
+
+# Register hook in .claude/settings.json (create minimal file if absent)
+SETTINGS="$PROJECT_ROOT/.claude/settings.json"
+HOOK_CMD="bash .claude/hooks/deps-hash-check.sh"
+if [ "$DRY_RUN" = "--dry-run" ]; then
+  echo "  [dry-run] would: register deps-hash-check in .claude/settings.json"
+elif [ ! -f "$SETTINGS" ]; then
+  printf '{\n  "hooks": {\n    "UserPromptSubmit": [\n      {"hooks": [{"type": "command", "command": "%s"}]}\n    ]\n  }\n}\n' "$HOOK_CMD" > "$SETTINGS"
+  echo "  ✓ .claude/settings.json created with UserPromptSubmit hook"
+elif command -v jq >/dev/null 2>&1; then
+  if ! grep -q "deps-hash-check" "$SETTINGS" 2>/dev/null; then
+    jq --arg cmd "$HOOK_CMD" \
+      '.hooks.UserPromptSubmit += [{"hooks":[{"type":"command","command":$cmd}]}]' \
+      "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
+    echo "  ✓ deps-hash-check registered in existing .claude/settings.json"
+  else
+    echo "  ⊝ .claude/hooks/deps-hash-check.sh already registered in settings.json"
+  fi
+else
+  echo "  ⚠ jq not found — add manually to .claude/settings.json:"
+  echo "    UserPromptSubmit: [{\"hooks\":[{\"type\":\"command\",\"command\":\"$HOOK_CMD\"}]}]"
+fi
+
 # ─── 2. Sub-agents ──────────────────────────────────────
 echo "▶ Sub-agents → .claude/agents/"
 mkdir_safe "$PROJECT_ROOT/.claude/agents"

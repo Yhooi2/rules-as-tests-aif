@@ -2,6 +2,7 @@
 
 > **Authoritative for:** human-driven installation paths (A/B/C), per-path step-by-step instructions, version verification procedure, post-install validation steps.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](README.md#why-this-exists). AI-driven installation — see [INSTALL-FOR-AI.md](INSTALL-FOR-AI.md). Quick start (recommended path) — see [README.md#installation](README.md#installation).
+> - Tool bootstrapping (MCP/skill seeding at install time): see [INSTALL-FOR-AI.md — Tool bootstrapping](INSTALL-FOR-AI.md#tool-bootstrapping--mcp-and-skill-recommendations-at-install-time).
 
 Three ways to install. Pick one.
 
@@ -288,7 +289,7 @@ npm run audit:docs
 ```
 
 Try a sample sub-agent invocation in Claude Code:
-```
+```text
 /aif-verify
 ```
 
@@ -326,7 +327,7 @@ Make sure `.nvmrc` is committed (`git add -f .nvmrc`).
 
 ## What was installed — quick reference
 
-```
+```text
 your-project/
 ├── .claude/
 │   ├── skills/rules-as-tests/        ← skill (auto-activates)

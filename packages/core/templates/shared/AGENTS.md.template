@@ -61,6 +61,7 @@ This project uses **AI Factory (aif)** for spec-driven development.
 The following skills auto-activate on relevant queries:
 
 - **`rules-as-tests`** — five-layer framework (architecture / meta-tests / spec by example / mutation / living docs). Auto-triggers on questions about ESLint, Stryker, Pact, dependency-cruiser, AI-driven code drift.
+- **`tool-bootstrapping`** — when project deps change, analyses stack for MCP/skill fit, proposes a confirmation list, persists accepted/rejected decisions in `.ai-factory/tool-decisions.md`. Auto-triggers on MCP, skill-discovery, bootstrapping, and tool-decision queries.
 
 Add additional project skills here as you create them. Don't list a skill until its file is committed (see ai-traps.md, lesson #2).
 

@@ -252,6 +252,61 @@ if [ "$STACK" = "react-next" ]; then
   fi
 fi
 
+# ───── Tool-bootstrapping baseline ─────
+header "Step 2d/5 — Tool-bootstrapping baseline"
+
+cd "$PROJECT_DIR"
+
+# Seed .ai-factory/tool-decisions.md if not present
+TOOL_DECISIONS="$PROJECT_DIR/.ai-factory/tool-decisions.md"
+if [ -f "$TOOL_DECISIONS" ]; then
+  log ".ai-factory/tool-decisions.md already exists — skipping baseline seed"
+else
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "[dry-run] would: create .ai-factory/tool-decisions.md from template"
+  else
+    TEMPLATE="$PKG_DIR/skills/tool-bootstrapping/templates/tool-decisions.md.template"
+    if [ -f "$TEMPLATE" ]; then
+      mkdir -p "$PROJECT_DIR/.ai-factory"
+      cp "$TEMPLATE" "$TOOL_DECISIONS"
+      # Stamp current deps-hash into frontmatter if package.json exists
+      if [ -f package.json ] && command -v sha256sum >/dev/null 2>&1; then
+        DEPS_JSON=$(node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log(JSON.stringify({...p.dependencies,...p.devDependencies}))" 2>/dev/null || echo "{}")
+        HASH=$(printf '%s' "$DEPS_JSON" | sha256sum | awk '{print $1}')
+        sed -i.bak "s|deps-hash: .*|deps-hash: sha256-${HASH}|" "$TOOL_DECISIONS" && rm -f "${TOOL_DECISIONS}.bak"
+      elif [ -f package.json ] && command -v shasum >/dev/null 2>&1; then
+        DEPS_JSON=$(node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log(JSON.stringify({...p.dependencies,...p.devDependencies}))" 2>/dev/null || echo "{}")
+        HASH=$(printf '%s' "$DEPS_JSON" | shasum -a 256 | awk '{print $1}')
+        sed -i.bak "s|deps-hash: .*|deps-hash: sha256-${HASH}|" "$TOOL_DECISIONS" && rm -f "${TOOL_DECISIONS}.bak"
+      fi
+      ok ".ai-factory/tool-decisions.md seeded with context7 baseline"
+    else
+      warn "Template not found at $TEMPLATE — skipping tool-decisions.md seed"
+    fi
+  fi
+fi
+
+# Add context7 to .mcp.json if not already configured
+MCP_JSON="$PROJECT_DIR/.mcp.json"
+if [ -f "$MCP_JSON" ] && grep -q "context7" "$MCP_JSON" 2>/dev/null; then
+  log ".mcp.json already has context7 — skipping"
+elif [ "$DRY_RUN" = "1" ]; then
+  echo "[dry-run] would: add context7 to .mcp.json"
+else
+  if command -v jq >/dev/null 2>&1; then
+    if [ -f "$MCP_JSON" ]; then
+      jq '.mcpServers["context7"] = {"command": "npx", "args": ["-y", "@upstash/context7-mcp@latest"]}' \
+        "$MCP_JSON" > "$MCP_JSON.tmp" && mv "$MCP_JSON.tmp" "$MCP_JSON"
+    else
+      echo '{"mcpServers":{"context7":{"command":"npx","args":["-y","@upstash/context7-mcp@latest"]}}}' > "$MCP_JSON"
+    fi
+    ok "context7 added to .mcp.json"
+  else
+    warn "jq not found — add context7 to .mcp.json manually:"
+    echo '  "mcpServers": { "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@latest"] } }'
+  fi
+fi
+
 # ───── 5. npm dev dependencies ─────
 if [ "$SKIP_DEPS" = false ]; then
   header "Step 3/5 — Installing dev dependencies"

@@ -21,6 +21,7 @@
 #   D1 Skills declared exist     → probe_D1
 #   D2 No TODO in JSON configs   → probe_D2
 #   D3 Goal-phrase parity        → probe_D3 (sub-wave 7.1.d)
+#   D4 Tool-decisions staleness  → probe_D4
 #
 # Exit codes:
 #   0 — all probes PASS (WARN allowed)
@@ -179,6 +180,35 @@ if skip_unless D3; then : ; else
   else
     fail "$RULE"
     echo "$D3_VIOL"
+  fi
+fi
+
+# ────────────────────────────────────────────────────────────────────────
+# D4 — Tool-bootstrapping staleness: .ai-factory/tool-decisions.md mtime ≤ package.json mtime
+# WARN only (not FAIL): tool-decisions.md may not exist on fresh installs.
+#
+# Fires WARN when:
+#   (a) .ai-factory/tool-decisions.md exists AND package.json is newer, OR
+#   (b) package.json exists AND .ai-factory/tool-decisions.md is absent
+#       (reminds operator to run initial tool-bootstrap)
+#
+# Skipped silently when: no package.json in cwd (non-Node project).
+# ────────────────────────────────────────────────────────────────────────
+if skip_unless D4; then : ; else
+  RULE="D4 (drift): .ai-factory/tool-decisions.md up-to-date with package.json"
+  if [ ! -f package.json ]; then
+    pass "$RULE (no package.json — skipped)"
+  elif [ ! -f .ai-factory/tool-decisions.md ]; then
+    warn "$RULE — .ai-factory/tool-decisions.md missing; run setup.sh or /tool-bootstrapping to seed"
+  else
+    # Compare mtimes: if package.json is strictly newer → stale
+    PKG_MTIME=$(stat -c %Y package.json 2>/dev/null || stat -f %m package.json 2>/dev/null || echo 0)
+    DEC_MTIME=$(stat -c %Y .ai-factory/tool-decisions.md 2>/dev/null || stat -f %m .ai-factory/tool-decisions.md 2>/dev/null || echo 1)
+    if [ "$PKG_MTIME" -gt "$DEC_MTIME" ]; then
+      warn "$RULE — package.json is newer than tool-decisions.md; run /tool-bootstrapping to re-evaluate"
+    else
+      pass "$RULE"
+    fi
   fi
 fi
 
