@@ -449,9 +449,9 @@ This is feature scope (Phase 9.x or 10.x), not goal-hierarchy fix. Shipping L3 i
 
 **Cross-references:** [research-patches/2026-05-09-§13.21-l3-self-review.md](research-patches/2026-05-09-§13.21-l3-self-review.md) §«H7 candidate observation» + §«H8 update» — sample data + sub-case enumeration; [research-patches/2026-05-09-§13.21-l3-revision.md](research-patches/2026-05-09-§13.21-l3-revision.md) — second-occurrence exemplar of §1.7 (parent rule); [PR #20 «Process retrospective» section](https://github.com/Yhooi2/rules-as-tests-aif/pull/20) — narrative context for additional sub-case (b) instances; [`.claude/rules/phase-research-coverage.md §3 aggregation`](../../.claude/rules/phase-research-coverage.md) — 3-patch threshold mechanism.
 
-### 13.25 Project-Aware Tool Bootstrapping (armed — Wave 5 research)
+### 13.25 Project-Aware Tool Bootstrapping (armed — research merged 2026-05-10, review GO 2026-05-10 m2, implementation pending)
 
-**Status:** armed 2026-05-10. Surfaced in chat between user and assistant as alternative to push-based MCP delivery via `install.sh`. Captured for systematic investigation in a dedicated Wave 5 research session before any implementation.
+**Status:** armed 2026-05-10 → research merged 2026-05-10 ([`research-patches/2026-05-10-§13.25-tool-bootstrapping-research.md`](research-patches/2026-05-10-§13.25-tool-bootstrapping-research.md), 486 lines) → review GO 2026-05-10 with m2 carry-forward (recorded in operator-side kickoff §1, gitignored) → implementation pending. **2026-05-11:** post-Wave-7 readiness review surfaced 1× BLOCKER (SSOT ID #16-#21 collision with Wave 7's existing #16-#26) + 2× MAJOR (this status update + Wave 7 infra refs in kickoff) — closed in current commit: research §10 SSOT IDs remap'ed #16-#21 → #27-#32, kickoff m2 Windsurf #22 → #33 (gitignored, local-only). Surfaced in chat between user and assistant as alternative to push-based MCP delivery via `install.sh`. Captured for systematic investigation in a dedicated Wave 5 research session before any implementation.
 
 **Origin:** user-stated frame (verbatim, do not paraphrase):
 
