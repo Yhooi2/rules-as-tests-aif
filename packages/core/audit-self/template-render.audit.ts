@@ -37,11 +37,13 @@ const consumerDirs: Record<Stack, string> = { 'ts-server': '', 'react-next': '' 
 // Phrases from installed templates that express the framework's core goal:
 // «every rule is an executable test that fails the build when violated».
 // Source: packages/core/templates/shared/AGENTS.md.template (lines 13, 57).
-// Verbatim goal phrase from README is not in templates; these synonyms are
-// the documented paraphrase variants that actually appear in rendered output.
+// Three-source coverage: two paraphrase variants currently in templates +
+// verbatim README phrase for forward-compatible drift detection if templates
+// are updated to mirror README more closely (m1, Wave 7 Round 1 review).
 const GOAL_PHRASE_SYNONYMS = [
   'enforced by lint, tests, CI',       // AGENTS.md.template §"Project rules" header
   'without a measurable check',         // AGENTS.md.template §Forbidden list
+  "AI agents can't silently bypass undocumented conventions",  // verbatim README#why-this-exists (m1)
 ];
 
 // ── P4: authority header regex ───────────────────────────────────────────
