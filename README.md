@@ -249,7 +249,10 @@ ai-factory extension update rules-as-tests-aif      # Path A
 
 ## License
 
-MIT. Use, fork, adapt freely.
+Proprietary — All Rights Reserved. See [LICENSE.md](LICENSE.md) for full terms.
+
+Internal use and non-commercial research are permitted. Commercial use that competes
+with or substitutes this software requires a commercial license — contact the author.
 
 ## Inspirations & sources
 
