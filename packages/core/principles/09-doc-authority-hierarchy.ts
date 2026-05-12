@@ -45,6 +45,7 @@ export const REQUIRED_HEADER_DOCS: readonly string[] = [
   'docs/meta-factory/principles-as-tests.md',
   'docs/meta-factory/aif-comparison.md',
   'docs/meta-factory/open-questions.md',
+  'docs/meta-factory/closed-questions.md',
   'docs/meta-factory/prior-art-evaluations.md',
   'docs/meta-factory/acceptance-tests.md',
   'docs/meta-factory/core-stability.md',

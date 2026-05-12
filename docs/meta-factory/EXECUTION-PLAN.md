@@ -69,7 +69,7 @@
 | CI-as-self-test | `audit-self.yml` 4 jobs | framework-self-install (E2E проверка install.sh+setup.sh) | Регрессии в installer обнаруживаются consumer'ом |
 
 **Эпистемологический разрыв:**
-```
+```text
 templates/shared/husky-pre-commit.sh  ← author видит как ШАБЛОН
                 ↓ install.sh копирует
 .husky/pre-commit                       ← consumer видит как СВОЙ pre-commit hook
@@ -165,7 +165,7 @@ Self-application — **не отдельный шаг**, а cross-cutting invari
 
 ## 4. Архитектура (краткая, детали в PROPOSAL.md §2)
 
-```
+```text
 [invariant core: принципы] + [detected stack] + [research] → [generated rules-as-tests]
                                                                   ↑
                                   [self-validation by core principles]
@@ -464,7 +464,7 @@ git reset HEAD~1 --hard
 - Self-application score: 9/10
 - Risk: gh api зависит от auth token — fallback для контрибьюторов без `gh auth login`?
 
-> **2026-05-10 reconciliation note:** Phase 1.C was implemented in [`.husky/pre-push`](../../.husky/pre-push) §6 block, BUT `.claude/orchestrator-prompts/` was subsequently gitignored (rationale: operator-side prompts hold session-specific context not for upstream). This makes the hook block dormant on the main path — fires only as defensive guard for force-added files past gitignore. Discipline mechanism formally exists but is structurally bypassed. Tracked as [open-questions §13.28](open-questions.md) with default closure path: non-git `make validate-prompts` target (advisory). Surface as Phase 11+ work after Wave 5 + Wave 6 close.
+> **2026-05-10 reconciliation note:** Phase 1.C was implemented in [`.husky/pre-push`](../../.husky/pre-push) §6 block, BUT `.claude/orchestrator-prompts/` was subsequently gitignored (rationale: operator-side prompts hold session-specific context not for upstream). This makes the hook block dormant on the main path — fires only as defensive guard for force-added files past gitignore. Discipline mechanism formally exists but is structurally bypassed. Tracked as [closed-questions §13.28](closed-questions.md) with default closure path: non-git `make validate-prompts` target (advisory). Surface as Phase 11+ work after Wave 5 + Wave 6 close.
 
 #### Phase 1 итоговая retrospective
 
