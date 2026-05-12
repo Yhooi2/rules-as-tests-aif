@@ -1,5 +1,10 @@
 # rules-as-tests-aif
 
+[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE.md)
+[![Discipline Self-Check](https://github.com/Yhooi2/rules-as-tests-aif/actions/workflows/discipline-self-check.yml/badge.svg?branch=main)](https://github.com/Yhooi2/rules-as-tests-aif/actions/workflows/discipline-self-check.yml)
+[![Audit Self](https://github.com/Yhooi2/rules-as-tests-aif/actions/workflows/audit-self.yml/badge.svg?branch=main)](https://github.com/Yhooi2/rules-as-tests-aif/actions/workflows/audit-self.yml)
+[![Workflow Integrity](https://github.com/Yhooi2/rules-as-tests-aif/actions/workflows/workflow-integrity.yml/badge.svg?branch=main)](https://github.com/Yhooi2/rules-as-tests-aif/actions/workflows/workflow-integrity.yml)
+
 > AI Factory extension that converts every codebase rule into an executable test that fails the build when violated. Includes AI documentation audit (drift detection + code-vs-docs probes), 5-layer enforcement framework, and ready-to-use configs for both server-side TypeScript and React/Next.js stacks.
 
 ## What this package gives you
