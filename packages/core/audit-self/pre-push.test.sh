@@ -182,7 +182,34 @@ This commit has no reference to the discipline check whatsoever."
   [ "$rc" -eq 1 ] && pass "body_prose_no_mention (rc=1 on body without §1.7)" \
     || fail "body_prose_no_mention: expected rc=1, got $rc"
 }
-# 14. §7 pa_check_trailer: same mechanism — pre-cutoff commits bypass the Prior-art check.
+# Wave 9.4 refinement: §1.7 regex tightened with (^|[^/])§1\.7 to exclude URL/path
+# embeddings. The discourse case stays caught; URL-only mentions no longer fire.
+# 14. URL false-positive excluded: body with §1.7 only inside a URL path → exit 1
+# (current behavior preserved — equivalent to "no §1.7 mention" since URL is not
+# discourse).
+test_s17_body_prose_url_excluded() {
+  export MOCK_BODY="feat(test): dummy
+
+See https://example.com/rules/§1.7-spec for the canonical definition."
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 1 ] && pass "body_prose_url_excluded (rc=1 on §1.7 inside URL only)" \
+    || fail "body_prose_url_excluded: expected rc=1, got $rc"
+}
+# 15. Punctuation-preceded §1.7 still caught: body with §1.7 after non-slash punctuation
+# (e.g. period, parenthesis) still fires as theatre-shaped prose → exit 2.
+test_s17_body_prose_punctuation_caught() {
+  export MOCK_BODY="feat(test): dummy
+
+Discipline applied.§1.7 forward and backward checks done."
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 2 ] && pass "body_prose_punctuation_caught (rc=2 on §1.7 after non-slash punctuation)" \
+    || fail "body_prose_punctuation_caught: expected rc=2, got $rc"
+}
+# 16. §7 pa_check_trailer: same mechanism — pre-cutoff commits bypass the Prior-art check.
 test_pa_historical_cutoff() {
   export MOCK_BODY="2026-05-01 00:00:00 +0000"
   local rc=0; pa_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
@@ -204,6 +231,8 @@ test_s17_body_prose_negative
 test_s17_body_prose_positive
 test_s17_body_prose_bootstrap_unaffected
 test_s17_body_prose_no_mention
+test_s17_body_prose_url_excluded
+test_s17_body_prose_punctuation_caught
 test_pa_historical_cutoff
 echo ""; echo "$PASS pass / $FAIL fail"
 [ "$FAIL" -eq 0 ] || exit 1; exit 0
