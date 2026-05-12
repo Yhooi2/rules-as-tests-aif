@@ -55,13 +55,23 @@ enter() {
 
 assert_fails() {
   # Runs the audit script with --only=$1; injected violation must produce exit 1.
-  # Skips noiselessly if probe filter ($only-id) doesn't match.
+  # Optional $3: grep-E pattern that must appear in output — confirms probe caught
+  # the *specific* violation, not an unrelated error (syntax crash, missing binary, etc.).
+  # Back-compat: callers passing 2 args behave as before.
   local probe="$1"
   local script="$2"
-  bash "$script" --only="$probe" >/dev/null 2>&1
-  local rc=$?
+  local expected_pattern="${3:-}"
+  local out rc
+  out=$(bash "$script" --only="$probe" 2>&1)
+  rc=$?
   if [ "$rc" -ne 1 ]; then
     echo -e "${RED}FAIL${NC}: $probe — expected exit 1, got $rc"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+  if [ -n "$expected_pattern" ] && ! echo "$out" | grep -qE "$expected_pattern"; then
+    echo -e "${RED}FAIL${NC}: $probe — exit 1 but output missing pattern '$expected_pattern'. Got:"
+    echo "$out" | sed 's/^/      /'
     FAIL=$((FAIL + 1))
     return 1
   fi
@@ -144,7 +154,7 @@ test_D1() {
 Use skill `phantom-skill` for X.
 EOF
   # No .claude/skills/phantom-skill/ → drift
-  assert_fails D1 "$AUDIT_SH"
+  assert_fails D1 "$AUDIT_SH" "phantom-skill"
   rm -rf "$d"
 }
 
@@ -182,7 +192,7 @@ test_D3() {
     > .claude/session-bootstrap.md
   # CLAUDE.md stripped of canonical phrase or synonym → triggers D3 FAIL
   printf '# Claude Guide\n\nSome content without the goal phrase.\n' > CLAUDE.md
-  assert_fails D3 "$AUDIT_SH"
+  assert_fails D3 "$AUDIT_SH" "CLAUDE\.md"
   rm -rf "$d"
 }
 
