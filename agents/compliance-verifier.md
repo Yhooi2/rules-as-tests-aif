@@ -38,7 +38,7 @@ The §1.7 Forward-check must demonstrate that **each applicable discipline layer
 | **Principles 01-N** | `packages/core/principles/02-paired-negative-test.test.ts:82 — mutation arm present` | «principles checked» with no test file ref |
 | **Capability-commit gate** | `CLAUDE.md:45-57 — this commit adds agents/, not packages/; gate does not fire` | «no new capability» with no reference to the gate definition |
 | **Build-vs-reuse SSOT** | `docs/meta-factory/prior-art-evaluations.md:105 — row #38 added in this commit` | «SSOT consulted» with no row number |
-| **Trigger sweep** | `open-questions.md §13.29 FIRED (this research) — classified in §0.1` | «triggers swept» with no §13.x classification |
+| **Trigger sweep** | `closed-questions.md §13.29 FIRED (this research) — classified in §0.1` | «triggers swept» with no §13.x classification |
 | **Doc-authority** | `agents/compliance-verifier.md:8 — Authoritative-for header present` | «doc-authority compliant» with no per-file verification |
 
 **Flag REVISE** if any applicable layer is addressed with generic prose only (no `file:line` or no concrete N/A justification of the form «no TS files — confirmed by `git diff --name-only` output above»).

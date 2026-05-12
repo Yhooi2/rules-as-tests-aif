@@ -10,7 +10,7 @@ description: Use when analysing project stack for MCP or skill recommendations, 
 
 ## Why this skill exists
 
-When an AI agent first encounters a project, it has no knowledge of which MCP servers or skills would help it work effectively with that project's stack. Without a codified discipline, agents either (a) load every possible tool (token waste), (b) load none (capability gap), or (c) propose tools ad-hoc without persistence (re-proposal every session). This skill codifies the six-rule loop from [open-questions.md §13.25](../../../docs/meta-factory/open-questions.md) that solves all three failure modes.
+When an AI agent first encounters a project, it has no knowledge of which MCP servers or skills would help it work effectively with that project's stack. Without a codified discipline, agents either (a) load every possible tool (token waste), (b) load none (capability gap), or (c) propose tools ad-hoc without persistence (re-proposal every session). This skill codifies the six-rule loop from [closed-questions.md §13.25](../../../docs/meta-factory/closed-questions.md) that solves all three failure modes.
 
 ## The 6 rules
 

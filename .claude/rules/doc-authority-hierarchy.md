@@ -14,7 +14,7 @@ This rule formalises **doc-authority hierarchy** as a project invariant, paralle
 - decision-level discipline (Prior-art trailers + SSOT)
 - search-level discipline ([phase-research-coverage.md](phase-research-coverage.md))
 
-The rule applies to **(a)** canonical project-internal docs and **(b)** shipped consumer-facing artefacts copied to consumer projects via `install.sh` (framework templates, preset rules + arch, sub-agent prompts — see canonical list in [`packages/core/principles/09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) `REQUIRED_HEADER_DOCS`). Compliance for **runtime-generated** consumer docs (e.g. `RULES.md` produced by AI-driven recipes, not static-copied) remains deferred per [open-questions.md §13.21](../../docs/meta-factory/open-questions.md) — that surface is L3 work for Phase 11+.
+The rule applies to **(a)** canonical project-internal docs and **(b)** shipped consumer-facing artefacts copied to consumer projects via `install.sh` (framework templates, preset rules + arch, sub-agent prompts — see canonical list in [`packages/core/principles/09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) `REQUIRED_HEADER_DOCS`). Compliance for **runtime-generated** consumer docs (e.g. `RULES.md` produced by AI-driven recipes, not static-copied) remains deferred per [closed-questions.md §13.21](../../docs/meta-factory/closed-questions.md) — that surface is L3 work for Phase 11+.
 
 ## §1 Problem this solves
 
@@ -33,7 +33,7 @@ Conflicting authority claims become detectable at review time and at session-sta
 - Operational reference docs under `docs/meta-factory/*.md` (excluding the transient-by-naming subset below)
 - Skill primary docs + cold references: `skills/*/SKILL.md`, `skills/*/references/*.md`
 - Hot operational docs: `.claude/session-bootstrap.md`, `.claude/rules/*.md`
-- Shipped consumer-facing artefacts copied to consumer projects via `install.sh:138-152`: framework templates under `packages/core/templates/shared/`, preset shared rules + arch under `packages/preset-next-15-canonical/`, sub-agent prompts under `agents/`. Canonical list lives in [`packages/core/principles/09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) `REQUIRED_HEADER_DOCS`. Generated-doc compliance trigger ([§13.21](../../docs/meta-factory/open-questions.md)) — Wave 1 + Wave 2 closure (2026-05-09).
+- Shipped consumer-facing artefacts copied to consumer projects via `install.sh:138-152`: framework templates under `packages/core/templates/shared/`, preset shared rules + arch under `packages/preset-next-15-canonical/`, sub-agent prompts under `agents/`. Canonical list lives in [`packages/core/principles/09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) `REQUIRED_HEADER_DOCS`. Generated-doc compliance trigger ([§13.21](../../docs/meta-factory/closed-questions.md)) — Wave 1 + Wave 2 closure (2026-05-09).
 
 **Folder-level authority (single header in folder README, individual files inherit):**
 - `docs/meta-factory/retros/` — closed historical artifacts post-merge; individual files scope-bound by phase ID
@@ -103,7 +103,7 @@ Individual files in such folders inherit folder authority and do **not** need th
 ## §6 Promotion / demotion / retirement
 
 - **Promotion to mandatory CI gate:** when 3 cross-doc authority drift incidents are surfaced via reviewer cycles within a 6-month window. Promotion path: principle 09 test + (optionally) custom pre-push hook checking that designated authority-bearing docs have valid headers.
-- **Widening scope to generated docs:** when [open-questions.md §13.21](../../docs/meta-factory/open-questions.md) trigger fires (templates layer L3 work).
+- **Widening scope to generated docs:** when [closed-questions.md §13.21](../../docs/meta-factory/closed-questions.md) trigger fires (templates layer L3 work).
 - **Retirement:** if no authority drift incident occurs for 12 consecutive months AND principle 09 test reports zero violations across the same window, the rule may be archived to prose guidance in CLAUDE.md (parallel to phase-research-coverage rule §retirement criteria).
 
 ## See also
@@ -111,5 +111,6 @@ Individual files in such folders inherit folder authority and do **not** need th
 - [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — executable principle.
 - [.claude/session-bootstrap.md](../session-bootstrap.md) — Step 0 file linking to README as canonical goal source.
 - [CLAUDE.md `Artifact Ownership Contract`](../../CLAUDE.md) — read-only / read-write boundaries per agent class.
-- [docs/meta-factory/open-questions.md §13.21](../../docs/meta-factory/open-questions.md) — generated-doc compliance trigger (deferred L3 work).
+- [docs/meta-factory/closed-questions.md §13.21](../../docs/meta-factory/closed-questions.md) — generated-doc compliance trigger (deferred L3 work; closed 2026-05-10, archived).
+- [docs/meta-factory/closed-questions.md](../../docs/meta-factory/closed-questions.md) — archive of closed §13.x entries (added 2026-05-12).
 - [.claude/rules/phase-research-coverage.md §4 anti-patterns](phase-research-coverage.md) — `#recursive-self-application-gap` parent anti-pattern category.

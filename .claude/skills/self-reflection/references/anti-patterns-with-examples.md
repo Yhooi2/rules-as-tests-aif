@@ -48,7 +48,7 @@ User pushed back each time. Assistant agreed each time. 2-3 messages later, same
 
 ### Case 3 — L3 generated-docs research recommendation 2026-05-09
 
-**What happened:** Research session on closing [§13.21](../../../../docs/meta-factory/open-questions.md). Recommendation passed prompt's 5-hypothesis anti-pattern self-audit but failed silently against six existing project disciplines:
+**What happened:** Research session on closing [§13.21](../../../../docs/meta-factory/closed-questions.md). Recommendation passed prompt's 5-hypothesis anti-pattern self-audit but failed silently against six existing project disciplines:
 
 1. principle 08 capability-commit classification (`.claude/skills/` is outside `packages/` scope per CLAUDE.md hook definition).
 2. SSOT entries for ESLint extends / Tailwind presets / AGENTS.override.md not verified.

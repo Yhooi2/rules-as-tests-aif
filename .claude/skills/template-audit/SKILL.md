@@ -39,4 +39,4 @@ Promote P2/P3/P5 → CI gate when:
 - Deterministic CI PASS rate <80% over 30 days, OR
 - Consumer reports goal-phrase miss not caught by P1/P4/P6.
 
-Promotion path: re-evaluate Decision 3 in [open-questions.md §13.27](../../../docs/meta-factory/open-questions.md).
+Promotion path: re-evaluate Decision 3 in [closed-questions.md §13.27](../../../docs/meta-factory/closed-questions.md).
