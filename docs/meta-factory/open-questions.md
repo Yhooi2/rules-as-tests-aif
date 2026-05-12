@@ -34,6 +34,7 @@
 | [§13.20 ADR formal adoption](#1320-adr-formal-adoption-deferred--docsadrs-directory--first-adr-file) | deferred |
 | [§13.22 Own-conventions evolution mechanism](#1322-own-conventions-evolution-mechanism--fold-into-l2-research-agent-phase-5) | v1-shipped; deferred to Phase 5+ |
 | [§13.24 H7 + H8 anti-pattern distillation](#1324-candidate-h7--h8-anti-pattern-distillation-into-4-catalog-deferred--h8-sample-size-threshold-already-met) | deferred (H8 threshold met) |
+| [§13.31 Project-wide discipline-theatre audit (Wave 9 umbrella)](#1331-project-wide-discipline-theatre-audit-wave-9-umbrella) | armed — triggers after maintainer commits to Phase 9+ scope |
 | [§13.32 Project foundations audit & re-evaluation](#1332-project-foundations-audit--re-evaluation-phase-10-umbrella) | armed |
 
 ---
@@ -380,6 +381,29 @@ Phase 8 entry research (see [phase-8-research.md §6](phase-8-research.md)) clos
 **Out of scope for this entry:** the actual distillation work (lives in next-session research-patch); design of meta-test specifics (literal-count detection regex, scope predicates); decision of whether to extend §1.7 sub-rule numbering vs add §1.8 (depends on cardinality of distilled patterns).
 
 **Cross-references:** [research-patches/2026-05-09-§13.21-l3-self-review.md](research-patches/2026-05-09-§13.21-l3-self-review.md) §«H7 candidate observation» + §«H8 update» — sample data + sub-case enumeration; [research-patches/2026-05-09-§13.21-l3-revision.md](research-patches/2026-05-09-§13.21-l3-revision.md) — second-occurrence exemplar of §1.7 (parent rule); [PR #20 «Process retrospective» section](https://github.com/Yhooi2/rules-as-tests-aif/pull/20) — narrative context for additional sub-case (b) instances; [`.claude/rules/phase-research-coverage.md §3 aggregation`](../../.claude/rules/phase-research-coverage.md) — 3-patch threshold mechanism.
+
+### 13.31 Project-wide discipline-theatre audit (Wave 9 umbrella)
+
+Wave 8 (§13.29) closed `#discipline-theatre` at the **CI / hook surface layer** — places where the gap was enumerated in research-patch §1.1. It did NOT extend the audit to **prose-substance surfaces** across the project, where the same antipattern is structurally possible but mechanically harder to detect.
+
+Suspected categories (NOT exhaustive — Wave 9 first task = enumerate):
+
+1. **Trailer truthfulness** — `§1.7:` / `Prior-art:` / `§1.7 Bootstrap:` trailer bodies vs the actual diff content of their commits. Wave 8 checks for citation **presence**; not whether the cited file:line actually evidences the claim.
+2. **Header accuracy** — `Authoritative-for:` scope statements (per `doc-authority-hierarchy.md`) vs the actual doc content. Wave 8 / principle 09 check **presence** of header; not whether the scope statement matches the doc.
+3. **Mutation-adequacy** — all paired-negative tests in the repo (not just principles 01/02/04/08/09). Do they actually fail when the discipline is bypassed, or are they degenerate oracles? Subsumes §13.30.
+4. **R1-R20 false-negative rate** — each lint rule has a regex/AST predicate; never measured against adversarial code samples that should fire it. Possible bypass via tiny syntactic variant.
+5. **Catalogue substance** — SSOT verdict rationales, memory entry descriptions, skill auto-trigger keyword accuracy. Each currently «present and ≥N chars»; never adversarially audited.
+6. **Wave 8 recursive self-application** — Wave 8 itself shipped claims (every PR body, every sub-agent prompt, every paired-negative arm). Each is subject to its own thesis.
+
+**Status:** armed — triggers after maintainer commits to Phase 9+ scope.
+
+**Trigger to revisit:** Wave 8 (§13.29) merged complete (Wave 8 retro + PR #45 + Wave 8.1b compliance-verifier); trigger now = maintainer commits to Phase 9+ session scope.
+
+**First action upon revisit (per kickoff scaffold):** [`.claude/orchestrator-prompts/wave-9-discipline-theatre-audit/kickoff.md`](../../.claude/orchestrator-prompts/wave-9-discipline-theatre-audit/kickoff.md) (gitignored local scaffold) — research session enumerates surfaces per category, runs sample audit (10-20 surfaces / category), reports adversarial findings + closure mechanism proposals. Implementation deferred to per-category sub-waves AFTER research approved.
+
+**Scope warning:** likely 4-8 week multi-session umbrella. Do NOT bundle into closure of §13.29 — bundling without substantive method is itself `#discipline-theatre`.
+
+**Owner:** maintainer + Phase 9+ planning session.
 
 ---
 
