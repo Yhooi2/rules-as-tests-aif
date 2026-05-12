@@ -33,7 +33,7 @@
 | [§13.19 Cline Memory Bank full pattern adoption](#1319-cline-memory-bank-full-pattern-adoption-deferred) | deferred |
 | [§13.20 ADR formal adoption](#1320-adr-formal-adoption-deferred--docsadrs-directory--first-adr-file) | deferred |
 | [§13.22 Own-conventions evolution mechanism](#1322-own-conventions-evolution-mechanism--fold-into-l2-research-agent-phase-5) | v1-shipped; deferred to Phase 5+ |
-| [§13.24 H7 + H8 anti-pattern distillation](#1324-candidate-h7--h8-anti-pattern-distillation-into-4-catalog-deferred--h8-sample-size-threshold-already-met) | deferred (H8 threshold met) |
+| [§13.24 H8 promoted; H7 still deferred](#1324-h8-promoted-to-4-catalog-h7-still-deferred) | H8 promoted 2026-05-12; H7 deferred (sample 1/3) |
 | [§13.32 Project foundations audit & re-evaluation](#1332-project-foundations-audit--re-evaluation-phase-10-umbrella) | armed |
 
 ---
@@ -356,9 +356,9 @@ per-rule × 26: 78K input · $5/M + 13K output · $25/M = $0.39  + $0.325 = $0.7
 
 **Cross-references:** [`.claude/rules/phase-research-coverage.md` §4 anti-patterns](../../.claude/rules/phase-research-coverage.md) — `adopted-pattern-drift` tag added in same branch; [`prior-art-evaluations.md` §5 staleness policy](prior-art-evaluations.md) — extends to entries #6-#10; [open-questions.md §13.16](open-questions.md) — discipline-layer SSOT (parallel cadence-trigger pattern).
 
-### 13.24 Candidate H7 + H8 anti-pattern distillation into §4 catalog (deferred — H8 sample-size threshold already met)
+### 13.24 H8 promoted to §4 catalog; H7 still deferred
 
-**Status:** deferred 2026-05-09 (Wave 0.5 close). Tracker entry for «next-session work» referenced in [research-patches/2026-05-09-§13.21-l3-self-review.md](research-patches/2026-05-09-§13.21-l3-self-review.md) and [PR #20 description Process retrospective](https://github.com/Yhooi2/rules-as-tests-aif/pull/20). Without this entry, follow-up work would have lived only as prose in those artefacts — same shape as H8 sub-case (b) «meta-commentary lags primary content», hence the explicit registration here.
+**Status:** H8 **promoted** 2026-05-12 (Wave 8 Batch C). §4 entry `#discipline-application-scope-blindness` added to [`.claude/rules/phase-research-coverage.md`](../../.claude/rules/phase-research-coverage.md); Layer 6 probes added to [`.claude/skills/self-reflection/references/forward-checklist.md`](../../.claude/skills/self-reflection/references/forward-checklist.md); SKILL.md enumeration updated. Research-patch: [research-patches/2026-05-12-§13.24-h8-promotion.md](research-patches/2026-05-12-§13.24-h8-promotion.md). H7 still deferred — threshold not met (sample 1/3). Entry remains open until H7 is resolved. _Originally deferred 2026-05-09 (Wave 0.5 close). Tracker entry for «next-session work» referenced in [research-patches/2026-05-09-§13.21-l3-self-review.md](research-patches/2026-05-09-§13.21-l3-self-review.md) and [PR #20 description Process retrospective](https://github.com/Yhooi2/rules-as-tests-aif/pull/20). Without this entry, follow-up work would have lived only as prose in those artefacts — same shape as H8 sub-case (b) «meta-commentary lags primary content», hence the explicit registration here._
 
 **Origin:** two candidate anti-patterns surfaced during Wave 0.5 work, both as sub-patterns of `#recursive-self-application-gap`:
 
