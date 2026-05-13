@@ -37,6 +37,7 @@ export const REQUIRED_HEADER_DOCS: readonly string[] = [
   '.claude/rules/doc-authority-hierarchy.md',
   '.claude/rules/no-paid-llm-in-ci.md',
   '.claude/rules/phase-research-coverage.md',
+  '.claude/rules/reviewer-discipline.md',
 
   // docs/meta-factory/ reference docs (excluding sub-folders + filename-convention transients)
   'docs/meta-factory/EXECUTION-PLAN.md',
