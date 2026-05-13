@@ -427,7 +427,7 @@ Phase 10 audits **foundational adequacy** — whether chosen mechanisms reflect 
 
 Project's discipline chain (CI hooks, principle tests, two-AI reviewer prompts, maintainer prompts) reliably catches AI-agent slips before merge. PR #51 (numeric-claims-unverified), PR #52 (memory-to-docs codification) demonstrated empirically: 9+ file:line / count / annotation slips caught across multiple review rounds — but **every catch required external trigger** (user prompt «обсудим», reviewer-session dispatch, CI hook firing, principle 10 test on push). The AI agent does NOT autonomously re-verify its own claims before declaring «done»; it drifts to next-thing without self-trigger.
 
-Structural diagnosis: **AI session = «agent doer», not «agent self-trigger-er»**. Without external triggers, silent-bypass returns. Cost during PR #52: 3 review rounds for 10-commit PR. This is the recursive form of the project thesis itself — «AI agents can't silently bypass undocumented conventions» — extended to «AI agents can't autonomously verify their own claims either».
+Structural diagnosis: **AI session = «agent doer», not «agent self-trigger-er»**. Without external triggers, silent-bypass returns. Cost during PR #52: 3 review rounds for 10-commit PR. This is the recursive form of the project thesis itself (per [README.md#why-this-exists](../../README.md)) — same failure mode (silent bypass of conventions) extended one layer up: agents also do not autonomously verify their own claims at write time.
 
 **Candidate mechanisms** (for research, not pre-decision):
 - A. Claude Code hooks (PreToolUse / PostToolUse / Stop / SubagentStop / UserPromptSubmit) — automatic fire on events
