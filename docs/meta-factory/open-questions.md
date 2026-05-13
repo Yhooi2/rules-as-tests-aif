@@ -14,14 +14,12 @@
 
 | Entry | Status |
 |---|---|
-| [§13.1 Granularity research, детально](#131-granularity-research-детально) | open, unresolved |
-| [§13.2 Маркетинг и наименование](#132-маркетинг-и-наименование) | open, deferred |
-| [§13.4 Обработка legacy кодовой базы](#134-обработка-legacy-кодовой-базы) | open, deferred |
-| [§13.5 Multi-stack monorepos](#135-multi-stack-monorepos) | open, deferred |
+| [§13.4 Обработка legacy кодовой базы](#134-обработка-legacy-кодовой-базы) | open, armed |
+| [§13.5 Multi-stack monorepos](#135-multi-stack-monorepos) | open, armed |
 | [§13.6 Relationship с AIF core](#136-relationship-с-aif-core) | hypothesis verified; operationalization deferred |
 | [§13.7 Operationalization L2 semantic drift detection](#137-operationalization-l2-semantic-drift-detection) | partial (symbolic v1 closed Phase 5; behavioral + embedding open) |
 | [§13.8 Decision matrix expansion rule](#138-decision-matrix-expansion-rule) | open, running mechanism trigger |
-| [§13.9 Bypass через `--no-verify`](#139-bypass-через---no-verify--структурное-решение) | open, deferred |
+| [§13.9 Bypass через `--no-verify`](#139-bypass-через---no-verify--структурное-решение) | open, armed |
 | [§13.10 LLM v2 trigger conditions](#1310-llm-v2-trigger-conditions) | OPEN, v2 trigger |
 | [§13.11 LLM cost model + tracking](#1311-llm-cost-model--tracking) | OPEN, v2 trigger |
 | [§13.12 Real-corpus validation strategy](#1312-real-corpus-validation-strategy) | OPEN, v2 trigger |
@@ -39,36 +37,7 @@
 
 ---
 
-### 13.1 Granularity research, детально
-
-Как именно сегментировать паттерны в research? «Server Actions» — один паттерн или семь подпаттернов (return type, FormData, revalidatePath, error handling, ...)?
-
-Гипотеза: иерархия в `research-cache.json`:
-```text
-next/16.2.1/
-  app-router/
-    server-actions/
-      return-type.json
-      form-data-validation.json
-      revalidate-after-mutation.json
-    server-components/
-      data-fetching.json
-      use-cache.json
-  build/
-    turbopack-vs-webpack.json
-```
-
-Granularity ≈ **один файл = один паттерн**, на котором можно построить **одно правило**. Это упрощает diff-режим (изменился один файл → перегенерировано одно правило).
-
-### 13.2 Маркетинг и наименование
-
-«AI генерит твои правила» — половина людей не доверяет. Маркетинг должен быть про **self-validating rule generator** с акцентом на validator, не на LLM.
-
-Возможные названия:
-- `meta-factory` — про генерацию фабрик
-- `rules-foundry` — про литьё правил
-- `aif-stack-aware` — расширение AIF
-- `rules-as-tests/core` + `rules-as-tests/cli` — продолжение текущего
+> **Note (D8 closure, 2026-05-13):** §13.1 and §13.2 archived to [closed-questions.md](closed-questions.md) (§13.1 empirically validated by Phase 5/6; §13.2 wishful pre-launch). See post-Wave-9 prioritisation session commit.
 
 ### 13.4 Обработка legacy кодовой базы
 
@@ -81,6 +50,8 @@ Granularity ≈ **один файл = один паттерн**, на котор
 
 Это UX-вопрос, не архитектурный, но важный для adoption.
 
+**Trigger:** first consumer onboarding reports adoption friction with ≥100 pre-existing violations on initial `setup.sh` run (formalized 2026-05-13 via D8 resolution). Until then: no signal expected (0 consumers).
+
 ### 13.5 Multi-stack monorepos
 
 Что если в одном репо `apps/web` (Next 16) и `apps/api` (Fastify 5) и `packages/shared` (TS-only)? Три фабрики? Одна с разными scoped правилами?
@@ -88,6 +59,8 @@ Granularity ≈ **один файл = один паттерн**, на котор
 Гипотеза: одна meta-factory invocation, на выходе — слой scoping в ESLint flat config, разные правила scoped к разным каталогам. Lock-файл общий, в нём отметки «правило R12 applies-to apps/web/**».
 
 Это требует более продвинутого Layer 1 ([architecture.md](architecture.md) §2.3), который понимает workspace structure.
+
+**Trigger:** first consumer is multi-stack monorepo (e.g. `apps/web` + `apps/api` + `packages/shared`), OR Phase 11 AIF integration entry research kicks off — workspace scoping in ESLint flat config is a primary Phase 11 entry-question (formalized 2026-05-13 via D8 resolution).
 
 ### 13.6 Relationship с AIF core
 
@@ -130,6 +103,8 @@ Decision matrix в [self-application.md](self-application.md) §3 фиксиру
 - **Audit-self job на наличие framework-self-install passing** — если автор закоммитил без локального запуска (любым путём, включая `--no-verify`), эту ситуацию ловит CI.
 
 Это не silver bullet (контрибьютор всё ещё может временно отключить hooks), но превращает bypass из «invisible» в «visible breach» через CI signal.
+
+**Trigger:** Wave 10 hook architecture closure (bash → TS-core hook migration) — at that closure boundary, evaluate whether CI `--no-verify`-detection (`.husky/` presence + audit-self framework-install passing job) is in-scope as a Wave 10.X sub-wave or remains deferred; OR first observed bypass incident in maintainer or consumer repo. Formalized 2026-05-13 via D8 resolution. Natural fit: Wave 10 already touches hook architecture; bypass-detection is the same layer.
 
 ### 13.10 LLM v2 trigger conditions
 
