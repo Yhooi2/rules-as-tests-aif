@@ -7,3 +7,6 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Stryker mutation testing output (Wave 9.2)
+packages/*/reports/

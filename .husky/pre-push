@@ -387,6 +387,16 @@ if git rev-parse --verify "$UPSTREAM_REF" &>/dev/null; then
           ;;
       esac
     done <<< "$body"
+    # Wave 9.4 — body-prose §1.7 without formal trailer.
+    # Body had no valid trailer line (else returned 0 above). Check if §1.7 appears
+    # in discourse (not within a URL/path) — that's substance failure
+    # (theatre-shaped prose, C1 form). Pattern (^|[^/])§1\.7 excludes URL embeddings
+    # like `/§1.7-spec` while still catching discourse mentions like ` §1.7 done`.
+    # Reuses S17_SUBSTANCE_WARN_ONLY flag for unified calibration with Wave 8.3 arm.
+    if printf '%s' "$body" | LC_ALL=en_US.UTF-8 grep -qE '(^|[^/])§1\.7'; then
+      printf '%s' "§1.7 mentioned in commit body prose but no formal trailer line (substance check — Wave 9.4)"
+      return 2
+    fi
     printf '%s' "no valid §1.7: trailer (or bootstrap)"
     return 1
   }

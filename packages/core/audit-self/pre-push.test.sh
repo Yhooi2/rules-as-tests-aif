@@ -135,7 +135,81 @@ test_s17_historical_cutoff() {
   [ "$rc" -eq 0 ] && pass "s17_historical_cutoff (rc=0 on pre-cutoff author-date)" \
     || fail "s17_historical_cutoff: expected rc=0, got $rc"
 }
-# 10. §7 pa_check_trailer: same mechanism — pre-cutoff commits bypass the Prior-art check.
+# Wave 9.4 body-prose §1.7 detection tests.
+# 10. Negative (Case A): body has §1.7 in prose, no trailer line → exit 2 (substance failure).
+test_s17_body_prose_negative() {
+  export MOCK_BODY="feat(test): dummy
+
+I performed §1.7 forward and backward checks per the rule."
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 2 ] && pass "body_prose_negative (rc=2 on prose §1.7 without trailer)" \
+    || fail "body_prose_negative: expected rc=2, got $rc"
+}
+# 11. Positive (Case B): body has prose §1.7 mention AND valid §1.7: trailer → exit 0.
+test_s17_body_prose_positive() {
+  export MOCK_BODY="feat(test): dummy
+
+I performed §1.7 forward and backward checks per the rule.
+§1.7: forward-check: packages/core/principles/02-paired-negative-test.test.ts:82 verified; backward: 0 new .md files"
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 0 ] && pass "body_prose_positive (rc=0 on prose + valid trailer)" \
+    || fail "body_prose_positive: expected rc=0, got $rc"
+}
+# 12. Bootstrap unaffected (Case C): body has prose §1.7 mention AND Bootstrap: line → exit 0.
+test_s17_body_prose_bootstrap_unaffected() {
+  export MOCK_BODY="feat(test): dummy
+
+I performed §1.7 forward and backward checks per the rule.
+§1.7 Bootstrap: introduces body-prose substance arm; B1 exemption — this is the discipline-bearing artifact"
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 0 ] && pass "body_prose_bootstrap_unaffected (rc=0 on prose + Bootstrap:)" \
+    || fail "body_prose_bootstrap_unaffected: expected rc=0, got $rc"
+}
+# 13. No §1.7 mention (Case D): body without §1.7 anywhere → exit 1 (current behavior preserved).
+test_s17_body_prose_no_mention() {
+  export MOCK_BODY="feat(test): dummy
+
+This commit has no reference to the discipline check whatsoever."
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 1 ] && pass "body_prose_no_mention (rc=1 on body without §1.7)" \
+    || fail "body_prose_no_mention: expected rc=1, got $rc"
+}
+# Wave 9.4 refinement: §1.7 regex tightened with (^|[^/])§1\.7 to exclude URL/path
+# embeddings. The discourse case stays caught; URL-only mentions no longer fire.
+# 14. URL false-positive excluded: body with §1.7 only inside a URL path → exit 1
+# (current behavior preserved — equivalent to "no §1.7 mention" since URL is not
+# discourse).
+test_s17_body_prose_url_excluded() {
+  export MOCK_BODY="feat(test): dummy
+
+See https://example.com/rules/§1.7-spec for the canonical definition."
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 1 ] && pass "body_prose_url_excluded (rc=1 on §1.7 inside URL only)" \
+    || fail "body_prose_url_excluded: expected rc=1, got $rc"
+}
+# 15. Punctuation-preceded §1.7 still caught: body with §1.7 after non-slash punctuation
+# (e.g. period, parenthesis) still fires as theatre-shaped prose → exit 2.
+test_s17_body_prose_punctuation_caught() {
+  export MOCK_BODY="feat(test): dummy
+
+Discipline applied.§1.7 forward and backward checks done."
+  export S17_SUBSTANCE_WARN_ONLY=false
+  local rc=0; s17_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
+  unset S17_SUBSTANCE_WARN_ONLY
+  [ "$rc" -eq 2 ] && pass "body_prose_punctuation_caught (rc=2 on §1.7 after non-slash punctuation)" \
+    || fail "body_prose_punctuation_caught: expected rc=2, got $rc"
+}
+# 16. §7 pa_check_trailer: same mechanism — pre-cutoff commits bypass the Prior-art check.
 test_pa_historical_cutoff() {
   export MOCK_BODY="2026-05-01 00:00:00 +0000"
   local rc=0; pa_check_trailer "deadbeef00" >/dev/null 2>&1 || rc=$?
@@ -153,6 +227,12 @@ test_pa_substance_positive
 test_pa_substance_noncapability_unaffected
 test_pa_substance_warn_only_default
 test_s17_historical_cutoff
+test_s17_body_prose_negative
+test_s17_body_prose_positive
+test_s17_body_prose_bootstrap_unaffected
+test_s17_body_prose_no_mention
+test_s17_body_prose_url_excluded
+test_s17_body_prose_punctuation_caught
 test_pa_historical_cutoff
 echo ""; echo "$PASS pass / $FAIL fail"
 [ "$FAIL" -eq 0 ] || exit 1; exit 0
