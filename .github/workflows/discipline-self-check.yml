@@ -112,6 +112,23 @@ jobs:
           fi
           echo "✅ Forward-check cites ${forward_citations} file:line reference(s)."
 
+          # Substance gate: Backward-check section must cite at least one file:line ref.
+          # Catches generic prose like "Complete sweep performed. All artefacts compliant."
+          backward_citations=$(echo "$PR_BODY" | awk '
+            /^### §1\.7 Backward-check applied/ { capture=1; next }
+            /^###/ { capture=0 }
+            capture { print }
+          ' | grep -cE '[^[:space:]]+\.[a-z]+:[0-9]+' || true)
+
+          if [ "$backward_citations" -lt 1 ]; then
+            echo "::error::Backward-check section contains 0 file:line citations (regex [^[:space:]]+\\.[a-z]+:[0-9]+)."
+            echo "Substance arm (Forward-check Wave 8.1 parity) — §1.7 Backward-check must cite specific evidence, not generic prose."
+            echo "Example: 'packages/core/audit-self/pre-push.test.sh:16 all body-prose test cases present'"
+            echo "Bootstrap exemption: §1.7 Skipped marker with rationale ≥60 chars."
+            exit 1
+          fi
+          echo "✅ Backward-check cites ${backward_citations} file:line reference(s)."
+
   sanity-stub-fails-substance:
     name: Sanity — Incident-1 stub §1.7 body MUST fail substance gate
     runs-on: ubuntu-latest
@@ -139,5 +156,18 @@ jobs:
             echo "The substance regex erroneously accepts generic prose. Substance gate has lost its paired-negative arm."
             exit 1
           fi
-          echo "✅ Sanity: Incident-1 stub body correctly contains 0 file:line citations."
-          echo "   Substance gate's paired-negative test is intact."
+          echo "✅ Sanity: Incident-1 stub Forward-check correctly contains 0 file:line citations."
+
+          stub_backward_citations=$(echo "$STUB_BODY" | awk '
+            /^### §1\.7 Backward-check applied/ { capture=1; next }
+            /^###/ { capture=0 }
+            capture { print }
+          ' | grep -cE '[^[:space:]]+\.[a-z]+:[0-9]+' || true)
+
+          if [ "$stub_backward_citations" -ne 0 ]; then
+            echo "::error::Sanity broken — Incident-1 stub Backward-check matched ${stub_backward_citations} citations (expected 0)."
+            echo "The backward substance regex erroneously accepts generic prose."
+            exit 1
+          fi
+          echo "✅ Sanity: Incident-1 stub Backward-check correctly contains 0 file:line citations."
+          echo "   Both substance gates' paired-negative arms are intact."

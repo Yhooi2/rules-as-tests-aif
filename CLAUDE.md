@@ -83,6 +83,21 @@ Each artifact has one owner. Cross-owner edits require explicit handoff (separat
 
 The contract addresses the exact mechanism of the 2026-05-09 incident: reviewer agents pattern-matching on language in [docs/meta-factory/EXECUTION-PLAN.md](docs/meta-factory/EXECUTION-PLAN.md) §1 («north star»), then reinforcing the wrong goal across reviewer cycles. Read-only constraint on goal-bearing artifacts (README) prevents reviewer agents from silently re-establishing a different goal.
 
+## PR strategy
+
+When working on an agreed scope (a defined umbrella, batch, or single-concern PR), stay strictly within that scope.
+
+**Rule:** if you notice a separate systemic issue mid-PR (e.g. «PR template missing §1.7 stubs causes recurring CI fails»), do NOT autonomously open an additional PR. Surface it as an observation in the final summary («I noticed X, want me to fix as a separate task?»), do NOT spawn a PR/branch/commit autonomously.
+
+**Why:** Incident 2026-05-11, PR #33. While completing PR #32 (Wave 5 readiness SSOT remap), the orchestrator noticed a real recurring CI-fail trigger in the PR template and opened PR #33 autonomously. Maintainer pushback: drive-by scope expansion adds PR review overhead, introduces shared-state operations without explicit invitation, and violates atomic-umbrella discipline. Atomic-umbrella discipline is parallel to atomic-commit discipline: one concern per PR, even if «we're already here».
+
+**How to apply:**
+
+- Within the originally agreed umbrella scope → atomic commits OK, multiple files OK, multiple concerns within the umbrella OK.
+- Outside the umbrella → surface as observation, await explicit invitation.
+- The `work-without-stopping` user override applies to **clarification within the agreed scope**, not to expanding scope with new shared-state operations.
+- Exception: if maintainer explicitly invited the systemic fix in this session, proceed — but that's an explicit invitation, not autopilot.
+
 ## See also
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — full contributor-facing details (hook setup, bypass policy).
