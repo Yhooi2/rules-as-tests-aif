@@ -112,8 +112,10 @@ jobs:
           fi
           echo "✅ Forward-check cites ${forward_citations} file:line reference(s)."
 
-          # Substance gate: Backward-check section must cite at least one file:line ref.
-          # Catches generic prose like "Complete sweep performed. All artefacts compliant."
+          # Substance gate: Backward-check section must cite at least one file:line ref
+          # (parity with Forward-check Wave 8.1 substance arm). Catches quantifier
+          # confabulation: prose like "all 13 X audited" without any verifiable citation.
+          # Regex: at-least-one non-whitespace path component ending in .ext:N
           backward_citations=$(echo "$PR_BODY" | awk '
             /^### §1\.7 Backward-check applied/ { capture=1; next }
             /^###/ { capture=0 }
@@ -171,3 +173,33 @@ jobs:
           fi
           echo "✅ Sanity: Incident-1 stub Backward-check correctly contains 0 file:line citations."
           echo "   Both substance gates' paired-negative arms are intact."
+
+  sanity-stub-backward-passes-with-citation:
+    name: Sanity — §1.7 Backward-check with file:line citation MUST pass substance gate (Forward-check parity)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Construct stub with citation and assert backward citations ≥1
+        run: |
+          set -euo pipefail
+          STUB_BODY=$(cat <<'EOF'
+          ### §1.7 Forward-check applied
+          packages/core/principles/01-rule-has-test.test.ts:12 checked — compliant with existing rule-has-test discipline. No forward conflicts.
+
+          ### §1.7 Backward-check applied
+          packages/core/audit-self/pre-push.test.sh:16 all body-prose test cases present. Complete sweep performed.
+          EOF
+          )
+
+          backward_citations=$(echo "$STUB_BODY" | awk '
+            /^### §1\.7 Backward-check applied/ { capture=1; next }
+            /^###/ { capture=0 }
+            capture { print }
+          ' | grep -cE '[^[:space:]]+\.[a-z]+:[0-9]+' || true)
+
+          if [ "$backward_citations" -lt 1 ]; then
+            echo "::error::Sanity broken — stub with Backward-check citation matched 0 (expected ≥1)."
+            echo "The backward substance regex rejects a valid file:line citation. Positive arm is broken."
+            exit 1
+          fi
+          echo "✅ Sanity: stub with Backward-check citation correctly passes (${backward_citations} citation(s) found)."
+          echo "   Backward substance gate's positive arm is intact."
