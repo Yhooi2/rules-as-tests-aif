@@ -72,6 +72,15 @@ exit 0
 STUB
   chmod +x "$tmp/packages/core/audit-self/pre-push.test.sh"
 
+  # Stub hook-stub-completeness.test.sh (added §3a — same isolation
+  # requirement: pre-push §3a hard-fail invokes it by relative path, so
+  # without this stub the hook fails before reaching section 7 subject).
+  cat > "$tmp/packages/core/audit-self/hook-stub-completeness.test.sh" <<'STUB'
+#!/usr/bin/env bash
+exit 0
+STUB
+  chmod +x "$tmp/packages/core/audit-self/hook-stub-completeness.test.sh"
+
   echo "$tmp"
 }
 
