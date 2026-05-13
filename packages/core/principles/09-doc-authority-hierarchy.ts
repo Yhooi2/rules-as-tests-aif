@@ -36,6 +36,7 @@ export const REQUIRED_HEADER_DOCS: readonly string[] = [
   '.claude/session-bootstrap.md',
   '.claude/rules/doc-authority-hierarchy.md',
   '.claude/rules/no-paid-llm-in-ci.md',
+  '.claude/rules/parallel-subwave-isolation.md',
   '.claude/rules/phase-research-coverage.md',
   '.claude/rules/reviewer-discipline.md',
 
