@@ -53,6 +53,7 @@ The framework validates itself with its own logic — **recursive self-applicati
 - **Build-vs-reuse discipline** — prior-art consult before any capability commit. SSOT: `docs/meta-factory/prior-art-evaluations.md`. Enforcement: `Prior-art:` commit trailer + pre-push hook.
 - **Recursive self-application** — `make self-audit` green = the framework's own conventions don't drift.
 - **Search-coverage discipline** — negative-existence claims («no production analog») fail the §1 6-item checklist before shipping as load-bearing. Rule: `.claude/rules/phase-research-coverage.md`.
+- **No paid LLM in CI** — no API-billed LLM calls in CI/GH Actions beyond the operator's existing Claude Code subscription. Semantic LLM checks ship as AI-agnostic sub-agent prompts (under `agents/`) read by active AI sessions, not as automated gates with metered API calls. Rationale + escape hatch: [`.claude/rules/no-paid-llm-in-ci.md`](.claude/rules/no-paid-llm-in-ci.md).
 
 If recursive self-application breaks, the framework becomes documentation that lies about itself — exactly the failure mode it claims to prevent.
 
