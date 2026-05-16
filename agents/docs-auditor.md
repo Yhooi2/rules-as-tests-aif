@@ -38,7 +38,6 @@ fi
 [ -f "$SCRIPT" ] || {
   echo "INFO: $SCRIPT not present in this project."
   echo "      Code-vs-docs probes are disabled until the audit script is created."
-  echo "      See references/self-testing-docs.md for the pattern."
   exit 0
 }
 ```
