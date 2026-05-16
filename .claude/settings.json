@@ -11,6 +11,14 @@
             "command": "bash .claude/hooks/inject-session-bootstrap.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/deps-hash-check.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
