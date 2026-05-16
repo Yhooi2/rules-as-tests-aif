@@ -56,6 +56,14 @@ else
   exit 1
 fi
 
+# ── 3b. Skill drift check (D-AuditC-5 channel 2) ──────────────────────────────
+if [ -x scripts/check-skill-drift.sh ]; then
+  bash scripts/check-skill-drift.sh || {
+    echo "❌ skill drift check failed"
+    exit 1
+  }
+fi
+
 # ── 4. Manifest render drift ──────────────────────────────────────────────────
 # --check flag verified to exist in packages/core/render/render-rules.ts
 if command -v npx &>/dev/null; then
