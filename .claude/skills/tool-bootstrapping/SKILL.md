@@ -32,7 +32,7 @@ Two-question filter before committing to any proposal: (a) is the capability cod
 
 ### Rule 5 — Incrementality
 
-At each session start, a UserPromptSubmit hook compares `sha256(package.json deps section)` with the last-known hash in `.ai-factory/tool-decisions.md`. Mismatch → inject one-line WARN into session context: `⚠ package.json deps changed since last tool-bootstrap — run /tool-bootstrapping to re-evaluate`. Hook implementation lands in Wave 5.3; `deps-hash:` frontmatter in [references/decision-format.md](references/decision-format.md) is the anchor field.
+At each session start, a UserPromptSubmit hook compares `sha256(package.json deps section)` with the last-known hash in `.ai-factory/tool-decisions.md`. Mismatch → inject one-line WARN into session context: `⚠ package.json deps changed since last tool-bootstrap — run /tool-bootstrapping to re-evaluate`. Hook implementation landed in Wave 5.3; `deps-hash:` frontmatter in [references/decision-format.md](references/decision-format.md) is the anchor field.
 
 ### Rule 6 — Persistence
 
