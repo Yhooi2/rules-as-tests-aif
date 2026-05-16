@@ -14,6 +14,8 @@
 
 | Entry | Status | Closed by |
 |---|---|---|
+| [§13.1 Granularity research, детально](#131-granularity-research-детально--closed-empirically-validated) | Closed | Phase 5/6 empirical validation (closure recorded 2026-05-13) |
+| [§13.2 Маркетинг и наименование](#132-маркетинг-и-наименование--closed-wishful-pre-launch) | Closed | 2026-05-13 (wishful, pre-launch) |
 | [§13.3 Granularity invariant core](#133-granularity-invariant-core--где-провести-границу) | Closed | Phase 3 empirical closure (2026-05-08) |
 | [§13.21 Doc-authority discipline applied to generated user-facing docs](#1321-doc-authority-discipline-applied-to-generated-user-facing-docs-deferred-l3) | Closed | 2026-05-10 (Waves 1–4, PRs #21–#24) |
 | [§13.23 Pre-push hook layer for §1.7](#1323-pre-push-hook-layer-for-17--closed-by-wave-7) | Closed | Wave 7 (2026-05-11) |
@@ -26,6 +28,69 @@
 ---
 
 ## Archived entries
+
+### 13.1 Granularity research, детально — closed (empirically validated)
+
+**Status:** closed 2026-05-13 by D8 resolution (post-Wave-9 prioritisation session). Empirically validated by Phase 5/6 shipping at the hypothesized granularity.
+**Origin:** PROPOSAL.md §13.1 (Phase 1.D split, 2026-05-07). Hypothesis: «один файл = один паттерн» on which one rule can be built — simplifies diff-mode (one file changes → one rule regenerated).
+
+Как именно сегментировать паттерны в research? «Server Actions» — один паттерн или семь подпаттернов (return type, FormData, revalidatePath, error handling, ...)?
+
+Гипотеза: иерархия в `research-cache.json`:
+```text
+next/16.2.1/
+  app-router/
+    server-actions/
+      return-type.json
+      form-data-validation.json
+      revalidate-after-mutation.json
+    server-components/
+      data-fetching.json
+      use-cache.json
+  build/
+    turbopack-vs-webpack.json
+```
+
+Granularity ≈ **один файл = один паттерн**, на котором можно построить **одно правило**. Это упрощает diff-режим (изменился один файл → перегенерировано одно правило).
+
+#### Phase 5/6 empirical closure (2026-05-13)
+
+**CLOSED — hypothesis VALIDATED.** Phase 5 (Layer 4 Validator) and Phase 6 (Layer 2 Research Agent) shipped at the hypothesized granularity. Evidence:
+
+- `packages/core/research/store/` contains 9 production research files at **1-pattern-per-file** granularity (next/15.x: 1, next/16.x: 3, next/any: 3, shared: 2). No `server-actions/{return-type, form-data-validation, ...}` sub-pattern split observed; «Server Actions»-style hypothetical 7-sub-pattern explosion did NOT occur.
+- [phase-5-research.md:80](phase-5-research.md#L80) explicitly designs `diffResearch(versionA, versionB)` at «pattern-level granularity matches 'one pattern → one rule' from §13.1».
+- Trigger-sweep report 2026-05-08 ([research-patches/2026-05-08-trigger-sweep-report.md:22](research-patches/2026-05-08-trigger-sweep-report.md#L22)): «Hypothesis 'one pattern per file' holds; no Server-Actions-style 7-sub-pattern split observed.» Entry was tracked as «STILL ARMED» at the time — that was a tracking lag; the empirical evidence already supported closure.
+- [retros/phase-8.8.1-coverage-discipline.md:58](retros/phase-8.8.1-coverage-discipline.md#L58) reaffirmed: «12 research-store files at 1-pattern-per-file granularity; no Server-Actions-style sub-pattern explosion.»
+
+**Closure rationale:** the hypothesis is no longer «open» — it is the de-facto convention shipped by Phase 5 and Phase 6. Future research-store additions follow 1-pattern-per-file by convention. If a future framework genuinely surfaces a Server-Actions-style sub-pattern explosion that breaks the convention, that triggers a re-opening event recorded as a new §13.x entry — not a re-opening of this one.
+
+---
+
+### 13.2 Маркетинг и наименование — closed (wishful, pre-launch)
+
+**Status:** closed 2026-05-13 by D8 resolution (post-Wave-9 prioritisation session). Archived as wishful with no formal trigger; pre-launch positioning concern with 0 consumers.
+**Origin:** PROPOSAL.md §13.2 (Phase 1.D split, 2026-05-07).
+
+«AI генерит твои правила» — половина людей не доверяет. Маркетинг должен быть про **self-validating rule generator** с акцентом на validator, не на LLM.
+
+Возможные названия:
+- `meta-factory` — про генерацию фабрик
+- `rules-foundry` — про литьё правил
+- `aif-stack-aware` — расширение AIF
+- `rules-as-tests/core` + `rules-as-tests/cli` — продолжение текущего
+
+#### 2026-05-13 archival rationale
+
+Marketing / naming is a pre-launch positioning concern. Project has 0 consumers; consumer-facing materials (public README revision aimed at end-users vs maintainers, demo, launch announcement) are not on the critical path. Wishful-trigger pattern: armed indefinitely with no formal condition for revisit; surfaces cognitive overhead for AI sessions reading the registry, plus risk of premature firing.
+
+**Re-opens naturally when** any of:
+- Public-facing material is drafted (consumer-aimed README revision, demo, launch announcement).
+- Project name change is proposed as a structural decision (e.g. package rename in registry).
+- Third-party material discovers the project under the current name and surfaces naming friction.
+
+When any of the above happens, a new §13.x entry should be opened reflecting then-current state, rather than re-opening this entry — the candidate name list above is a 2026-05-07 snapshot and may not reflect updated positioning thinking by re-open time.
+
+---
 
 ### 13.3 Granularity invariant core — где провести границу
 
