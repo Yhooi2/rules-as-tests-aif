@@ -1,5 +1,6 @@
 # No paid LLM in CI — discipline rule
 
+> **Class:** A — deterministic grep mechanism ready (Track 3 §3.4); principle test pending.
 > **Authoritative for:** no-paid-LLM-in-CI policy rationale, scope (CI/GH Actions surface), escape-hatch process (explicit operator override per session with rationale), AI-agnostic sub-agent fallback pattern.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion invariant declaration — see [README.md §What must not break](../../README.md).
 

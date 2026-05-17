@@ -1,5 +1,6 @@
 # Parallel sub-wave isolation — discipline rule
 
+> **Class:** C — prose-only; mechanical detection deferred until post-Wave-10 AST-level orchestrator-prompt analysis (per §4).
 > **Authoritative for:** parallel-subwave-isolation rule — §1 git worktree requirement for parallel Sonnet sessions, §2 sequential-fallback escape hatch, §3 anti-patterns (`#shared-workdir-parallel`, `#branch-race-on-checkout`), §4 promotion / retirement triggers.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion to orchestrator skill — global skill at `~/.claude/skills/orchestrator/SKILL.md` may reference this rule.
 

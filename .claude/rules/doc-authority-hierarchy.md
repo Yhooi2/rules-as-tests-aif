@@ -1,5 +1,6 @@
 # Doc authority hierarchy — discipline rule
 
+> **Class:** A — companion principle test shipped at [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts).
 > **Authoritative for:** doc-authority-hierarchy discipline rule — §2 doc categorisation, §3 header format spec, §4 four anti-patterns, §5 folder-level authority pattern, §6 promotion / demotion / retirement triggers.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion principle test — see [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts).
 
@@ -78,6 +79,10 @@ Insert at the top of the doc, after the title and any existing status block, as 
 | EXECUTION-PLAN.md | phase scope, sequencing, acceptance criteria, operational decisions | project goal — see README#why-this-exists |
 | PROPOSAL.md | design history and original architectural proposal (Phase 0.5 – 1.D snapshot, May 2026) — **FROZEN** | current goal hierarchy (see README); do not retroactively rewrite |
 | .claude/session-bootstrap.md | operational restatement of goal + invariants for AI session start | (delegates upward — operational artifact) |
+
+**Rule-files Class field (`.claude/rules/*.md`):**
+
+In addition to the Authoritative-for header, rule files under `.claude/rules/*.md` carry a `> **Class:**` line declaring their executable-artifact status — `A` (principle test shipped or actively designed) / `B` (compensating mechanism without test) / `C` (prose-only, mechanism deferred with explicit promotion criterion). The field documents the gap between [README.md#why-this-exists](../../README.md#why-this-exists) absolutism («every rule = executable artifact») and current practice per [research-patches/2026-05-16-readme-absolutism-vs-class-c-practice.md](../../docs/meta-factory/research-patches/2026-05-16-readme-absolutism-vs-class-c-practice.md). Class field placed as first line of the blockquote header, before Authoritative-for.
 
 ## §4 Anti-patterns
 

@@ -1,5 +1,6 @@
 # Dual-implementation discipline — discipline rule
 
+> **Class:** C — prose-only, no current executable artifact. Promotion criterion in §9.
 > **Authoritative for:** dual-implementation discipline rule — §1 problem, §2 triggers + non-triggers, §3 audience triage, §4 detection mechanism, §5 drift check, §6 CC-bias mitigation, §7 single source of truth, §8 anti-patterns, §9 promotion / retirement, §10 see also.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Build-vs-reuse (upstream adoption vs build) — see [build-first-reuse-default.md](build-first-reuse-default.md). Search-coverage discipline — see [phase-research-coverage.md](phase-research-coverage.md).
 
