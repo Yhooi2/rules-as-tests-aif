@@ -2,30 +2,56 @@
 # @cc-only-rationale: internal dev tooling — end-of-turn reminder injection for maintainer's CC session; not shipped to consumer projects via install.sh
 set -euo pipefail
 
+
 input=$(cat)
 
 stop_hook_active=$(echo "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
+transcript=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
+
 if [ "$stop_hook_active" = "true" ]; then
   exit 0
 fi
 
-transcript=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
 if [ -z "$transcript" ] || [ ! -f "$transcript" ]; then
   exit 0
 fi
 
-last_line=$(tail -r "$transcript" 2>/dev/null | grep -m1 '"type":"assistant"' || true)
-if [ -z "$last_line" ]; then
-  exit 0
-fi
+# Aggregate text + tool_uses across ALL assistant JSONL entries since the last
+# real user-text message (not tool_result). A single assistant turn typically
+# spans multiple lines (thinking, text, tool_use as separate entries); picking
+# only the last line misses the final text whenever it happens to be preceded
+# (or, under buffered-write race, even succeeded) by a thinking block.
+turn_data=$(jq -nc '
+  [inputs] as $all
+  | (($all | to_entries
+        | map(select(.value.type == "user"
+                     and (
+                       ((.value.message.content[0]? // {}).type == "text")
+                       or (.value.isMeta == true)
+                     )))
+        | last).key // -1) as $boundary
+  | $all[$boundary + 1:]
+  | map(select(.type == "assistant"))
+  | {
+      text: ([.[].message.content[]? | select(.type == "text") | .text] | join("")),
+      tool_names: [.[].message.content[]? | select(.type == "tool_use") | .name]
+    }
+' < "$transcript" 2>/dev/null || echo '{"text":"","tool_names":[]}')
 
-tool_names=$(echo "$last_line" | jq -r '.message.content[]? | select(.type=="tool_use") | .name' 2>/dev/null || true)
+text=$(echo "$turn_data" | jq -r '.text // ""')
 has_askuserquestion=false
-if echo "$tool_names" | grep -qx 'AskUserQuestion'; then
+if echo "$turn_data" | jq -e '.tool_names | any(. == "AskUserQuestion")' >/dev/null 2>&1; then
   has_askuserquestion=true
 fi
 
-text=$(echo "$last_line" | jq -r '.message.content[]? | select(.type=="text") | .text' 2>/dev/null || true)
+if [ "${HOOK_DEBUG:-0}" = "1" ]; then
+  {
+    echo "[$(date '+%H:%M:%S')] transcript=$transcript"
+    echo "  text_len=${#text} has_askuserquestion=$has_askuserquestion"
+    echo "  tool_names=$(echo "$turn_data" | jq -c '.tool_names')"
+  } >> /tmp/end-of-turn-reminder-debug.log
+fi
+
 if [ -z "$text" ] && [ "$has_askuserquestion" != "true" ]; then
   exit 0
 fi
