@@ -48,6 +48,8 @@ edit-time → pre-commit → pre-push → CI → production audit
 
 **CI is the last-resort gate, not the primary one.** AI cannot silently bypass what fails at any of these channels.
 
+**Practice note:** a small number of rules are currently Class C (prose-only, mechanism deferred). See [research-patches/2026-05-16-readme-absolutism-vs-class-c-practice.md](docs/meta-factory/research-patches/2026-05-16-readme-absolutism-vs-class-c-practice.md). These are tracked and audited; rule files self-describe class via a `> **Class:** A | B | C` line in their header per [.claude/rules/doc-authority-hierarchy.md §3](.claude/rules/doc-authority-hierarchy.md).
+
 ### Methodology
 
 Generate enforcement rules from principles, not from copy-pasted presets. Presets become stale as stacks evolve (Next 14 → 15 → 16 in 18 months); principles age more slowly.
