@@ -1,3 +1,5 @@
+<!-- scope:d2-dual-implementation-design -->
+
 # 2026-05-17 — Self-review: dual-implementation discipline (D2)
 
 > **Patch type:** self-review for new rule introduction (per [phase-research-coverage.md §1.7](../../.claude/rules/phase-research-coverage.md))
