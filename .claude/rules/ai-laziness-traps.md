@@ -1,5 +1,6 @@
 # AI laziness traps — discipline rule
 
+> **Class:** A — companion principle test pending (Track 3 Action A → planned slot 12).
 > **Authoritative for:** ai-laziness-traps discipline rule — §1 problem this solves, §2 canonical trap catalogue, §3 kickoff-author obligations (cite + extend, no blanket reference), §4 anti-patterns, §5 promotion / retirement triggers.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion to research-discipline rule — see [phase-research-coverage.md](phase-research-coverage.md).
 

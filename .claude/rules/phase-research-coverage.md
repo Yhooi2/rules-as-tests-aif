@@ -9,6 +9,7 @@ paths:
 
 # Phase research coverage — searching discipline
 
+> **Class:** A — companion principle test pending (Track 3 Action B → planned slot 13, HISTORICAL_CUTOFF mechanism proven viable).
 > **Authoritative for:** searching-layer discipline rule — §1 6-item coverage methodology checklist, §2 self-reflection prompts for retros, §3 research-patches/ accumulator format (mirrors AIF /aif-evolve), §4 named anti-patterns for fast pattern-match.
 > **NOT authoritative for:** project goal — see [../../README.md#why-this-exists](../../README.md#why-this-exists). Recording-layer discipline (Prior-art trailer + SSOT + principle 08) — see [CLAUDE.md `Build-vs-reuse invariant`](../../CLAUDE.md). Discipline-layer SSOT (re-evaluation triggers for this rule) — see [open-questions.md §13.16](../../docs/meta-factory/open-questions.md).
 
