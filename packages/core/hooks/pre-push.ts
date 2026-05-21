@@ -194,6 +194,10 @@ function main(): void {
     priorArtSection();
     process.exit(0);
   }
+  if (process.env['PREPUSH_ONLY'] === 's17') {
+    s17Section();
+    process.exit(0);
+  }
 
   // ── 1. actionlint ──────────────────────────────────────────────────────────
   const workflows = workflowYmlFiles();

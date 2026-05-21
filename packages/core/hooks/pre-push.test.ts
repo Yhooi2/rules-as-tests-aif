@@ -4,10 +4,11 @@
  * These assert the dispatch contract that dual-implementation-discipline.md §4
  * mandates (capability-check, not brand-name) and the migration invariants that
  * keep enforcement intact (delegation through runCheck; self-tests still
- * referenced by literal path; §7 Prior-art trailer now handled directly in TS;
- * legacy shim retained for §1.7-only).
+ * referenced by literal path; §7 Prior-art trailer and §1.7 discipline trailer
+ * both handled directly in TS; legacy-trailer-checks.sh deleted in Wave 10.3).
  * The runner's own behaviour is covered by utils/run-check.test.ts.
  * The §7 logic is covered by checks/prior-art.test.ts.
+ * The §1.7 logic is covered by checks/s17.test.ts.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -64,6 +65,13 @@ describe('pre-push.ts orchestrator — delegation folded through runCheck', () =
     expect(ORCHESTRATOR).toMatch(/from '\.\/checks\/prior-art\.ts'/);
     expect(ORCHESTRATOR).toMatch(/from '\.\/checks\/s17\.ts'/);
     expect(ORCHESTRATOR).not.toMatch(/legacy-trailer-checks\.sh'\]/); // no longer invoked
+  });
+
+  it('PREPUSH_ONLY seam accepts both "prior-art" and "s17" (Wave 10.3 extension)', () => {
+    // Ensures the test seam is exercisable for §1.7 in isolation — the anti-tautology
+    // pattern from prior-art-trailer-hook.test.sh applied to the s17 section.
+    expect(ORCHESTRATOR).toMatch(/PREPUSH_ONLY.*prior-art/);
+    expect(ORCHESTRATOR).toMatch(/PREPUSH_ONLY.*s17/);
   });
 
   it('imports §7 prior-art check from the TS module (Wave 10.2)', () => {
