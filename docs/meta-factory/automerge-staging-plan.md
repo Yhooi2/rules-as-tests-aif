@@ -1,8 +1,8 @@
-<!-- scope: automerge→staging operational plan + maintainer settings recipe -->
+<!-- scope: automerge→staging operational plan, branching flow + maintainer settings recipe -->
 # Automerge → staging integration plan
 
-> **Status:** PLANNED. Code prerequisites **DONE** (2026-05-22); remaining work is maintainer-side GitHub settings + the orchestrator flow.
-> **Authoritative for:** the automerge→staging operational plan — decided shape, phased rollout, the maintainer GitHub-settings recipe, and the open sub-decisions. Supersedes the `open-questions.md §13.40` placeholder home (open-questions hit its 500-line pre-commit cap and no §13.x was cleanly terminal to archive; a dedicated multi-phase plan doc is the better fit than the open-question registry).
+> **Status:** **LIVE** (2026-05-22). `staging` branch created; `staging` + `main` branch-protected (required checks `ci-success` + `actionlint` + `zizmor`, `strict: true`); repo auto-merge enabled. Code prerequisites merged (#121/#123/#125).
+> **Authoritative for:** the automerge→staging operational plan — the branching flow (§2.1), decided shape, the maintainer GitHub-settings recipe (applied), and the open sub-decisions. Supersedes the `open-questions.md §13.40` placeholder home (open-questions hit its 500-line pre-commit cap; a dedicated plan doc fits better than the open-question registry).
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). The CI-backstop mechanism it depends on — see [.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) and the `pr-commit-trailers` job in [.github/workflows/audit-self.yml](../../.github/workflows/audit-self.yml).
 
 ## §1 Goal
@@ -12,79 +12,104 @@ The maintainer can leave the computer ~3 hours and PRs keep merging without him 
 ## §2 Decided shape
 
 - **Target:** sub-PRs auto-merge into a long-lived `staging` branch; never directly into `main`.
-- **Mechanism — variant A:** GitHub **native auto-merge** (`gh pr merge --auto`) gated on green CI. No LLM, no paid runtime → respects [no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md). (Variant B = live-session preverify-then-CI, weaker; variant C = autonomous paid agent, needs explicit policy exception — both rejected.)
+- **Mechanism — variant A:** GitHub **native auto-merge** (`--auto`) gated on green CI. No LLM, no paid runtime → respects [no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md). (Variant B = live-session preverify-then-CI, weaker; variant C = autonomous paid agent, needs explicit policy exception — both rejected.)
 - **Human gate:** maintainer reviews staging and merges `staging → main` manually.
+
+## §2.1 Branching flow (the discipline)
+
+```text
+main (source of truth, human-blessed) ──┐
+   │  branch every feature/sub-PR FROM main
+   ▼
+feature/* ──auto-merge on green CI──▶ staging (disposable review buffer)
+                                        │  maintainer reviews the batch
+                                        ▼  ── merges staging → main (decision)
+                                       main
+                                        │  ── RESYNC: fast-forward staging to main
+                                        ▼
+                                     staging == main  (drift reset to zero)
+```
+
+**Always branch FROM `main`, auto-merge INTO `staging`.** This is deliberate and correct *for this model*, even though the usual git rule is "branch from the branch you merge into":
+
+- `main` is the **source of truth** — the last state a human blessed. `staging` is a **disposable buffer** that, by design, holds *un-reviewed* auto-merged work.
+- Branching from `main` anchors every PR to blessed code, **not** to a pile of unverified auto-merges. Building new work on top of unverified work is the thing to avoid.
+- Inter-PR conflicts (two PRs off `main` touching the same file, each green alone) surface **in the buffer**, not in `main`, because `staging` protection sets `strict: true` (require branches up to date) — the second PR is forced to update and the conflict shows there.
+
+**Load-bearing discipline — RESYNC.** After every `staging → main` promotion, fast-forward `staging` back to `main` so `staging ≈ main` at all times:
+
+```bash
+git push origin origin/main:staging   # clean ff; staging has no unique commits post-promotion
+```
+
+This is what keeps `staging` a *disposable buffer* rather than silently becoming a divergent long-lived `develop`. **If `staging` is allowed to drift from `main` for days/weeks, this whole model degrades** (integration problems pile up and hit `main` in bulk at promotion). Promote + resync frequently — ideally after each walk-away session.
+
+**When NOT to use the two-hop:** a single small change by exact path is fine to branch from `main` and PR straight to `main` (trunk-based). Reserve the staging buffer for batches / walk-away / higher-risk work where you want a review buffer.
 
 ## §3 Prerequisite status — CI-backstop (DONE)
 
-The hard blocker was: today's §1.7 / Prior-art / test gates ran only in `.husky/pre-push`, so "CI green" ≠ "verified" until they were mirrored into CI deterministically. Without that, auto-merge could land work the local hook would have blocked (the hook-bypass hole).
-
-This is now closed:
+The hard blocker was: §1.7 / Prior-art / test gates ran only in `.husky/pre-push`, so "CI green" ≠ "verified" until they were mirrored into CI deterministically. Closed:
 
 | PR | What it added | State |
 |---|---|---|
 | **#121** | `pr-commit-trailers` job in [audit-self.yml](../../.github/workflows/audit-self.yml) — runs §1.7 + §7 over the real PR commit range via the `PREPUSH_ONLY` seam; §1.7 hard-enforced, §7 base blocks, §7 substance warn-only (Option B). | MERGED |
-| **#123** | Parameterised the diff base via `PREPUSH_UPSTREAM_REF` so the backstop gates PRs targeting a **non-main base** (i.e. PRs → `staging`), not only `origin/main`. Paired-negative: [tests/hooks/prepush-upstream-ref.test.sh](../../tests/hooks/prepush-upstream-ref.test.sh). | MERGED |
+| **#123** | Parameterised the diff base via `PREPUSH_UPSTREAM_REF` so the backstop gates PRs targeting a **non-main base** (PRs → `staging`), not only `origin/main`. Paired-negative: [tests/hooks/prepush-upstream-ref.test.sh](../../tests/hooks/prepush-upstream-ref.test.sh). | MERGED |
+| **#125** | Real `ci-success` aggregate job (`needs:` every audit-self PR job) so branch protection can require one context. Gate logic: [scripts/ci-success-gate.sh](../../scripts/ci-success-gate.sh), paired-negative [scripts/ci-success-gate.test.sh](../../scripts/ci-success-gate.test.sh). | MERGED |
 
-So a sub-PR → `staging` is now re-checked at merge time against `staging` even if its push bypassed pre-push. The deterministic gate is real, which is what makes auto-merge safe.
+So a sub-PR → `staging` is re-checked at merge time against `staging` even if its push bypassed pre-push. The deterministic gate is real, which is what makes auto-merge safe.
 
 ## §4 Phased plan
 
 0. **CI-backstop** — DONE (§3).
-1. **Create the `staging` branch + branch protection** requiring the same status checks `main` requires (the `ci-success` set per [workflow-integrity.yml](../../.github/workflows/workflow-integrity.yml)); enable repo-level auto-merge. ⚠ **Maintainer-side** — branch protection / rulesets are GitHub settings the agent cannot set (`settings.json` is agent-uncommittable). Recipe in §5.
-2. **Orchestrator flow:** sub-PRs target `staging`; the AI sets `gh pr merge --auto <PR>`; PRs merge on green while the maintainer is away; the AI posts a plain-language report (what merged / what it verified / gaps & why).
-3. **Decision gate:** maintainer reviews `staging`, merges `staging → main` manually.
+1. **`staging` branch + branch protection + repo auto-merge** — DONE (2026-05-22, recipe §5).
+2. **Orchestrator flow:** sub-PRs target `staging` (branched from `main`, §2.1); the AI sets `gh pr merge --auto <PR>`; PRs merge on green while the maintainer is away; the AI posts a plain-language report (what merged / what it verified / gaps & why).
+3. **Decision gate:** maintainer reviews `staging`, merges `staging → main` manually, then **resyncs** `staging` to `main` (§2.1).
 4. **(Optional, later)** automate `staging → main` once trust is established — higher blast radius (production), out of scope now.
 
-## §5 Maintainer settings recipe
+## §5 Maintainer settings recipe (APPLIED 2026-05-22)
 
-Run once, by the maintainer (these touch branch protection / repo settings — not agent-committable):
+Done; kept for reference / re-provisioning. `{owner}/{repo}` = `Yhooi2/rules-as-tests-aif`.
 
 ```bash
-# 1. Create the long-lived staging branch off main.
-git fetch origin
-git branch staging origin/main
-git push -u origin staging
+# 1. staging branch off main.
+git fetch origin && git branch staging origin/main && git push -u origin staging
 
-# 2. Enable repo-level auto-merge (Settings → General → "Allow auto-merge",
-#    or via API):
+# 2. repo auto-merge.
 gh api -X PATCH repos/{owner}/{repo} -F allow_auto_merge=true
 
-# 3. Protect staging: require the same status checks as main, require branches
-#    up to date. Replace the contexts list with main's required set
-#    (gh api repos/{owner}/{repo}/branches/main/protection to read it).
-gh api -X PUT repos/{owner}/{repo}/branches/staging/protection \
-  --input - <<'JSON'
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": ["ci-success"]
-  },
-  "enforce_admins": false,
-  "required_pull_request_reviews": null,
-  "restrictions": null
-}
+# 3. protect staging — require the real ci-success aggregate (#125) + the two
+#    always-run cross-FILE checks (needs: can't cross workflow files; path-
+#    conditional discipline-self-check is intentionally NOT required — it would
+#    deadlock PRs that don't touch its paths).
+gh api -X PUT repos/{owner}/{repo}/branches/staging/protection --input - <<'JSON'
+{"required_status_checks":{"strict":true,"contexts":["ci-success","actionlint — YAML & expression correctness","zizmor — supply-chain audits"]},"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null}
+JSON
+
+# 4. protect main — owner-only merges. On this single-owner repo, owner-only =
+#    PR required + green checks + sole-owner write + the git-safety hook blocking
+#    agent merges to main. (`restrictions` push allow-list is org-only.)
+gh api -X PUT repos/{owner}/{repo}/branches/main/protection --input - <<'JSON'
+{"required_status_checks":{"strict":true,"contexts":["ci-success","actionlint — YAML & expression correctness","zizmor — supply-chain audits"]},"enforce_admins":false,"required_pull_request_reviews":{"required_approving_review_count":0},"restrictions":null}
 JSON
 ```
 
-> The `contexts` array must list the actual required-check names. The repo currently expresses the required set as the `ci-success` context (asserted on `main` by [workflow-integrity.yml](../../.github/workflows/workflow-integrity.yml) lines ~78). Confirm whether `ci-success` is a real aggregate job or a placeholder before relying on it for staging (see §6 open sub-decision 2).
-
-Then, per sub-PR (agent-side, while the maintainer is away):
+Per sub-PR (agent-side, while the maintainer is away):
 
 ```bash
-gh pr create --base staging --head <feature-branch> ...
+gh pr create --base staging --head <feature-branch-off-main> ...
 gh pr merge --auto --squash <PR>     # merges when CI goes green
 ```
 
 ## §6 Open sub-decisions (maintainer sign-off)
 
-1. **Branch name / reuse of the epic flow.** This plan uses a long-lived `staging`. The project also has an `epic/ID-<digits>-<topic>` integration flow where the *agent* merges sub-PRs into a per-umbrella epic branch (circuit-breaker at `epic→main`). These are distinct mechanisms (native auto-merge into long-lived `staging` vs agent-merge into per-epic branch). Decision needed: keep them separate, or make per-epic branches the auto-merge target instead of one long-lived `staging`.
-2. **Required-check contexts.** §5 assumes a working `ci-success` aggregate. There is no job literally named `ci-success` in the workflows — it is a context name referenced by branch protection. Confirm the exact set of job contexts `staging` should require (e.g. the `audit-self` jobs incl. `pr-commit-trailers`, `discipline-self-check`, `workflow-integrity`, `framework-self-template-render`).
-3. **Squash vs merge-commit** into staging (affects how `pr-commit-trailers` sees the range on the eventual `staging→main` PR).
+1. **Branch name / reuse of the epic flow.** This plan uses a long-lived `staging`. The project also has an `epic/ID-<digits>-<topic>` flow where the *agent* merges sub-PRs into a per-umbrella epic branch (circuit-breaker at `epic→main`). Distinct mechanisms. Decide: keep separate, or fold one into the other. _(Open.)_
+2. ~~Required-check contexts.~~ **RESOLVED 2026-05-22** — real `ci-success` aggregate shipped (#125); `staging`+`main` require `ci-success` + `actionlint` + `zizmor`.
+3. **Squash vs merge-commit** into staging — affects how `pr-commit-trailers` sees the range on the eventual `staging→main` PR. Squash recommended (one clean commit per sub-PR). _(Open — low stakes.)_
 
 ## §7 Cross-references
 
-- [.github/workflows/audit-self.yml](../../.github/workflows/audit-self.yml) — `pr-commit-trailers` job (the deterministic gate this plan relies on).
-- [tests/hooks/prepush-upstream-ref.test.sh](../../tests/hooks/prepush-upstream-ref.test.sh) — paired-negative for the non-main-base support.
-- [.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) — why variant A (native auto-merge) and not an autonomous paid agent.
-- [.github/workflows/workflow-integrity.yml](../../.github/workflows/workflow-integrity.yml) — `ci-success` required-check assertion (the model staging protection mirrors).
+- [.github/workflows/audit-self.yml](../../.github/workflows/audit-self.yml) — `pr-commit-trailers` + `ci-success` jobs.
+- [scripts/ci-success-gate.sh](../../scripts/ci-success-gate.sh) — aggregate gate logic (paired-negative tested).
+- [tests/hooks/prepush-upstream-ref.test.sh](../../tests/hooks/prepush-upstream-ref.test.sh) — non-main-base backstop paired-negative.
+- [.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) — why variant A (native auto-merge), not an autonomous paid agent.
+- [.github/workflows/workflow-integrity.yml](../../.github/workflows/workflow-integrity.yml) — `ci-success` required-check assertion.
