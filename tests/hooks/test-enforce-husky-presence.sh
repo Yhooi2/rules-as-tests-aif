@@ -39,7 +39,9 @@ for hook in "$REPO_ROOT/.husky/pre-commit" "$REPO_ROOT/.husky/pre-push"; do
     GATE_PASS=1
     continue
   fi
-  if ! grep -qE '\b(actionlint|zizmor|bash -n|json\.load|yaml\.safe_load)\b' "$hook"; then
+  # Kept in sync with .github/workflows/audit-self.yml#enforce-husky-presence.
+  # Wave 10.1: a pre-push hook delegating to the TS orchestrator counts as non-trivial.
+  if ! grep -qE '\b(actionlint|zizmor|bash -n|json\.load|yaml\.safe_load)\b|packages/core/hooks/pre-push\.ts' "$hook"; then
     echo "GATE would FAIL: $hook lacks expected probes (looks empty/stub)"
     GATE_PASS=1
   fi
