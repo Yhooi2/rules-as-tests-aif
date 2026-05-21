@@ -36,13 +36,12 @@ Three independent probes of `obra/superpowers`, 2026-05-21:
 
 > Each wave is its own kickoff + R-phase/I-phase. The verification-heavy items are **separate large tasks to be planned, not executed in this session** (maintainer directive 2026-05-21).
 
-### Wave N0 — Headless-dispatch storm (HARD external deadline ~2026-06-15) — MOST URGENT
-- **Threat:** the autonomous-dispatch architecture (orchestrator → Sonnet workers via `claude -p` headless, "Option C") rests on a platform capability the maintainer flags as closing ~mid-June. External, deadline-bound, not fixable-by-test. See [[project_claude_p_headless_window]] memory.
-- **Strategic framing:** the storm hits the **orchestration/methodology layer** — explicitly NOT the moat (per §3). The enforcement substrate (lint/hooks/mutation/drift + AI-agnostic `agents/*.md`) runs on husky/CI/npm and is harness-independent → weatherproof. The storm is a live stress-test of the AI-agnostic thesis.
-- **Task 0 (gate everything on this):** **VERIFY** the actual policy + exact date via claude-code-guide / official Anthropic docs — do NOT build a migration on an unverified premise (project discipline; also keeps the book honest — no fabricated vendor policy).
-- **Resolution fork (maintainer call):** (a) migrate dispatch to Agent SDK — credit window also ~2026-06-15 (see [[project_swarm_execution_approach]]); (b) degrade to human-in-loop interactive; (c) hand orchestration to a companion runtime (aif-handoff).
-- **Checks:** no-paid-LLM preserved; whichever path must keep the enforcement substrate harness-independent.
-- **BFR verdict:** likely ADOPT (Agent SDK) or REFERENCE (aif-handoff) — orchestration is not the moat; do not BUILD a custom dispatcher.
+### Wave N0 — Headless-dispatch billing change (firm date 2026-06-15) — plan by date, NOT a cliff
+- **Task 0 — DONE (VERIFIED 2026-05-21, claude-code-guide + WebSearch, 2 channels):** the earlier "policy makes `claude -p` unavailable / closing door" framing was **WRONG**. Reality: a **billing change, not a ban.** Effective **June 15, 2026** (announced May 14), `claude -p` + Agent SDK + Claude Code GitHub Actions + third-party agents move **off the subscription's interactive pool onto a separate monthly Agent-SDK credit** ($20 Pro / $100 Max5x / $200 Max20x, at full API rates, no rollover). On exhaustion: requests rejected (or continue at API rates if "extra usage" enabled). Interactive terminal + Claude.ai unchanged. `claude -p` stays supported (docs even add `--bare` as the recommended scripted mode). Sources: [headless docs](https://code.claude.com/docs/en/headless), [Anthropic support](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [The Register 2026-05-14](https://www.theregister.com/ai-ml/2026/05/14/anthropic-tosses-agents-into-the-api-billing-pool/5240748).
+- **Strategic framing (holds, sharpened):** the change hits the **orchestration/methodology layer** — NOT the moat (§3). The enforcement substrate (lint/hooks/mutation/drift + AI-agnostic `agents/*.md`) runs on husky/CI/npm, never used `claude -p`, and is already protected by the **`no-paid-llm-in-ci` rule** → fully weatherproof. A fan-out Bash dispatcher spawning many `claude -p` workers, however, burns the monthly credit fast at API rates.
+- **Real decision (by June 15, maintainer call):** not "migrate before the door shuts" but "how to pay the meter" — (a) cost-aware dispatch within the credit; (b) pay overage at API rates; (c) upgrade plan for more credit; (d) human-in-loop interactive (free pool); (e) hand orchestration to a companion runtime (aif-handoff). Overlaps Wave N7 (dogfood-companions): process-layer migration is the same action.
+- **Checks:** `no-paid-llm-in-ci` preserved; substrate stays harness-independent; estimate per-dispatch credit burn before committing to a fan-out shape.
+- **BFR verdict:** ADOPT (Agent-SDK / companion path) — orchestration is not the moat; do not BUILD a custom dispatcher. Urgency: **moderate** (cost-planning by a firm date), downgraded from the earlier "beats all" once verification showed it is a meter, not a removal.
 
 ### Wave N1 — Niche-validation research
 - **Goal:** lock the positioning empirically. Is there ANY tool combining enforcement-substrate **+** recursive-self-application? (negative-existence → `phase-research-coverage.md` §1 6-item checklist).
@@ -96,7 +95,7 @@ Three independent probes of `obra/superpowers`, 2026-05-21:
 ## §5 — Sequencing + dependencies
 
 ```text
-HARD DEADLINE ~2026-06-15 (beats all):   N0 (headless-dispatch storm — verify FIRST, then migrate)
+FIRM DATE 2026-06-15 (plan by it, not a cliff): N0 (headless billing change — VERIFIED: meter, not ban; pick how to pay)
 NOW (cheap, parallel, lock the story):   N1 (validation) ∥ N2 (adopt)
 URGENT (unblocks Commit 7 + AIF claim):  N6a (C-1 impl PR)
 LONG POLE (after Wave 9 M1–M5):          N3 (TS core / Wave 10)
@@ -106,7 +105,7 @@ AFTER N7 → then N2+N3:                    N5 (give-back)
 AFTER N3+N6a:                             N6b (one-button install)
 ```
 
-- **N0 is the only wave with a hard external clock** — it outranks everything. But it threatens the non-moat layer, so worst case the project degrades orchestration to interactive and the substrate is untouched. Verify before migrating.
+- **N0 has the only fixed external date (June 15)** — but VERIFICATION downgraded it from "hard cliff that beats all" to "cost-model change to plan around." It hits the non-moat layer; the substrate is untouched (already `no-paid-llm-in-ci`-protected). Worst case: degrade orchestration to the free interactive pool. Plan dispatch cost by the date.
 
 - **N1/N2** are cheap and lock positioning → do first, parallelizable (use worktrees per [`parallel-subwave-isolation.md`](../../../.claude/rules/parallel-subwave-isolation.md)).
 - **N6a (C-1 impl)** is the urgent unblock — gates the honest companion claim and Commit 7.
