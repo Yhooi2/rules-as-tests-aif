@@ -151,10 +151,15 @@ jobs:
             while IFS= read -r r; do
               in_audit=0
               # skip_unless R<n>[a-z]*  — covers R16 → R16a/R16b sub-probes
-              grep -qE "skip_unless ${r}[a-z]*\b" packages/core/audit-self/*.sh packages/preset-next-15-canonical/audit-self/*.sh 2>/dev/null && in_audit=1
+              # Wave 10.4: also grep *.ts (audit-ai-docs.ts replaced audit-ai-docs.sh)
+              grep -qE "skip_unless ${r}[a-z]*\b" packages/core/audit-self/*.sh packages/core/audit-self/*.ts packages/preset-next-15-canonical/audit-self/*.sh 2>/dev/null && in_audit=1
               in_manual=0
-              grep -qE "$r.*manual|manual.*$r|$r.*delegated|delegated.*$r" \
-                agents/best-practices-sidecar.md packages/core/audit-self/*.sh packages/preset-next-15-canonical/audit-self/*.sh 2>/dev/null && in_manual=1
+              # Wave 10.4: agents/best-practices-sidecar.md removed in PR #79; markers now in *.ts.
+              # Use find+xargs to avoid nonexistent-file exit-code-2 masking valid matches.
+              if find packages/core/audit-self packages/preset-next-15-canonical/audit-self \( -name "*.sh" -o -name "*.ts" \) -print0 2>/dev/null | \
+                 xargs -0 grep -qE "$r.*manual|manual.*$r|$r.*delegated|delegated.*$r" 2>/dev/null; then
+                in_manual=1
+              fi
               if [ "$in_audit" -eq 0 ] && [ "$in_manual" -eq 0 ]; then
                 echo "::error::orphan rule $r — no probe, no manual review note, no delegation"
                 fail=1
@@ -175,14 +180,14 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: '20'
-      - name: Install ts-morph and tsx for R4 probe
-        run: npm install --silent ts-morph tsx
-      - name: Run packages/core/audit-self/audit-ai-docs.test.sh
+      - name: Install packages/core deps (remark + vitest for audit-ai-docs.test.ts)
+        run: npm install --prefix packages/core --silent
+      - name: Run packages/core/audit-self/audit-ai-docs.test.ts (Wave 10.4 — vitest)
         run: |
-          if [ -x packages/core/audit-self/audit-ai-docs.test.sh ]; then
-            bash packages/core/audit-self/audit-ai-docs.test.sh
+          if [ -f packages/core/audit-self/audit-ai-docs.test.ts ]; then
+            npx --prefix packages/core vitest run --reporter=default packages/core/audit-self/audit-ai-docs.test.ts
           else
-            echo "::error::packages/core/audit-self/audit-ai-docs.test.sh missing or not executable"
+            echo "::error::packages/core/audit-self/audit-ai-docs.test.ts missing"
             exit 1
           fi
 
@@ -264,6 +269,8 @@ jobs:
           node-version: '20'
       - name: Install python pyyaml (required by audit probes)
         run: pip install pyyaml
+      - name: Install packages/core deps (remark + vitest for audit-ai-docs.test.ts)
+        run: npm install --prefix "$GITHUB_WORKSPACE/packages/core" --silent
       - name: Self-install on tmp consumer (ts-server preset)
         run: |
           mkdir -p /tmp/fake-consumer-ts && cd /tmp/fake-consumer-ts
@@ -272,11 +279,11 @@ jobs:
           git config user.name "CI"
           echo '{"name":"fake-consumer-ts","version":"0.0.0","private":true}' > package.json
           bash "$GITHUB_WORKSPACE/install.sh" ts-server
-      - name: Run framework own audits inside fake consumer
+      - name: Run framework own audits (Wave 10.4 — vitest, ts-server)
         run: |
-          cd /tmp/fake-consumer-ts
-          bash "$GITHUB_WORKSPACE/packages/core/audit-self/audit-ai-docs.test.sh" || \
-            { echo "::error::framework audits failed inside tmp consumer (ts-server)"; exit 1; }
+          cd "$GITHUB_WORKSPACE"
+          npx --prefix packages/core vitest run --reporter=default packages/core/audit-self/audit-ai-docs.test.ts || \
+            { echo "::error::framework audits failed (ts-server consumer)"; exit 1; }
 
   framework-self-install-react-next:
     name: Self-install on tmp consumer (react-next)
@@ -292,6 +299,8 @@ jobs:
           node-version: '20'
       - name: Install python pyyaml (required by audit probes)
         run: pip install pyyaml
+      - name: Install packages/core deps (remark + vitest for audit-ai-docs.test.ts)
+        run: npm install --prefix "$GITHUB_WORKSPACE/packages/core" --silent
       - name: Self-install on tmp consumer (react-next preset)
         run: |
           mkdir -p /tmp/fake-consumer-rn && cd /tmp/fake-consumer-rn
@@ -302,11 +311,11 @@ jobs:
           # next.config.js triggers auto-detection in setup.sh; also pass explicit stack to install.sh
           echo 'module.exports = {};' > next.config.js
           bash "$GITHUB_WORKSPACE/install.sh" react-next
-      - name: Run framework own audits inside fake consumer
+      - name: Run framework own audits (Wave 10.4 — vitest, react-next)
         run: |
-          cd /tmp/fake-consumer-rn
-          bash "$GITHUB_WORKSPACE/packages/core/audit-self/audit-ai-docs.test.sh" || \
-            { echo "::error::framework audits failed inside tmp consumer (react-next)"; exit 1; }
+          cd "$GITHUB_WORKSPACE"
+          npx --prefix packages/core vitest run --reporter=default packages/core/audit-self/audit-ai-docs.test.ts || \
+            { echo "::error::framework audits failed (react-next consumer)"; exit 1; }
 
   framework-self-detect:
     name: Detector v1 — self-application snapshot (L1 invariant)
