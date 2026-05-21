@@ -36,13 +36,12 @@ Three independent probes of `obra/superpowers`, 2026-05-21:
 
 > Each wave is its own kickoff + R-phase/I-phase. The verification-heavy items are **separate large tasks to be planned, not executed in this session** (maintainer directive 2026-05-21).
 
-### Wave N0 — Headless-dispatch storm (HARD external deadline ~2026-06-15) — MOST URGENT
-- **Threat:** the autonomous-dispatch architecture (orchestrator → Sonnet workers via `claude -p` headless, "Option C") rests on a platform capability the maintainer flags as closing ~mid-June. External, deadline-bound, not fixable-by-test. See [[project_claude_p_headless_window]] memory.
-- **Strategic framing:** the storm hits the **orchestration/methodology layer** — explicitly NOT the moat (per §3). The enforcement substrate (lint/hooks/mutation/drift + AI-agnostic `agents/*.md`) runs on husky/CI/npm and is harness-independent → weatherproof. The storm is a live stress-test of the AI-agnostic thesis.
-- **Task 0 (gate everything on this):** **VERIFY** the actual policy + exact date via claude-code-guide / official Anthropic docs — do NOT build a migration on an unverified premise (project discipline; also keeps the book honest — no fabricated vendor policy).
-- **Resolution fork (maintainer call):** (a) migrate dispatch to Agent SDK — credit window also ~2026-06-15 (see [[project_swarm_execution_approach]]); (b) degrade to human-in-loop interactive; (c) hand orchestration to a companion runtime (aif-handoff).
-- **Checks:** no-paid-LLM preserved; whichever path must keep the enforcement substrate harness-independent.
-- **BFR verdict:** likely ADOPT (Agent SDK) or REFERENCE (aif-handoff) — orchestration is not the moat; do not BUILD a custom dispatcher.
+### Wave N0 — Headless-dispatch billing change (firm date 2026-06-15) — plan by date, NOT a cliff
+- **Task 0 — DONE (VERIFIED 2026-05-21, claude-code-guide + WebSearch, 2 channels):** the earlier "policy makes `claude -p` unavailable / closing door" framing was **WRONG**. Reality: a **billing change, not a ban.** Effective **June 15, 2026** (announced May 14), `claude -p` + Agent SDK + Claude Code GitHub Actions + third-party agents move **off the subscription's interactive pool onto a separate monthly Agent-SDK credit** ($20 Pro / $100 Max5x / $200 Max20x, at full API rates, no rollover). On exhaustion: requests rejected (or continue at API rates if "extra usage" enabled). Interactive terminal + Claude.ai unchanged. `claude -p` stays supported (docs even add `--bare` as the recommended scripted mode). Sources: [headless docs](https://code.claude.com/docs/en/headless), [Anthropic support](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [The Register 2026-05-14](https://www.theregister.com/ai-ml/2026/05/14/anthropic-tosses-agents-into-the-api-billing-pool/5240748).
+- **Strategic framing (holds, sharpened):** the change hits the **orchestration/methodology layer** — NOT the moat (§3). The enforcement substrate (lint/hooks/mutation/drift + AI-agnostic `agents/*.md`) runs on husky/CI/npm, never used `claude -p`, and is already protected by the **`no-paid-llm-in-ci` rule** → fully weatherproof. A fan-out Bash dispatcher spawning many `claude -p` workers, however, burns the monthly credit fast at API rates.
+- **Real decision (by June 15, maintainer call):** not "migrate before the door shuts" but "how to pay the meter" — (a) cost-aware dispatch within the credit; (b) pay overage at API rates; (c) upgrade plan for more credit; (d) human-in-loop interactive (free pool); (e) hand orchestration to a companion runtime (aif-handoff). Overlaps Wave N7 (dogfood-companions): process-layer migration is the same action.
+- **Checks:** `no-paid-llm-in-ci` preserved; substrate stays harness-independent; estimate per-dispatch credit burn before committing to a fan-out shape.
+- **BFR verdict:** ADOPT (Agent-SDK / companion path) — orchestration is not the moat; do not BUILD a custom dispatcher. Urgency: **moderate** (cost-planning by a firm date), downgraded from the earlier "beats all" once verification showed it is a meter, not a removal.
 
 ### Wave N1 — Niche-validation research
 - **Goal:** lock the positioning empirically. Is there ANY tool combining enforcement-substrate **+** recursive-self-application? (negative-existence → `phase-research-coverage.md` §1 6-item checklist).
@@ -83,34 +82,46 @@ Three independent probes of `obra/superpowers`, 2026-05-21:
 - **Output:** clean coexistence; eventual `npx`-style scaffold replacing the current 8 manual steps.
 - **BFR verdict:** the «button» is the only new build; coexistence reuses C-1 resolution.
 
+### Wave N7 — Dogfood companions in our own dev (arm up: усиливаясь ими)
+- **Goal:** close the conflation the maintainer surfaced 2026-05-21 — «companion» has meant *product-positioning* (we ship alongside; §3), never *dev-tool* (we **use** companions to build this project). Today: **zero companion deps** in `package.json`, own homegrown skills (orchestrator/reviewer), own MCP-research tools — we REFERENCE/ADOPT-VOCABULARY but do not dogfood. This wave makes dogfooding an explicit, bounded choice.
+- **Scope split (load-bearing):** dogfood companions at the **dev-workflow/process layer ONLY** (e.g. use Superpowers' SDD skill + `using-git-worktrees` in our own development instead of maintaining homegrown equivalents). Keep the **enforcement substrate dependency-free** — coupling it to a vendor would forfeit the AI-agnostic weatherproofing the N0 storm just proved load-bearing (book Часть XIII: «оружие для процесса бери у союзников, броню субстрата куй свою»).
+- **N0 coupling:** this is the same action as de-risking the storm — if dispatch already runs on Superpowers/Agent-SDK patterns, the `claude -p` closure bites far less. N7 process-layer dogfooding ⊇ N0 migration target.
+- **Pairs with N5 (give back):** dogfooding first tells us empirically *which* of our unique artifacts (paired-negative, mutation gates, doc-authority) are worth contributing back — N5 follows N7, not the reverse.
+- **Checks:** every dogfood adoption carries a T16 problem-class-match note + SSOT entry; substrate-layer purity verified (`grep` of companion deps in `package.json` stays empty); §1.7 forward+backward whenever a homegrown skill is retired in favour of a companion's.
+- **BFR verdict:** ADOPT (process-layer skills) + KEEP-NARROW (substrate stays own). NOT a BUILD.
+
+> **DECISION-NEEDED (maintainer):** what does «companion» mean for this project — **(A)** product-positioning only (ship alongside, never couple); **(B)** dev-tool (dogfood them to build ourselves); or **(C)** both, on separate layers (substrate = A, process = B)? · *Reviewer's described consequences, not a pick:* A → keeps everything as today; symbiosis stays a claim, not practice; lowest risk, but «arm up with allies» (book Часть XIII) never materialises. B → maximal strengthening but risks coupling the substrate and eroding AI-agnosticism (the very property N0 proved load-bearing). C → the layered split this wave assumes; preserves the weatherproof moat while actually using allies where safe. **N7's whole shape presumes C; if the maintainer picks A or B, N7 is rescoped or dropped.** Per [`reviewer-discipline.md` §2](../../../.claude/rules/reviewer-discipline.md) this is a strategy call — surfaced, not decided here.
+
 ## §5 — Sequencing + dependencies
 
 ```text
-HARD DEADLINE ~2026-06-15 (beats all):   N0 (headless-dispatch storm — verify FIRST, then migrate)
+FIRM DATE 2026-06-15 (plan by it, not a cliff): N0 (headless billing change — VERIFIED: meter, not ban; pick how to pay)
 NOW (cheap, parallel, lock the story):   N1 (validation) ∥ N2 (adopt)
 URGENT (unblocks Commit 7 + AIF claim):  N6a (C-1 impl PR)
 LONG POLE (after Wave 9 M1–M5):          N3 (TS core / Wave 10)
 RESEARCH (no deadline):                  N4a (detector fix) → N4b (gate)
-AFTER N2+N3:                             N5 (give-back)
-AFTER N3+N6a:                            N6b (one-button install)
+ARM UP (process-layer, ⊇ N0 target):     N7 (dogfood companions in dev) — gated on DECISION = C
+AFTER N7 → then N2+N3:                    N5 (give-back)
+AFTER N3+N6a:                             N6b (one-button install)
 ```
 
-- **N0 is the only wave with a hard external clock** — it outranks everything. But it threatens the non-moat layer, so worst case the project degrades orchestration to interactive and the substrate is untouched. Verify before migrating.
+- **N0 has the only fixed external date (June 15)** — but VERIFICATION downgraded it from "hard cliff that beats all" to "cost-model change to plan around." It hits the non-moat layer; the substrate is untouched (already `no-paid-llm-in-ci`-protected). Worst case: degrade orchestration to the free interactive pool. Plan dispatch cost by the date.
 
 - **N1/N2** are cheap and lock positioning → do first, parallelizable (use worktrees per [`parallel-subwave-isolation.md`](../../../.claude/rules/parallel-subwave-isolation.md)).
 - **N6a (C-1 impl)** is the urgent unblock — gates the honest companion claim and Commit 7.
 - **N3** is the long pole; everything product-shaped (N5, N6b) waits on it.
 - **One-button install is LAST** — «coexistence first, button later», never the reverse.
+- **N7 gates on the DECISION-NEEDED** (companion = A/B/C). It is the operational twin of book Часть XIII («arm up with allies») and folds into N0: process-layer dogfooding *is* the storm-migration. N5 (give-back) sequences **after** N7 — you only know what's worth giving once you've used theirs.
 
 ## §6 — §1.7 self-reflexive note (per `phase-research-coverage.md` §1.7)
 
 - **Forward-check:** this roadmap complies with `build-first-reuse-default` (every wave carries a BFR verdict), `no-paid-llm-in-ci` (N1/N4 checks are DeepWiki/WebSearch/deterministic-scorer only), `doc-authority-hierarchy` (this patch declares scope + subordinates to README/EXECUTION-PLAN), `reviewer-discipline` (waves are *proposed*; admission is the maintainer's strategy call, not decided here).
-- **Backward-check:** no new rule introduced → no existing-artefact sweep owed. The roadmap *proposes* rule changes (N2 demotes `parallel-subwave-isolation`'s promotion ambition); those edits carry their own §1.7 when authored.
+- **Backward-check:** no new rule introduced → no existing-artefact sweep owed. The roadmap *proposes* rule changes (N2 demotes `parallel-subwave-isolation`'s promotion ambition); those edits carry their own §1.7 when authored. N7 raises a DECISION-NEEDED rather than deciding it — `reviewer-discipline.md` §2 compliant (consequences described, maintainer picks).
 - **Self-application:** the symbiosis verdict (§3) was itself produced by the project's own «verify, don't assert» discipline (§2 probes) — the recommendation walked its own talk before being written down.
 
 ## §7 — Tags
 
-`#niche-positioning` `#companion-symbiosis` `#build-first-reuse-as-strategy` `#enforcement-substrate-moat` `#give-back-residue`
+`#niche-positioning` `#companion-symbiosis` `#build-first-reuse-as-strategy` `#enforcement-substrate-moat` `#give-back-residue` `#dogfood-companions` `#arm-up-with-allies`
 
 ## §8 — See also
 
