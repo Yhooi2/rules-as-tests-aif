@@ -30,6 +30,10 @@ export interface GitProvider {
   commitBody(sha: string): string;
   /** Date part (YYYY-MM-DD) of `git show -s --format=%ai <sha>`. */
   authorDate(sha: string): string;
+  /** `git show -s --format=%s <sha>` — commit subject line. */
+  commitSubject(sha: string): string;
+  /** `git show <sha> -- <paths…>` — the unified diff restricted to those paths. */
+  diffForPaths(sha: string, paths: readonly string[]): string;
 }
 
 export function upstreamExists(ref: string): boolean {
@@ -82,4 +86,6 @@ export const realGit: GitProvider = {
   },
   commitBody: (sha) => gitOut(['show', '-s', '--format=%B', sha]),
   authorDate: (sha) => gitOut(['show', '-s', '--format=%ai', sha]).trim().split(' ')[0] ?? '',
+  commitSubject: (sha) => gitOut(['show', '-s', '--format=%s', sha]).replace(/\n$/, ''),
+  diffForPaths: (sha, paths) => gitOut(['show', sha, '--', ...paths]),
 };

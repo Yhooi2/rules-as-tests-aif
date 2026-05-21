@@ -50,21 +50,20 @@ describe('pre-push.ts orchestrator — delegation folded through runCheck', () =
     expect(ORCHESTRATOR).toMatch(/from '\.\/utils\/run-check\.ts'/);
   });
 
-  it('invokes all three audit-self self-tests by literal path', () => {
+  it('invokes the remaining audit-self self-tests by literal path', () => {
     // Keeps hook-stub-completeness.test.sh (which greps this file) satisfiable.
-    for (const s of [
-      'audit-ai-docs.test.sh',
-      'pre-push.test.sh',
-      'hook-stub-completeness.test.sh',
-    ]) {
+    // pre-push.test.sh was deleted in Wave 10.3 (its §1.7 scenarios moved to
+    // s17.test.ts), so it is no longer in the hard-fail invocation set.
+    for (const s of ['audit-ai-docs.test.sh', 'hook-stub-completeness.test.sh']) {
       expect(ORCHESTRATOR).toContain(`packages/core/audit-self/${s}`);
     }
   });
 
-  it('delegates §1.7 trailer to the legacy bash shim (§7 moved to TS in Wave 10.2)', () => {
-    // The shim is now §1.7-only (pa_* removed in Wave 10.2). It is still
-    // invoked for the §1.7 discipline-trailer check until Wave 10.3 ports it.
-    expect(ORCHESTRATOR).toMatch(/legacy-trailer-checks\.sh/);
+  it('drives both trailer checks from TS modules (legacy shim deleted in Wave 10.3)', () => {
+    // §7 → checks/prior-art.ts (Wave 10.2); §1.7 → checks/s17.ts (Wave 10.3).
+    expect(ORCHESTRATOR).toMatch(/from '\.\/checks\/prior-art\.ts'/);
+    expect(ORCHESTRATOR).toMatch(/from '\.\/checks\/s17\.ts'/);
+    expect(ORCHESTRATOR).not.toMatch(/legacy-trailer-checks\.sh'\]/); // no longer invoked
   });
 
   it('imports §7 prior-art check from the TS module (Wave 10.2)', () => {
