@@ -125,7 +125,7 @@ jobs:
           if [ "$backward_citations" -lt 1 ]; then
             echo "::error::Backward-check section contains 0 file:line citations (regex [^[:space:]]+\\.[a-z]+:[0-9]+)."
             echo "Substance arm (Forward-check Wave 8.1 parity) — §1.7 Backward-check must cite specific evidence, not generic prose."
-            echo "Example: 'packages/core/audit-self/pre-push.test.sh:16 all body-prose test cases present'"
+            echo "Example: 'packages/core/hooks/checks/s17.test.ts:16 all body-prose test cases ported to vitest (Wave 10.3)'"
             echo "Bootstrap exemption: §1.7 Skipped marker with rationale ≥60 chars."
             exit 1
           fi
@@ -186,7 +186,7 @@ jobs:
           packages/core/principles/01-rule-has-test.test.ts:12 checked — compliant with existing rule-has-test discipline. No forward conflicts.
 
           ### §1.7 Backward-check applied
-          packages/core/audit-self/pre-push.test.sh:16 all body-prose test cases present. Complete sweep performed.
+          packages/core/hooks/checks/s17.test.ts:16 all body-prose test cases ported to vitest (Wave 10.3). Complete sweep performed.
           EOF
           )
 

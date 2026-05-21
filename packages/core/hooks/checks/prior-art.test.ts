@@ -48,6 +48,8 @@ function fakeGit(overrides: Partial<GitProvider> = {}): GitProvider {
     subdirExistedAtParent: () => false,
     commitBody: () => '',
     authorDate: () => FUTURE,
+    commitSubject: () => 'feat: x',
+    diffForPaths: () => '',
     ...overrides,
   };
 }

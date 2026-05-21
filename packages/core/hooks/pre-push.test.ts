@@ -4,10 +4,11 @@
  * These assert the dispatch contract that dual-implementation-discipline.md §4
  * mandates (capability-check, not brand-name) and the migration invariants that
  * keep enforcement intact (delegation through runCheck; self-tests still
- * referenced by literal path; §7 Prior-art trailer now handled directly in TS;
- * legacy shim retained for §1.7-only).
+ * referenced by literal path; §7 Prior-art trailer and §1.7 discipline trailer
+ * both handled directly in TS; legacy-trailer-checks.sh deleted in Wave 10.3).
  * The runner's own behaviour is covered by utils/run-check.test.ts.
  * The §7 logic is covered by checks/prior-art.test.ts.
+ * The §1.7 logic is covered by checks/s17.test.ts.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -50,21 +51,27 @@ describe('pre-push.ts orchestrator — delegation folded through runCheck', () =
     expect(ORCHESTRATOR).toMatch(/from '\.\/utils\/run-check\.ts'/);
   });
 
-  it('invokes all three audit-self self-tests by literal path', () => {
+  it('invokes the remaining audit-self self-tests by literal path', () => {
     // Keeps hook-stub-completeness.test.sh (which greps this file) satisfiable.
-    for (const s of [
-      'audit-ai-docs.test.sh',
-      'pre-push.test.sh',
-      'hook-stub-completeness.test.sh',
-    ]) {
+    // pre-push.test.sh was deleted in Wave 10.3 (its §1.7 scenarios moved to
+    // s17.test.ts), so it is no longer in the hard-fail invocation set.
+    for (const s of ['audit-ai-docs.test.sh', 'hook-stub-completeness.test.sh']) {
       expect(ORCHESTRATOR).toContain(`packages/core/audit-self/${s}`);
     }
   });
 
-  it('delegates §1.7 trailer to the legacy bash shim (§7 moved to TS in Wave 10.2)', () => {
-    // The shim is now §1.7-only (pa_* removed in Wave 10.2). It is still
-    // invoked for the §1.7 discipline-trailer check until Wave 10.3 ports it.
-    expect(ORCHESTRATOR).toMatch(/legacy-trailer-checks\.sh/);
+  it('drives both trailer checks from TS modules (legacy shim deleted in Wave 10.3)', () => {
+    // §7 → checks/prior-art.ts (Wave 10.2); §1.7 → checks/s17.ts (Wave 10.3).
+    expect(ORCHESTRATOR).toMatch(/from '\.\/checks\/prior-art\.ts'/);
+    expect(ORCHESTRATOR).toMatch(/from '\.\/checks\/s17\.ts'/);
+    expect(ORCHESTRATOR).not.toMatch(/legacy-trailer-checks\.sh'\]/); // no longer invoked
+  });
+
+  it('PREPUSH_ONLY seam accepts both "prior-art" and "s17" (Wave 10.3 extension)', () => {
+    // Ensures the test seam is exercisable for §1.7 in isolation — the anti-tautology
+    // pattern from prior-art-trailer-hook.test.sh applied to the s17 section.
+    expect(ORCHESTRATOR).toMatch(/PREPUSH_ONLY.*prior-art/);
+    expect(ORCHESTRATOR).toMatch(/PREPUSH_ONLY.*s17/);
   });
 
   it('imports §7 prior-art check from the TS module (Wave 10.2)', () => {

@@ -10,10 +10,10 @@
  * shell-outs into thin, individually-tested call sites (closes C3 for the
  * delegation sections).
  *
- * Wave 10.2: §7 Prior-art trailer (pa_* functions) is now handled directly by
- * the TS module `checks/prior-art.ts` + `utils/git.ts`. The bash shim
- * (`legacy-trailer-checks.sh`) is trimmed to §1.7-only (s17_* functions) and
- * will be deleted after Wave 10.3 ports the §1.7 check.
+ * Both trailer checks are now TS-native: §7 Prior-art → `checks/prior-art.ts`
+ * (Wave 10.2), §1.7 discipline trailer → `checks/s17.ts` (Wave 10.3), both over
+ * `utils/git.ts`. The former bash shim (`legacy-trailer-checks.sh`) is deleted;
+ * no bash trailer logic remains.
  *
  * Behaviour parity with the former bash hook is byte-faithful for the delegation
  * sections; documented deviations:
@@ -28,6 +28,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runCheck, type CheckResult } from './utils/run-check.ts';
 import { runPriorArtCheck } from './checks/prior-art.ts';
+import { runS17Check } from './checks/s17.ts';
 import { getCommits, upstreamExists, realGit } from './utils/git.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -132,12 +133,69 @@ function priorArtSection(): void {
   }
 }
 
+/**
+ * §1.7 discipline-trailer check. TS-native since Wave 10.3 (ported from the
+ * deleted legacy-trailer-checks.sh s17_* functions). Both arms default to
+ * warn-only (S17_WARN_ONLY / S17_SUBSTANCE_WARN_ONLY) through the 2026-06-10
+ * calibration window; set the env flag to 'false' to harden locally.
+ */
+function s17Section(): void {
+  const UPSTREAM_REF = 'origin/main';
+  if (!upstreamExists(UPSTREAM_REF)) return;
+  const commits = getCommits(UPSTREAM_REF);
+  const warnOnly = (process.env['S17_WARN_ONLY'] ?? 'true') !== 'false';
+  const substanceWarnOnly = (process.env['S17_SUBSTANCE_WARN_ONLY'] ?? 'true') !== 'false';
+  const report = runS17Check(commits, realGit);
+
+  if (report.failures.length > 0) {
+    if (warnOnly) {
+      process.stdout.write('\n⚠ §1.7 trailer missing or invalid on rule-introducing commit(s):\n');
+      for (const f of report.failures) process.stdout.write(`  ${f.sha}  ${f.message}\n`);
+      process.stdout.write(
+        '\nCalibration window: warn-only through 2026-06-10 (30 days from ship). Set S17_WARN_ONLY=false to enforce locally.\n' +
+          'Fix: add `§1.7: forward-check applied — …; backward-check sweep — …` to commit body.\n\n',
+      );
+    } else {
+      process.stdout.write('\n❌ §1.7 trailer missing or invalid on rule-introducing commit(s):\n');
+      for (const f of report.failures) process.stdout.write(`  ${f.sha}  ${f.message}\n`);
+      process.stdout.write(
+        '\nFix: add `§1.7: forward-check applied — …; backward-check sweep — …` to commit body.\n' +
+          'Bootstrap exemption: `§1.7 Bootstrap: <reason>` (≥20 chars rationale).\n\n',
+      );
+      process.exit(1);
+    }
+  }
+
+  if (report.substanceFailures.length > 0) {
+    if (substanceWarnOnly) {
+      process.stdout.write('\n⚠ §1.7 trailer lacks file:line citation on rule-introducing commit(s) (substance arm — Wave 8.3):\n');
+      for (const f of report.substanceFailures) process.stdout.write(`  ${f.sha}  ${f.message}\n`);
+      process.stdout.write(
+        '\nCalibration window: warn-only through 2026-06-10. Set S17_SUBSTANCE_WARN_ONLY=false to enforce locally.\n' +
+          'Fix: include ≥1 file:line citation, e.g. `packages/core/principles/02.test.ts:82`.\n\n',
+      );
+    } else {
+      process.stdout.write('\n❌ §1.7 trailer lacks file:line citation on rule-introducing commit(s) (substance arm — Wave 8.3):\n');
+      for (const f of report.substanceFailures) process.stdout.write(`  ${f.sha}  ${f.message}\n`);
+      process.stdout.write(
+        '\nFix: include ≥1 file:line citation, e.g. `packages/core/principles/02.test.ts:82`.\n' +
+          'Bootstrap exemption: `§1.7 Bootstrap: <reason>` (≥20 chars rationale).\n\n',
+      );
+      process.exit(1);
+    }
+  }
+}
+
 function main(): void {
   // Test seam: run a single section in isolation. The §7 anti-tautology
   // end-to-end test (tests/hooks/prior-art-trailer-hook.test.sh) sets this so it
   // exercises only the prior-art logic, independent of sections 1–6 deps/env.
   if (process.env['PREPUSH_ONLY'] === 'prior-art') {
     priorArtSection();
+    process.exit(0);
+  }
+  if (process.env['PREPUSH_ONLY'] === 's17') {
+    s17Section();
     process.exit(0);
   }
 
@@ -161,7 +219,6 @@ function main(): void {
 
   // ── 3. Self-test pipeline ─────────────────────────────────────────────────────
   requireSelfTest('packages/core/audit-self/audit-ai-docs.test.sh');
-  requireSelfTest('packages/core/audit-self/pre-push.test.sh');
 
   // ── 3a. Hook stub completeness ────────────────────────────────────────────────
   requireSelfTest('packages/core/audit-self/hook-stub-completeness.test.sh');
@@ -223,17 +280,10 @@ function main(): void {
   // pa_* functions in the former legacy-trailer-checks.sh (now §1.7-only).
   priorArtSection();
 
-  // ── §1.7. Discipline trailer (§1.7) — delegated to legacy bash shim until Wave 10.3 ──
-  // The shim is now §1.7-only (pa_* functions removed in Wave 10.2). The bash
-  // handles its own warn-only calibration and exits non-zero only on hard failures.
-  {
-    const r = runCheck('bash', [resolve(HERE, 'legacy-trailer-checks.sh')], {
-      cwd: REPO_ROOT,
-      env: process.env,
-    });
-    emit(r);
-    if (r.exitCode !== 0) process.exit(r.exitCode);
-  }
+  // ── §1.7. Discipline trailer — TS-native since Wave 10.3 ─────────────────────
+  // Ported from s17_* in the (now deleted) legacy-trailer-checks.sh. Both arms
+  // default to warn-only through the 2026-06-10 calibration window.
+  s17Section();
 
   // ── 8. lychee offline link check on changed *.md ─────────────────────────────
   {
