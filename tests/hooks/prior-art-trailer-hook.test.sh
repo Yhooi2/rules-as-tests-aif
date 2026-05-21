@@ -4,9 +4,12 @@
 #
 # Independence: tests instrument the hook through a subprocess in an
 # isolated tmpdir; sub-tests do NOT exercise the hook against the test
-# script's own commits. The hook file under test is the canonical one
-# at $REPO_ROOT/.husky/pre-push (single source of truth — no inlined
-# logic copy in this test).
+# script's own commits. The §7 trailer logic under test is the canonical
+# bash at $REPO_ROOT/packages/core/hooks/legacy-trailer-checks.sh — Wave 10.1
+# extracted it verbatim out of .husky/pre-push (now a Node dispatcher that
+# cannot run self-contained in a fresh tmp repo). It ports to TS in Wave 10.2
+# (checks/prior-art.ts), at which point this guard re-targets the TS impl.
+# Single source of truth — no inlined logic copy in this test.
 #
 # External commands invoked by sections 1-6 of the hook (actionlint,
 # zizmor, npx, npm, packages/core/audit-self/audit-ai-docs.test.sh) are
@@ -25,7 +28,7 @@
 set -uo pipefail
 
 REPO_ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
-HOOK_FILE="$REPO_ROOT/.husky/pre-push"
+HOOK_FILE="$REPO_ROOT/packages/core/hooks/legacy-trailer-checks.sh"
 
 PASS=0
 FAIL=0
