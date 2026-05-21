@@ -1,0 +1,94 @@
+name: pre-push-backstop
+
+# CI backstop for the `git push --no-verify` gap.
+#
+# The local pre-push hook (packages/core/hooks/pre-push.ts) runs the §7 Prior-art
+# and §1.7 discipline trailer checks against the push range. `--no-verify` skips
+# it entirely, so a capability/rule commit can land on a PR branch with no trailer
+# and nothing notices: the existing CI (audit-self.yml) runs the principles
+# meta-tests and the §7/§1.7 anti-tautology *unit/e2e* tests against synthesized
+# fixture repos — none of them inspect THIS PR's actual commits. This workflow
+# re-runs the two trailer sections against the LIVE PR commit range so the gate
+# fires at merge time even when the local hook was bypassed.
+#
+# It is a thin invoker, not a re-implementation: it runs the exact same
+# pre-push.ts sections via the PREPUSH_ONLY seam, overriding the diff base with
+# PREPUSH_UPSTREAM_REF = the PR base ref (parameterised in pre-push.ts). Single
+# source of truth — the check logic lives in checks/prior-art.ts + checks/s17.ts;
+# this file only points them at the right commit range.
+#
+# Faithful mirror of pre-push behaviour: it does NOT override the warn-only env
+# defaults (S17_WARN_ONLY / S17_SUBSTANCE_WARN_ONLY / PA_SUBSTANCE_WARN_ONLY).
+# Today that means it HARD-fails only on a §7 Prior-art trailer missing/invalid on
+# a capability commit (that arm has no warn-only); the §1.7 arms warn through the
+# calibration window. Because it reuses pre-push.ts unchanged, it auto-hardens the
+# moment PR #119 flips those defaults to blocking — no edit to this file needed.
+#
+# Deterministic, no LLM (.claude/rules/no-paid-llm-in-ci.md): pure git + TS, runs
+# on the operator's GitHub Actions minutes, no API key.
+#
+# Forward-compatible with the §13.40 automerge→staging plan: because the base is
+# the PR base ref (not hard-coded origin/main), this also gates sub-PRs that
+# target a non-main base (epic/staging branches).
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  trailer-backstop:
+    name: Trailer backstop (§7 prior-art + §1.7) on live PR range
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # full history so PR-base..HEAD resolves
+          ref: ${{ github.event.pull_request.head.sha }}  # real PR head, not the synthetic merge commit
+
+      - name: Fetch PR base branch
+        # The base tip may have advanced past the merge-base and is not guaranteed
+        # to be in the head's fetched history; fetch it explicitly and reference it
+        # as origin/<base_ref> so `<base>..HEAD` is exactly this PR's commits.
+        # base_ref via env (not inline ${{…}}) to avoid template-injection (zizmor).
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Install packages/core deps (tsx loader)
+        run: npm install --prefix packages/core --silent
+
+      - name: Resolve tsx ESM loader
+        # tsx lands in packages/core/node_modules under the prefix install; probe
+        # root too for parity with the e2e tests' resolution.
+        run: |
+          if [ -f packages/core/node_modules/tsx/dist/esm/index.mjs ]; then
+            echo "TSX_LOADER=$PWD/packages/core/node_modules/tsx/dist/esm/index.mjs" >> "$GITHUB_ENV"
+            echo "NODE_PATH=$PWD/packages/core/node_modules" >> "$GITHUB_ENV"
+          elif [ -f node_modules/tsx/dist/esm/index.mjs ]; then
+            echo "TSX_LOADER=$PWD/node_modules/tsx/dist/esm/index.mjs" >> "$GITHUB_ENV"
+            echo "NODE_PATH=$PWD/node_modules" >> "$GITHUB_ENV"
+          else
+            echo "::error::tsx ESM loader not found in packages/core/node_modules or root node_modules"
+            exit 1
+          fi
+
+      - name: §7 Prior-art trailer — live PR commit range vs base
+        env:
+          PREPUSH_ONLY: prior-art
+          PREPUSH_UPSTREAM_REF: origin/${{ github.base_ref }}
+        run: node --import "$TSX_LOADER" packages/core/hooks/pre-push.ts
+
+      - name: §1.7 discipline trailer — live PR commit range vs base
+        env:
+          PREPUSH_ONLY: s17
+          PREPUSH_UPSTREAM_REF: origin/${{ github.base_ref }}
+        run: node --import "$TSX_LOADER" packages/core/hooks/pre-push.ts

@@ -39,6 +39,19 @@ const CORE = resolve(REPO_ROOT, 'packages/core');
 const run = (cmd: string, args: readonly string[] = []): CheckResult =>
   runCheck(cmd, args, { cwd: REPO_ROOT });
 
+/**
+ * Upstream ref the trailer checks diff against (`<ref>..HEAD`). Defaults to
+ * `origin/main` — the pre-push case. The CI backstop
+ * (.github/workflows/pre-push-backstop.yml) overrides it via PREPUSH_UPSTREAM_REF
+ * with the PR base ref, so a push that bypassed pre-push with `--no-verify` is
+ * re-checked at merge time against the actual base. Parameterising the ref (vs
+ * hard-coding `origin/main`) is what lets the backstop also gate PRs targeting a
+ * non-main base — epic/staging branches per the §13.40 automerge plan.
+ */
+function upstreamRef(): string {
+  return process.env['PREPUSH_UPSTREAM_REF'] ?? 'origin/main';
+}
+
 /** Re-emit a captured result's output to the operator. */
 function emit(r: CheckResult): void {
   if (r.stdout) process.stdout.write(r.stdout);
@@ -88,7 +101,7 @@ function requireSelfTest(scriptRelPath: string): void {
  * depend on the other sections' tools/deps.
  */
 function priorArtSection(): void {
-  const UPSTREAM_REF = 'origin/main';
+  const UPSTREAM_REF = upstreamRef();
   if (!upstreamExists(UPSTREAM_REF)) return;
   const commits = getCommits(UPSTREAM_REF);
   const substanceWarnOnly = (process.env['PA_SUBSTANCE_WARN_ONLY'] ?? 'true') !== 'false';
@@ -140,7 +153,7 @@ function priorArtSection(): void {
  * calibration window; set the env flag to 'false' to harden locally.
  */
 function s17Section(): void {
-  const UPSTREAM_REF = 'origin/main';
+  const UPSTREAM_REF = upstreamRef();
   if (!upstreamExists(UPSTREAM_REF)) return;
   const commits = getCommits(UPSTREAM_REF);
   const warnOnly = (process.env['S17_WARN_ONLY'] ?? 'true') !== 'false';
