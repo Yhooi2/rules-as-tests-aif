@@ -3,14 +3,25 @@
  * Wave 10.4: bash→TS port with D1–D5 structural hardening (code-fence-aware remark AST,
  * JSON.parse key-match for D2). Prior-art: prior-art-evaluations.md#58 (remark, ADOPT).
  *
- * Rule mapping:
- *   R4  Tests for new code         → ts-morph probe (probe_R4)
- *   D1  Skills declared exist      → remark AST (code-fence-aware; ignores negative mentions)
- *   D2  No TODO/_comment in JSON   → JSON.parse key-match (not substring grep)
- *   D3  Goal-phrase parity         → includes() check on prose text
- *   D4  Tool-decisions staleness   → mtime comparison (no AST needed)
- *   D5  Inverse-completeness       → includes() grep over repo files + exemption list
- *   R17 Component .stories.tsx     → filesystem scan (in react-next preset; tested here)
+ * Full rule mapping (mirrors audit-ai-docs.sh rule header; workflow rule-to-probe grep reads this):
+ *   R1  TypeScript hygiene       → delegated to ESLint (no-explicit-any, no-non-null-assertion)
+ *   R2  Validation at boundaries → delegated to local ESLint rule (rules-as-tests/no-unsafe-zod-parse)
+ *   R3  Architectural boundaries → delegated to dependency-cruiser (run separately)
+ *   R4  Tests for new code       → probeR4() — ts-morph: every domain export has .unit.ts
+ *   R5  Async correctness        → delegated to ESLint no-floating-promises
+ *   R6  Errors                   → delegated to ESLint (no-throw-literal, no-useless-catch)
+ *   R7  Time/randomness/IO       → delegated to local ESLint rule (rules-as-tests/no-direct-time-randomness)
+ *   R8  Observability            → delegated to local ESLint rule (rules-as-tests/require-otel-span)
+ *   R9  Imports/dependencies     → delegated to ESLint (no-restricted-imports)
+ *   R10 Naming                   → manual review only (not formalisable)
+ *   R11 CI integrity             → manual review only
+ *   D1  Skills declared exist    → probeD1() — remark AST (code-fence-aware; ignores negative mentions)
+ *   D2  No TODO/_comment in JSON → probeD2() — JSON.parse key-match (not substring grep)
+ *   D3  Goal-phrase parity       → probeD3() — includes() check on prose text
+ *   D4  Tool-decisions staleness → probeD4() — mtime comparison
+ *   D5  Inverse-completeness     → probeD5() — includes() grep over repo files + exemption list
+ *
+ * skip_unless R4 — active probe (probeR4 function below); all others delegated or manual.
  *
  * Exit codes:
  *   0 — all probes PASS (WARN allowed)
