@@ -189,6 +189,20 @@ line 164 — this output block quoting line 157
 
 ---
 
+## §5.6 — Maintainer decisions (recorded 2026-05-21)
+
+> **Authority note:** §5.1–§5.4 above are the reviewer-disciplined decision surface (options + consequences, no pick). This section records the **maintainer's** explicit answers to that surface — the decision is the maintainer's (Art, 2026-05-21), recorded by the orchestrator. This is the legitimate closure of a decision-needed surface per [reviewer-discipline.md §2 step 3](../../../.claude/rules/reviewer-discipline.md). **Implementation is deferred to a separate follow-up session** — this research patch ships no code and codifies no rule.
+
+| Surfaced item | Maintainer decision | Note |
+|---|---|---|
+| **§5.1 — D6 mechanism choice** | **Option (c): both viable — ship H10 first, retain H2 as deferred alternative.** | Rationale (maintainer): H10 (verdict-as-tool-call; schema enforces fields) is the only mechanism with 0% FP (round-3 §3.7) and *prevents verdict formation* rather than catch-and-reject; natural fit for the Wave 10 TS-migration. H2 gives cheap interim coverage (ADOPT VOCABULARY; springzero scan-pattern) but its 67% FP on meta-discourse (round-3 §3.7; confirmed on this patch's own §2 in round-4 §4.1) is too noisy for a standing HOT gate. Not «either/or» — H10 as the target, H2 as interim if earlier coverage is needed. |
+| **§5.3 — Consolidation with autonomous-self-audit** | **Merge** the overlapping scope into one R-phase. | Rationale (maintainer): both hit the same nerve (recommendation-moment / no-self-trigger); the live [`end-of-turn-reminder.sh`](../../../.claude/hooks/end-of-turn-reminder.sh) Stop hook already partially instantiates candidate A/E of that companion. Keeping them separate risks `#parallel-evolution-creep` ([build-first-reuse-default.md §4](../../../.claude/rules/build-first-reuse-default.md)). |
+| **§5.2.1–§5.2.4 — four Round-4 residuals** | **Open — carried into the follow-up session.** | Not separately adjudicated in this exchange. The follow-up implementation/consolidation session inherits them as open inputs (adversarial-sentence fold, R1 shortlist H10-schema boundary, H2-FP acceptability, retroactive §2 amendment), now framed by the fixed D6 = (c) and consolidation = merge decisions above. |
+
+**Follow-up trigger:** a new session implements H10-first under Wave 10 scope and merges this scope with `autonomous-self-audit-research` into one R-phase. This patch + the merged kickoff are its inputs.
+
+---
+
 ## Citations used in this file
 
 | Citation | What it grounds |
