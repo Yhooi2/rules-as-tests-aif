@@ -7,7 +7,12 @@
 # Exit: 0 = all pass, 1 = at least one failure.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="$SCRIPT_DIR/../../../.husky/pre-push"
+# Wave 10.1: the §7/§1.7 trailer functions moved out of .husky/pre-push (now a
+# 10-line dispatcher) into packages/core/hooks/legacy-trailer-checks.sh, keeping
+# their 2-space indentation so the sed-extraction below still matches. They port
+# to TS in Wave 10.2 (prior-art.ts) / 10.3 (s17.ts), at which point these
+# scenarios move to vitest and this file is retired.
+HOOK="$SCRIPT_DIR/../hooks/legacy-trailer-checks.sh"
 if [ -t 1 ]; then RED='\033[0;31m'; GREEN='\033[0;32m'; NC='\033[0m'
 else RED=''; GREEN=''; NC=''; fi
 PASS=0; FAIL=0

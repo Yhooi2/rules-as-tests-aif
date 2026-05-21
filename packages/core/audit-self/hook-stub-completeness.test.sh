@@ -16,11 +16,15 @@
 set -euo pipefail
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-HOOK="${REPO_ROOT}/.husky/pre-push"
+# Wave 10.1: the self-test invocations moved from the bash body of .husky/pre-push
+# (now a 10-line dispatcher) into the TS orchestrator. They remain present there
+# as literal `packages/core/audit-self/<name>.test.sh` string args to runCheck(),
+# so the grep below still finds the full hard-fail set.
+HOOK="${REPO_ROOT}/packages/core/hooks/pre-push.ts"
 TESTS_DIR="${REPO_ROOT}/tests/hooks"
 
-# Extract hard-fail invocations from .husky/pre-push.
-# Pattern: `if [ -x packages/core/audit-self/<name>.sh ]; then bash ...`
+# Extract hard-fail invocations from the pre-push orchestrator.
+# Pattern: literal `packages/core/audit-self/<name>.test.sh` runCheck args.
 hard_fail_scripts=$(grep -oE 'packages/core/audit-self/[a-z0-9-]+\.test\.sh' "$HOOK" | sort -u)
 
 if [ -z "$hard_fail_scripts" ]; then
