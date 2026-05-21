@@ -183,6 +183,19 @@ Ran the claim regexes over this patch. Flagged claims + grounding:
 
 ---
 
+## §8.5 — Maintainer decisions (recorded 2026-05-21)
+
+> Per [reviewer-discipline.md §2 step 3](../../../.claude/rules/reviewer-discipline.md): §9 surfaced options-only; this records the **maintainer's** (Art) explicit answers — the legitimate closure of a decision-needed surface. Decisions were implemented in a **separate** PR (atomic-PR discipline: research patch vs implementation), not this patch.
+
+| Item | Maintainer decision | Realised by |
+|---|---|---|
+| **Q-E1 — which gate** | **Hybrid: DEFER the clean Q1b A/B to longitudinal accrual + FIX the detector** (recall/precision is the binding weakness, not compliance). | Q-E2 (eval tool accrues) + Q-E4 (detector fix). |
+| **Q-E2 — fund longitudinal eval** | **YES** — scorer promoted to a committed session-bound tool. | [tests/eval/](../../../tests/eval/) (scorer + README + committed baseline); SSOT #53; NOT CI-wired (no-paid-LLM + private transcripts). |
+| **Q-E3 — §13.34 trigger on ≥+15pp** | **YES** — interim graduates only on ≥+15pp grounded-lift over the committed baseline (≥50 fired instances). | [open-questions.md §13.34](../../../docs/meta-factory/open-questions.md) «Empirical promotion gate». |
+| **Q-E4 — detector fix scope** | **YES — widen numeric regex to ≤2 intervening tokens + strip citations/quotes/links.** | [`.claude/hooks/end-of-turn-reminder.sh`](../../../.claude/hooks/end-of-turn-reminder.sh) `scan_text` + extended [eot-claim-scan.test.sh](../../../tests/hooks/eot-claim-scan.test.sh) (recall+precision sub-tests). Validated on real data: recall +~37% claim-turns, precision −~105 FP (baseline doc). |
+
+Implementation note (T15-adjacent): the detector fix was itself validated by re-running the eval scorer over real transcripts (recall/precision deltas in [tests/eval/baseline-2026-05-21.md](../../../tests/eval/baseline-2026-05-21.md)) — the eval the patch designed is the test the fix had to pass.
+
 ## §9 — Open questions for maintainer (decision-needed — options, no pick, per [reviewer-discipline.md §2](../../../.claude/rules/reviewer-discipline.md))
 
 - **Q-E1 — which decision-gate (a/b/c/d)?** The pilot points to a blend: **(d) DEFER the clean Q1b A/B** to longitudinal accrual + **fix the detector** (recall/precision) now as the cheap high-value move (a sub-case of «keep, but improve»). Option (b) bare-removal is defensible on headroom grounds; option (c) fast-track-H10 is premature (H0 un-tested). → maintainer / `/orchestrator` decides; reviewer does not pick.
