@@ -4,7 +4,7 @@
 > **Authoritative for:** iterative re-validation of the think-time-gate §7 recommendation bundle (H1+H10+W1, MEDIUM confidence); anchor consolidation of what is already decided; Round 0 of the iterative research structure described in [`.claude/orchestrator-prompts/recommendation-gate-iterative/kickoff.md`](./../../../.claude/orchestrator-prompts/recommendation-gate-iterative/kickoff.md).
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). The mechanism catalogue and prior-art evidence — those are authoritative in the predecessor patch (§0.1 below). Strategy/implementation decision — maintainer after Round 5 surfaces decision-needed.
 > **Date:** 2026-05-21
-> **Status:** ROUND 2 COMPLETE (post-REVISE correction applied) — shortlist {H1, H2, H10}; H2 FRESH-route delta-a; springzero per-turn cadence corrected to INCONCLUSIVE-resolved (session-exit); H2 per-turn viability re-grounded on Claude Code harness evidence only; Gate 2 self-check passed. Rounds 3-5 pending.
+> **Status:** ROUND 3 COMPLETE (post-REVISE) — §3 split to [round-3 file](2026-05-21-recommendation-gate-iterative-round-3.md) for the 500-line limit. Paper prototype + full-corpus dry-run done, Gate 3 PASS: H2 4/10 genuine catch + 67% FP; H10 5/9 firm + 0% FP (fabrication risk); H1 instruction-delta only for at-write-time factual class; no single mechanism covers both classes. Rounds 4-5 pending. (Round 2: shortlist {H1,H2,H10}; H2 FRESH delta-a; springzero cadence corrected to session-exit; per-turn viability on Claude Code harness evidence; Gate 2 passed.)
 > **Predecessor:** [2026-05-16-§17-think-time-gate.md](2026-05-16-§17-think-time-gate.md) (mechanism catalogue, §4 H1–H11 + W1–W4, §7 recommendation bundle) + [2026-05-16-think-time-s17-gate-correction.md](2026-05-16-think-time-s17-gate-correction.md) (Stop-hook errata). This patch is a **re-validation** of those delivered conclusions (Option B, maintainer decision 2026-05-21), NOT a replacement or re-derivation.
 > **Inherits authority from:** [research-patches/README.md](README.md) folder-level Authoritative-for header.
 
@@ -488,3 +488,10 @@ Specifically: C3 («4-turn hand-roll defence») was a case where `§1` analysis 
 2. **H2 «catch-and-reject vs. prevent-formation» latency:** the stop-hook-fires-after-response-generation property means H2 adds one retry loop per intercepted turn. For the 4-turn defence (C3), H2 would fire 4 times — 4 retry loops. H10 would enforce at the first tool-call attempt. Round 3 should note which mechanism is less disruptive to dialogue flow.
 
 3. **H1 specificity vs. session-start sufficiency:** the 2026-05-13 session had generic injection but not the specific 4-step recommendation checklist. Round 3 dry-run must evaluate whether the corpus cases (C1–C8) would plausibly have been caught by the specific checklist instruction vs. the generic goal/invariants that were present and failed. This is the Q1 empirical question in dry-run form.
+
+
+---
+
+## §3 — Paper prototype + dry-run vs full corpus
+
+> **Moved to a separate file** to stay under the 500-line markdown limit (`.husky/pre-commit`): see [2026-05-21-recommendation-gate-iterative-round-3.md](2026-05-21-recommendation-gate-iterative-round-3.md). **Round 3 status: COMPLETE — Gate 3 PASS.** Headline: H2 keyword-scan caps at 4/10 genuine catches + 67% false-positive rate (two structural FP causes); H10 schema-gate 5/9 firm + 0% FP but fabrication-bypass risk; H1 instruction-delta concrete only for the at-write-time factual class (C7/C8/F2/F3), strategy-verdict class Q1-unresolved at paper fidelity; no single mechanism covers both failure classes.
