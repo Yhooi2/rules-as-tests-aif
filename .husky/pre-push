@@ -112,7 +112,8 @@ fi
 # Substance arm (Wave 8.4): on capability commits, the `Prior-art: skipped — …`
 # escape-hatch is rejected (exit 2 from pa_check_trailer); must cite a real SSOT
 # entry (prior-art-evaluations.md#N). PA_SUBSTANCE_WARN_ONLY gates independently.
-# Enforcing by default since 2026-05-21 (flipped early per maintainer directive); set PA_SUBSTANCE_WARN_ONLY=true for local downgrade.
+# PA_SUBSTANCE_WARN_ONLY stays warn-only (default true): enforcing it conflicts with the documented `skipped — refactor only` escape hatch in CLAUDE.md (PR #115, Option B). §1.7 arms are enforcing as of 2026-05-21.
+
 UPSTREAM_REF="origin/main"
 if git rev-parse --verify "$UPSTREAM_REF" &>/dev/null; then
   COMMITS=$(git rev-list "${UPSTREAM_REF}..HEAD" 2>/dev/null || true)
@@ -244,7 +245,7 @@ if git rev-parse --verify "$UPSTREAM_REF" &>/dev/null; then
     return 1
   }
 
-  PA_SUBSTANCE_WARN_ONLY="${PA_SUBSTANCE_WARN_ONLY:-false}"
+  PA_SUBSTANCE_WARN_ONLY="${PA_SUBSTANCE_WARN_ONLY:-true}"
   PRIOR_ART_FAILURES=""
   PA_SUBSTANCE_FAILURES=""
   for sha in $COMMITS; do
@@ -276,7 +277,7 @@ if git rev-parse --verify "$UPSTREAM_REF" &>/dev/null; then
     if [ "$PA_SUBSTANCE_WARN_ONLY" = "true" ]; then
       printf '\n⚠ Prior-art: escape-hatch on capability commit (substance arm, Wave 8.4):\n'
       printf '%b' "$PA_SUBSTANCE_FAILURES"
-      printf 'Local downgrade active (*_WARN_ONLY=true); default is enforcing.'
+      printf '\nWarn-only (PA_SUBSTANCE_WARN_ONLY default true); set =false to enforce. Enforcing conflicts with CLAUDE.md escape hatch — see PR #115.\n'
       printf 'Fix: replace `Prior-art: skipped — …` with `Prior-art: prior-art-evaluations.md#N (verdict X — rationale)`.\n\n'
     else
       printf '\n❌ Prior-art: escape-hatch on capability commit:\n'
@@ -443,7 +444,7 @@ if git rev-parse --verify "$UPSTREAM_REF" &>/dev/null; then
     if [ "$S17_SUBSTANCE_WARN_ONLY" = "true" ]; then
       printf '\n⚠ §1.7 trailer lacks file:line citation on rule-introducing commit(s) (substance arm — Wave 8.3):\n'
       printf '%b' "$S17_SUBSTANCE_FAILURES"
-      printf '\Local downgrade active (*_WARN_ONLY=true); default is enforcing.'
+      printf 'Local downgrade active (*_WARN_ONLY=true); default is enforcing.'
       printf 'Fix: include ≥1 file:line citation, e.g. `packages/core/principles/02.test.ts:82`.\n\n'
     else
       printf '\n❌ §1.7 trailer lacks file:line citation on rule-introducing commit(s) (substance arm — Wave 8.3):\n'
