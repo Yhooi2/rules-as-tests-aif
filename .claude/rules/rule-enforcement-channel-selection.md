@@ -1,6 +1,6 @@
 # Rule-enforcement channel selection — discipline rule
 
-> **Class:** C — prose-only; mechanism deferred. No compensating mechanism currently in place; enforced by author awareness at rule-authoring time. Promotion criterion in §6. (Refined from the patch §6/§7 "B" lean — there is no compensating mechanism today, so C is the honest class, matching peer meta-discipline rules [reviewer-discipline.md](reviewer-discipline.md) and [parallel-subwave-isolation.md](parallel-subwave-isolation.md).)
+> **Class:** B — compensating mechanism shipped: [`.claude/hooks/inject-matching-rule.sh`](../hooks/inject-matching-rule.sh) (PostToolUse path-scoped rule-injector, the §4 mechanism) + a deterministic self-test (`packages/core/hooks/inject-matching-rule.test.ts`). **Activation pending** one `settings.json` PostToolUse `Edit|Write` entry (maintainer-landed — `settings.json` is agent-self-protected). Promotion to A (principle test on rule-channel-declaration) in §6. (Codified Class C 2026-05-22; promoted to B the same wave when the injector shipped — no longer "prose-only".)
 > **Authoritative for:** rule-enforcement-channel-selection discipline — §1 the two-axis principle, §2 triggers/non-triggers, §3 the selection procedure, §4 channel catalogue (this repo), §5 anti-patterns, §6 promotion/retirement.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Enforcement *ordering in time* (edit→pre-commit→pre-push→CI→audit) — that is the README "earliest reachable channel" invariant; this rule is its *delivery-scope* companion. No-paid-LLM constraint on any proposed mechanism — see [no-paid-llm-in-ci.md](no-paid-llm-in-ci.md).
 
@@ -49,7 +49,7 @@ For each rule, in order:
 | pre-commit / `.husky/pre-push` | gate | commit/push-scoped | 0 | deterministic |
 | CI (`audit-self.yml`, `ci-success`) | gate | PR-scoped | 0 | deterministic — **last resort** |
 | principle test (`packages/core/principles/*.test.ts`) | gate | repo-wide | 0 | deterministic |
-| PostToolUse hook, **stdout-only** (no exit-1 — the deferred §4 ADAPT injector) | injection | path/glob/tool-scoped | low (per-edit) | deterministic |
+| PostToolUse hook, JSON `additionalContext` (`inject-matching-rule.sh`, §4) | injection | path/glob-scoped | low (per-edit, session-cached) | deterministic |
 | UserPromptSubmit digest (`inject-session-bootstrap.sh`) | injection | always-on | per-prompt tokens | deterministic — **reserve for 3–4 invariants** |
 | `.claude/rules/*.md` auto-load (CC session-start) | injection | always-on | per-session tokens | deterministic |
 | skill `when_to_use` triggering | injection | semantic | metadata only | **best-effort** |
@@ -57,7 +57,7 @@ For each rule, in order:
 
 The gate/injection split turns on the **exit code**, not the hook event: a PostToolUse hook that `exit 1`s *blocks* (gate); one that only writes stdout *informs* (injection). `check-doc-authority.sh` is a gate because its bin exits 1 on violation.
 
-The deferred **ADAPT** mechanism (patch §4): a PostToolUse rule-injector keyed on a `globs:` front-matter field in `.claude/rules/*.md`, delivering the matching rule only when a matching path is touched — generalising `check-doc-authority.sh`'s internal path-filter. Adapts OhMyOpencode `rulesInjector`. ~2–3h; deterministic bash, no paid LLM.
+The **ADAPT** mechanism is now **shipped**: [`.claude/hooks/inject-matching-rule.sh`](../hooks/inject-matching-rule.sh) — on Edit/Write it matches the edited repo-relative path against each rule's `<!-- globs: … -->` marker (subset: `prefix/**`, `*.ext`, exact) and injects that rule's `<!-- inject: … -->` summary as PostToolUse `additionalContext`, **once per session** (session-cache keyed on `session_id`). Verified contract (code.claude.com/docs/en/hooks.md, 2026-05-22): plain stdout is ignored for PostToolUse — context must be JSON `hookSpecificOutput.additionalContext` + exit 0 (non-blocking → injection, never a gate). Generalises `check-doc-authority.sh`'s internal path-filter; adapts OhMyOpencode `rulesInjector`. Deterministic bash, no paid LLM. **Activation:** add a PostToolUse `Edit|Write` entry for it in `settings.json` (maintainer; self-protected file) — see the PR body for the snippet.
 
 ## §5 Anti-patterns
 
@@ -68,18 +68,18 @@ The deferred **ADAPT** mechanism (patch §4): a PostToolUse rule-injector keyed 
 - **`#inject-where-gate-possible`** — delivering prose reminders for a mechanically-detectable violation instead of a gate that blocks it. Counter: detectable → gate at the earliest reachable channel.
 - **`#pattern-matching-on-name`** (companion to [ai-laziness-traps.md §2 T16](ai-laziness-traps.md)) — assuming a tool that advertises "rules/memory/context" delivers reliable JIT just because of the label (NeMo "guardrails" ≠ dev-convention delivery). Counter: verify the actual delivery mechanism, not the name.
 
-## §6 Class C — promotion / retirement
+## §6 Class B — promotion / retirement
 
-**Class C** — prose-only; the deferred mechanism is the §4 ADAPT rule-injector hook.
+**Class B** — compensating mechanism shipped (`.claude/hooks/inject-matching-rule.sh`, §4) with a deterministic self-test (`packages/core/hooks/inject-matching-rule.test.ts`); not yet a principle test on rule-*compliance*.
 
-- **Promotion to mechanically-enforced (Class A/B):** when EITHER (a) the §4 ADAPT hook ships (→ B: compensating mechanism), with a follow-on `packages/core/principles/<N>-channel-selection.test.ts` checking that every load-bearing rule declares a non-memory channel (→ A); OR (b) 3 channel-mismatch incidents (a load-bearing rule parked in memory/semantic that under-fired) accrue within 6 months.
-- **Retirement:** if 12 consecutive months pass with zero channel-mismatch incidents AND (if promoted) the principle test reports zero violations, archive to prose in CLAUDE.md.
+- **Promotion to Class A (principle test):** add `packages/core/principles/<N>-channel-selection.test.ts` asserting that every rule carrying a `<!-- globs: -->` marker also carries a valid `<!-- inject: -->`, and (longer-term) that load-bearing rules declare a non-memory channel. Fires when the marker convention spreads to ≥3 rules OR a channel-mismatch incident recurs.
+- **Retirement:** if 12 consecutive months pass with zero channel-mismatch incidents AND (once promoted) the principle test reports zero violations, archive to prose in CLAUDE.md.
 
 **Existing rules — forward-going, not retroactive:** §3 step 5 obligates *new or relocated* rules to declare their delivery channel; it does **not** trigger a retroactive sweep of the existing `.claude/rules/*.md` (none of which declare a channel today). They declare channel at next substantive touch — parallel to [dual-implementation-discipline.md §9](dual-implementation-discipline.md) "forward-going annotation". No CI gate checks channel declaration (Class C), so existing non-declaration is the expected starting state, not a debt bomb.
 
 ## §7 Recursive self-application
 
-This rule is itself a rule — so it must be delivered at its own correct channel. It is **judgment** (no mechanical test decides "is this rule at the narrowest channel") and **relevant when authoring rules** (`.claude/rules/`, `packages/core/principles/`). **Today** it is delivered **always-on** via CC's session-start load of every `.claude/rules/*.md` (deterministic, but pays standing cost every session) and registered in principle 09's `REQUIRED_HEADER_DOCS` (this commit) — **not** memory, which is the fix to the origin incident. The deferred §4 ADAPT hook would **narrow** it to path-scoped deterministic injection (fire only when rule-authoring surfaces are touched), trading per-session standing cost for per-edit. Either way it is not memory; recording it there would be the `#memory-as-primary-channel` anti-pattern it names. The §1.7 forward+backward self-check lives in the origin patch §6.
+This rule is itself a rule — so it must be delivered at its own correct channel. It is **judgment** (no mechanical test decides "is this rule at the narrowest channel") and **relevant when authoring rules** (`.claude/rules/`, `packages/core/principles/`). **Today** it is delivered **always-on** via CC's session-start load of every `.claude/rules/*.md` (deterministic, but pays standing cost every session) and registered in principle 09's `REQUIRED_HEADER_DOCS` (this commit) — **not** memory, which is the fix to the origin incident. The §4 hook (`inject-matching-rule.sh`) now **narrows** delivery to path-scoped deterministic injection — it fires only when `.claude/rules/**` or `packages/core/principles/**` are touched, via this rule's own `<!-- globs: -->` marker (below); once activated in `settings.json` it trades per-session standing cost for per-edit. **Dogfood:** this rule carries the first `<!-- globs: -->` / `<!-- inject: -->` markers in the repo. Either way it is not memory; recording it there would be the `#memory-as-primary-channel` anti-pattern it names. The §1.7 forward+backward self-check lives in the origin patch §6.
 
 ## See also
 
@@ -89,3 +89,7 @@ This rule is itself a rule — so it must be delivered at its own correct channe
 - [doc-authority-hierarchy.md](doc-authority-hierarchy.md) — header + Class-field format this rule follows.
 - [ai-laziness-traps.md §2 T16](ai-laziness-traps.md) — `#pattern-matching-on-name` trap referenced in §5.
 - [packages/core/principles/09-doc-authority-hierarchy.ts](../../packages/core/principles/09-doc-authority-hierarchy.ts) — `REQUIRED_HEADER_DOCS` (this rule is registered there).
+
+<!-- globs: .claude/rules/**, packages/core/principles/** -->
+<!-- inject: Channel-selection — pick rule delivery by detectability (mechanically-detectable → gate; judgment → inject) and relevance (narrowest deterministic trigger); never park a load-bearing rule in memory. -->
+
