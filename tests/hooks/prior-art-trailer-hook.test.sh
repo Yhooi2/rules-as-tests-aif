@@ -53,9 +53,10 @@ make_test_repo() {
   echo '{"name":"test","version":"0.0.0"}' > "$tmp/package.json"
   git -C "$tmp" add package.json
   git -C "$tmp" -c commit.gpgsign=false commit -q -m "init"
-  # Synthesize origin/main pointing at the init commit so the hook's
-  # `git rev-parse --verify origin/main` succeeds.
+  # Synthesize origin/staging (the upstreamRef() default) + origin/main pointing
+  # at the init commit so the hook's diff base resolves.
   git -C "$tmp" update-ref refs/remotes/origin/main HEAD
+  git -C "$tmp" update-ref refs/remotes/origin/staging HEAD
 
   # Stubs for external commands sections 1-6 invoke unconditionally.
   mkdir -p "$tmp/_stub_bin"
@@ -146,6 +147,7 @@ PKG
   git -C "$repo" add package.json
   git -C "$repo" -c commit.gpgsign=false commit -q -m "seed: existing dep"
   git -C "$repo" update-ref refs/remotes/origin/main HEAD
+  git -C "$repo" update-ref refs/remotes/origin/staging HEAD
 }
 
 # bump_existing_dep: edits the version of an existing dep (no NEW dep).

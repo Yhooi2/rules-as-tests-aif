@@ -56,6 +56,7 @@ make_repo() {
   git -C "$tmp" add package.json
   git -C "$tmp" -c commit.gpgsign=false commit -q -m "init"
   git -C "$tmp" update-ref refs/remotes/origin/main HEAD
+  git -C "$tmp" update-ref refs/remotes/origin/staging HEAD
   echo "$tmp"
 }
 
