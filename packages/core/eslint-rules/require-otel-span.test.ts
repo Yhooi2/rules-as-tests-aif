@@ -71,5 +71,15 @@ ruleTester.run('require-otel-span', requireOtelSpan, {
       code: `export const handler = async function() { return { ok: true }; };`,
       errors: [{ messageId: 'missingSpan' }],
     },
+    // Kills L47 DFS guard mutants: sparse array [, 1] produces an ArrayExpression
+    // with elements = [null, NumericLiteral]. The real guard
+    // `child && typeof child === 'object' && 'type' in child` safely skips null.
+    // Mutants that replace this with `true` (or loosen the &&/|| logic) push null
+    // onto the DFS stack; the next stack.pop() yields null, and `null.type` throws
+    // TypeError — which RuleTester surfaces as an unexpected crash, failing the test.
+    {
+      code: `export async function f() { const x = [, 1]; }`,
+      errors: [{ messageId: 'missingSpan' }],
+    },
   ],
 });
