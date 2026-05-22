@@ -1,3 +1,4 @@
+<!-- scope:storm-readiness-as-positioning -->
 # Research-patch — Storm-readiness as positioning (случайная готовность → востребованность)
 
 > **Scope:** один стратегический инсайт + поставленная цель. Наследует авторитет папки `research-patches/` (one patch per gap, append-only).
