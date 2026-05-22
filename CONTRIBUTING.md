@@ -48,11 +48,11 @@ Runs on every `git push`:
 |---|---|---|
 | Workflow linting | `.github/workflows/*.yml` | `actionlint` |
 | Security scan | `.github/workflows/` | `zizmor` |
-| Self-test pipeline | `tests/audit/` | `bash tests/audit/audit-ai-docs.test.sh` |
-| Manifest render drift | `factory/rules-manifest.json` ↔ `factory/RULES.md` | `npx tsx scripts/render-rules.ts --check` |
-| Spec discipline | staged `.claude/orchestrator-prompts/*.md` | `npx tsx scripts/validate-batch-spec.ts` (pre-commit soft warn, pre-push hard fail) |
+| Self-test pipeline | `packages/core/audit-self/` | `npx vitest run --reporter=default packages/core/audit-self/audit-ai-docs.test.ts` |
+| Manifest render drift | `packages/core/manifest/rules-manifest.json` ↔ rendered `RULES.md` | `npx tsx packages/core/render/render-rules.ts --check` |
+| Spec discipline | staged `.claude/orchestrator-prompts/*.md` | `npx tsx packages/core/spec-validation/validate-batch-spec.ts` (pre-commit soft warn, pre-push hard fail) |
 
-> **Pre-push spec validation requires `gh auth login`** for full SHA verification (action existence + tag↔SHA consistency). Without auth, the check falls back to anonymous gh API (60 req/h limit) and exits with code 2 (treated as pass) on rate-limit. For best CI parity locally, run `gh auth login` once. See `scripts/validate-batch-spec.ts --help`.
+> **Pre-push spec validation requires `gh auth login`** for full SHA verification (action existence + tag↔SHA consistency). Without auth, the check falls back to anonymous gh API (60 req/h limit) and exits with code 2 (treated as pass) on rate-limit. For best CI parity locally, run `gh auth login` once. See `packages/core/spec-validation/validate-batch-spec.ts --help`.
 
 ## What if you must bypass
 
@@ -81,7 +81,7 @@ pip install zizmor             # security scanner
 ```
 
 Python 3 is pre-installed on macOS 12+. Node.js (for `npx tsx`) is required for
-`scripts/render-rules.ts`. Install via `brew install node` or `nvm`.
+`packages/core/render/render-rules.ts`. Install via `brew install node` or `nvm`.
 
 ### Linux
 
