@@ -40,6 +40,9 @@ export const REQUIRED_HEADER_DOCS: readonly string[] = [
   '.claude/rules/parallel-subwave-isolation.md',
   '.claude/rules/phase-research-coverage.md',
   '.claude/rules/reviewer-discipline.md',
+  '.claude/rules/ai-laziness-traps.md',
+  '.claude/rules/build-first-reuse-default.md',
+  '.claude/rules/memory-codification.md',
   '.claude/rules/rule-enforcement-channel-selection.md',
 
   // docs/meta-factory/ reference docs (excluding sub-folders + filename-convention transients)
@@ -101,6 +104,7 @@ export const REQUIRED_HEADER_DOCS: readonly string[] = [
   'agents/review-sidecar.md',
   'agents/living-docs-auditor.md',
   'agents/compliance-verifier.md',
+  'agents/memory-codification-auditor.md',
 ];
 
 /**
