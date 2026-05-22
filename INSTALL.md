@@ -15,7 +15,7 @@ git clone https://github.com/Yhooi2/rules-as-tests-aif /tmp/rules-as-tests-aif
 cd /tmp/rules-as-tests-aif
 ```
 
-(Or, when Phase 4 lands: `npm i -D @yhooi2/rules-as-tests-aif`.)
+(An npm package is not yet published. Use Path B — `install.sh` — as the current install method.)
 
 ---
 
@@ -88,14 +88,14 @@ cp path/to/pkg/agents/*.md .claude/agents/
 
 ```bash
 mkdir -p .ai-factory/rules
-cp path/to/pkg/factory/DESCRIPTION.template.md .ai-factory/
-cp path/to/pkg/factory/ARCHITECTURE.ts-server.md .ai-factory/
-cp path/to/pkg/factory/RULES.md .ai-factory/
-cp path/to/pkg/factory/rules/integration-rules.md .ai-factory/rules/
+cp path/to/pkg/packages/core/templates/shared/DESCRIPTION.template.md .ai-factory/
+cp path/to/pkg/packages/core/templates/shared/ARCHITECTURE.ts-server.md .ai-factory/
+cp path/to/pkg/packages/preset-next-15-canonical/RULES.md .ai-factory/
+cp path/to/pkg/packages/core/templates/shared/integration-rules.md .ai-factory/rules/
 
 # For React/Next, also:
-cp path/to/pkg/factory/ARCHITECTURE.react-next.md .ai-factory/
-cp path/to/pkg/factory/RULES.react-next.md .ai-factory/
+cp path/to/pkg/packages/preset-next-15-canonical/templates/ARCHITECTURE.react-next.md .ai-factory/
+cp path/to/pkg/packages/preset-next-15-canonical/RULES.react-next.md .ai-factory/
 ```
 
 ### C.3 — audit-ai-docs.sh

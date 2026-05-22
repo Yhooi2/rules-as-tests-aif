@@ -73,7 +73,7 @@ If recursive self-application breaks, the framework becomes documentation that l
 
 **Isn't:** workflow framework (use AI Factory); task orchestration / swarm coordination (use `aif-handoff`); standalone CI tool. **Not the IDE/CLI runtime our framework deploys into** — Claude Code, Cursor, Cline, Codex, Aider are *deployment surfaces*, not companions; the framework installs into their workspace via standard project install.
 
-**Reuse stance:** see [`.claude/rules/build-first-reuse-default.md`](.claude/rules/build-first-reuse-default.md). Default = adopt upstream when problem-class matches. Build ourselves only what is structurally missing — currently: Living Documentation, 5-layer framework, methodology discipline, AST-based hooks (Wave 10).
+**Reuse stance:** see [`.claude/rules/build-first-reuse-default.md`](.claude/rules/build-first-reuse-default.md). Default = adopt upstream when problem-class matches. Build ourselves only what is structurally missing — currently: Living Documentation, 5-layer framework, methodology discipline, AST-based hooks (shipped Wave 10 / N3 ✅).
 
 **Roadmap signals:** companion-target comparison shipped 2026-05-16 — see [research-patch §3-§4](docs/meta-factory/research-patches/2026-05-16-companion-target-comparison.md). Verdicts: **Superpowers** added as 3rd named companion (rules-as-tests alignment confirmed via TDD-for-Skills discipline). **OhMyOpencode + microsoft/agent-framework** = REFERENCE-only (different lifecycle / problem class). **Cline / Cursor / Codex / Aider** = framework-consumers (different architectural layer — runtimes we install into, not companions at our framework layer). Future widening pending only if new discipline-framework candidates appear.
 
