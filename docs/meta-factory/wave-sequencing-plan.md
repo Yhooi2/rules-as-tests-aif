@@ -22,7 +22,7 @@
 | N5 | give the conscience back | 🔲 not started (sequences after N7) | — |
 | N6a | coexistence / C-1 | ✅ DONE | #79/#82 MERGED |
 | N6b | one-button install | 🔲 not started (last build) | — |
-| N7 | dogfood companions | 🟡 verdicts done → application pending; **DECISION=C confirmed** | `2026-05-22-n7-dogfood-companions.md` |
+| N7 | dogfood companions | 🟡 **repo-side applied** (SSOT #64/#65, rule §4 demotion, retention=A coexist) → **live-dogfood trial pending** (global Superpowers install blocked by classifier); **DECISION=C** | `2026-05-22-n7-dogfood-companions.md` §9 |
 | N8 | deterministic-offload autonomy economy | ✅ **R-phase DONE** (#158→staging; autonomous Queue-mode: Worker→Reviewer **GO**→orchestrator anti-collusion passed). A-phase (impl) 🔲 pending maintainer D1/D2/D3 | findings `2026-05-22-n8-rphase-findings.md` (R1–R4) + plan `2026-05-22-deterministic-offload-autonomy-economy.md` |
 
 **Infra:** I.1 staging-trunk migration **DONE** (#144/#150 — default branch = `staging`, `main` push-blocked, `ci-success` on both; native Merge Queue unavailable on this repo → `strict:false` substitute). I.2 channel-selection promote + SSOT #60–#63 still maintainer-click. I.3 DN-4 incremental.
@@ -51,7 +51,7 @@
 |---|---|---|---|
 | 1.1 | **N8 R-phase** (free: local-model dispatch / batch / caching / offload-sweep + «$ above subscription» estimate) | ✅ **DONE** (#158→staging, 2026-05-22) | — |
 | 1.2 | **N0 decision** — how to stay autonomous + cheap, informed by 1.1 | after 1.1, **before 2026-06-15** | 1.1 |
-| 1.3 | **N8 A-phase** — apply cheap wins (migrate checks into hooks, autonomy hooks) | start high-ROI items before June 15 | 1.1 |
+| 1.3 | **N8 A-phase** — apply cheap wins (migrate checks into hooks, autonomy hooks) | start high-ROI items before June 15 | 1.1 + maintainer gates: **D1** (cost-lever A/B/C) · **D2** (R4 bench go/no-go) · **D3** (offload-migration priority) — [findings §7](research-patches/2026-05-22-n8-rphase-findings.md) |
 
 ### Track 2 — cheap, no deadline, parallel-safe
 | # | Task | Note |
@@ -125,7 +125,7 @@ N4a (done, #98) ──────────────→ N4b (recommendatio
 N3 (done) + N6a (done) ───────→ N6b (one-button install)
 DECISION=C (0.2) ─────────────→ N7 (dogfood) ──→ N5 (give-back)
 N8 R-phase (1.1) ─────────────→ N0 decision (1.2)
-                └─────────────→ N8 A-phase (1.3)
+                └─→ D1·D2·D3 (findings §7) ──→ N8 A-phase (1.3)
 N8 A3 (hybrid dispatch) ⇄ N7   (overlap — coordinate, don't double-build)
 ```
 
