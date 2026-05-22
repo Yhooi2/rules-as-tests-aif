@@ -54,8 +54,10 @@ describe.skipIf(!JQ)('inject-matching-rule.sh — PostToolUse rule-injector', ()
     const out = runHook(payload('Edit', '.claude/rules/some-new-rule.md', uniq()));
     const json = JSON.parse(out);
     expect(json.hookSpecificOutput.hookEventName).toBe('PostToolUse');
+    // guards the own-line-anchor fix: we get the real `<!-- inject: -->` summary,
+    // not a mis-match against the prose that documents the marker syntax.
     expect(json.hookSpecificOutput.additionalContext).toContain('Channel-selection');
-    // own-line anchor works: we get the real summary, not the prose-documented `<!-- globs: … -->`
+    // and the injected summary itself must not leak the glob-subset doc text.
     expect(json.hookSpecificOutput.additionalContext).not.toContain('subset:');
   });
 
