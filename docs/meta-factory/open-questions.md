@@ -370,11 +370,11 @@ Suspected categories (NOT exhaustive — Wave 9 first task = enumerate):
 5. **Catalogue substance** — SSOT verdict rationales, memory entry descriptions, skill auto-trigger keyword accuracy. Each currently «present and ≥N chars»; never adversarially audited.
 6. **Wave 8 recursive self-application** — Wave 8 itself shipped claims (every PR body, every sub-agent prompt, every paired-negative arm). Each is subject to its own thesis.
 
-**Status:** armed — triggers after maintainer commits to Phase 9+ scope.
+**Status:** R-phase DONE (landed 2026-05-21, PR #87); I-phase prompts authored (gitignored scaffold, not formally closed); Wave 10 unblocked.
 
-**Trigger to revisit:** Wave 8 (§13.29) merged complete (Wave 8 retro + PR #45 + Wave 8.1b compliance-verifier); trigger now = maintainer commits to Phase 9+ session scope.
+**Trigger to revisit:** n/a for R-phase (complete). I-phase sub-waves trigger per-category — each category (trailer truthfulness, header accuracy, mutation-adequacy, R1-R20 FN-rate, catalogue substance, Wave 8 recursive self-application) is an independent sub-wave.
 
-**First action upon revisit (per kickoff scaffold):** [`.claude/orchestrator-prompts/wave-9-discipline-theatre-audit/kickoff.md`](../../.claude/orchestrator-prompts/wave-9-discipline-theatre-audit/kickoff.md) (gitignored local scaffold) — research session enumerates surfaces per category, runs sample audit (10-20 surfaces / category), reports adversarial findings + closure mechanism proposals. Implementation deferred to per-category sub-waves AFTER research approved.
+**First action upon I-phase:** [`.claude/orchestrator-prompts/wave-9-discipline-theatre-audit/kickoff.md`](../../.claude/orchestrator-prompts/wave-9-discipline-theatre-audit/kickoff.md) (gitignored local scaffold) — per-category implementation sub-waves, each with paired-negative tests verifying mechanism substance. R-phase findings + category list are the input.
 
 **Scope warning:** likely 4-8 week multi-session umbrella. Do NOT bundle into closure of §13.29 — bundling without substantive method is itself `#discipline-theatre`.
 
