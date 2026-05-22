@@ -45,7 +45,7 @@ This project uses **AI Factory (aif)** for spec-driven development.
 - **`/aif-explore <task>`** — when scope is unclear. Saves research to `.ai-factory/RESEARCH.md`.
 - **`/aif-plan <task>`** — for any non-trivial change. Creates branch, writes plan to `.ai-factory/plans/`.
 - **`/aif-implement`** — execute plan step by step with checkpoints.
-- **`/aif-verify`** — **required before commit.** Runs `best-practices-sidecar`, `review-sidecar`, `docs-auditor` over RULES.md and audit-ai-docs.sh probes.
+- **`/aif-verify`** — **required before commit.** Runs `review-sidecar`, `living-docs-auditor` over RULES.md and audit-ai-docs.sh probes.
 - **`/aif-fix <error>`** — targeted bug fix. Reads the plan, knows exactly what was intended.
 - **`/aif-commit`** — final commit, groups checkpoint commits, pushes.
 
@@ -69,9 +69,8 @@ Add additional project skills here as you create them. Don't list a skill until 
 
 Loaded by AI Factory in `.claude/agents/`:
 
-- **`best-practices-sidecar`** — validates code against RULES.md after each `/aif-implement`. Reports violations.
 - **`review-sidecar`** — two-AI tautology review. Reads tests as if external reviewer with no memory of how they were written.
-- **`docs-auditor`** — runs `scripts/audit-ai-docs.sh` (drift detection + code-vs-docs probes). Interprets PASS/FAIL.
+- **`living-docs-auditor`** — runs `scripts/audit-ai-docs.sh` (drift detection + code-vs-docs probes). Interprets PASS/FAIL.
 
 ## Test commands
 
