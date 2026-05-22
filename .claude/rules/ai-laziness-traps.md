@@ -1,6 +1,6 @@
 # AI laziness traps — discipline rule
 
-> **Class:** A — companion principle test pending (Track 3 Action A → planned slot 12).
+> **Class:** A — companion principle test shipped at [packages/core/principles/12-ai-laziness-traps.test.ts](../../packages/core/principles/12-ai-laziness-traps.test.ts) (#74, 2026-05-17).
 > **Authoritative for:** ai-laziness-traps discipline rule — §1 problem this solves, §2 canonical trap catalogue, §3 kickoff-author obligations (cite + extend, no blanket reference), §4 anti-patterns, §5 promotion / retirement triggers.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion to research-discipline rule — see [phase-research-coverage.md](phase-research-coverage.md).
 
@@ -148,7 +148,7 @@ Blanket reference («see ai-laziness-traps.md» without enumeration or domain ex
 - **New trap promotion to canonical catalogue (§2):** when 2+ wave-specific T-additions describe structurally the same failure mode, abstract and add to §2. Wave-specific T-XXX deprecates.
 - **Trap retirement:** if a T-N has not been cited as active in any kickoff for 4+ consecutive waves AND no incident has fired matching it, demote to «archived» section (preserve for history, do not require enumeration).
 - **Catalogue split:** if §2 exceeds 25 entries, split by domain (e.g. audit-specific vs. implementation-specific). Avoid bloat-by-accretion.
-- **Companion principle test promotion:** if rule violation rate (kickoffs without proper T-enumeration) reaches ≥3 incidents in 6 months, add `packages/core/principles/11-ai-laziness-traps.test.ts` — mechanical check on kickoff files under `.claude/orchestrator-prompts/*/kickoff.md` for the required citation + enumeration syntax.
+- **Companion principle test — SHIPPED:** [`packages/core/principles/12-ai-laziness-traps.test.ts`](../../packages/core/principles/12-ai-laziness-traps.test.ts) (#74, 2026-05-17) — mechanical check on kickoff files under `.claude/orchestrator-prompts/*/kickoff.md` for the required §3 citation + T-enumeration syntax. Promoted ahead of the «≥3 incidents in 6 months» violation-rate threshold via the 1A roadmap (slot 12, not the originally-sketched slot 11 — that slot went to build-first-reuse-default).
 
 ## See also
 
