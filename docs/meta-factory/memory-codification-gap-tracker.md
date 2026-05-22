@@ -13,7 +13,7 @@ Each row below is a durable convention living **only** in user-scope agent memor
 
 Status legend: **PENDING** (still memory-only) · **CODIFIED** (in repo + memory reduced to pointer) · **DEFERRED** (codification blocked / lower-priority, reason noted) · **OUT-OF-REPO** (correct home is a non-version-controlled global artefact).
 
-**Progress (2026-05-22 DN-4 sweep):** 11 CODIFIED (#16/#17/#22/#28 → §1.11 via #159; #20/#23/#25/#26/#27 → §1.12 + T17-T19 via #161; #29 → CONTRIBUTING, #30 → §1.13 this PR) · 3 DEFERRED (#18/#19 reference-facts; #21 thesis-level research-patch) · 1 OUT-OF-REPO (#24). No row remains bare-PENDING — every gap is codified or has a noted disposition.
+**Progress (2026-05-22 DN-4 sweep):** 12 CODIFIED (#16/#17/#22/#28 → §1.11 via #159; #20/#23/#25/#26/#27 → §1.12 + T17-T19 via #161; #29 → CONTRIBUTING, #30 → §1.13 via #162; #21 → research-patch proposal-of-record) · 2 DEFERRED (#18/#19 reference-facts) · 1 OUT-OF-REPO (#24). No row remains bare-PENDING — every gap is codified or has a noted disposition. **DN-4 sweep complete.**
 
 ## The 15 stage-0 gaps
 
@@ -24,7 +24,7 @@ Status legend: **PENDING** (still memory-only) · **CODIFIED** (in repo + memory
 | 18 | `ci_runner_allocation_diagnostic` | troubleshooting doc/skill (heuristic, not a rule-to-enforce) | DEFERRED — reference-fact, not a behavioural rule; codify into a troubleshooting doc on next CI-runner incident |
 | 19 | `claude_code_guide_worker_inaccessible` | CC-harness fact → kickoff-authoring habit (plan D4 fallback); queue-mode.md §10 already partly covers | DEFERRED — CC-harness fact, already partly covered by queue-mode.md §10; low-priority |
 | 20 | `dont_ask_when_best_path_clear` | `.claude/rules/*` (pairs with reviewer-discipline §2 + reasoned-recommendation) | CODIFIED → phase-research-coverage.md §1.12 |
-| 21 | `no_human_verification_ai_self_verifies` | **major** — project-thesis-one-layer-up; codify via research-patch; widens §13.34 (hard to mechanize — it IS the recursive thesis) | DEFERRED — thesis-level; needs a dedicated research-patch + §13.34 widening, not a quick rule fold (out of DN-4 round scope) |
+| 21 | `no_human_verification_ai_self_verifies` | **major** — project-thesis-one-layer-up; codify via research-patch; widens §13.34 (hard to mechanize — it IS the recursive thesis) | CODIFIED → research-patches/2026-05-22-no-human-verification-self-verify-thesis.md (proposal-of-record; §13.34-widen / CLAUDE-invariant elevation surfaced as maintainer DECISION-NEEDED §5) |
 | 22 | `orchestrator_verify_state_before_claim` | `.claude/rules/*` (re-verify HEAD/closure before ship / negative-existence claim); §13.34-adjacent | CODIFIED → phase-research-coverage.md §1.11 |
 | 23 | `own_qa_before_handoff` | AI-agnostic `agents/*.md` cold-review run per load-bearing PR (session-time, no CI) | CODIFIED → ai-laziness-traps.md T19 |
 | 24 | `phase_minus_1_no_memory_inheritance` | orchestrator skill (keyword-grep step is deterministic; "absorb constraints" is judgment) | OUT-OF-REPO — home is the global orchestrator skill (`~/.claude/skills/orchestrator`), not version-controlled per-project; cannot be codified into this repo |
