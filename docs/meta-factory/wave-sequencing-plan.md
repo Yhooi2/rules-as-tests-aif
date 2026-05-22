@@ -17,7 +17,7 @@
 | # | Task | Why now | Note |
 |---|---|---|---|
 | 0.1 | Commit books (facts + chronicle v3) + N8 patch + this doc | «don't lose plans» (session theme); currently uncommitted | maintainer commits |
-| 0.2 | **Decide companion = A / B / C** | one answer unblocks N7 (coupled to N8/N0) | maintainer decision; see niche roadmap §4 N7 |
+| 0.2 | ✅ **CLOSED — companion = C** (both, on separate layers) | unblocks N7 | maintainer-delegated decision 2026-05-22 («Твоё решение»); rationale below |
 | 0.3 | Promote N0–N8 from research-patches → `EXECUTION-PLAN.md` | makes plans «active tasks», not archived patches | maintainer decision |
 
 ### Track 1 — critical path to June 15 (maintainer's stated top priority: autonomy without extra spend)
@@ -67,10 +67,21 @@
 
 ## §5 — Open maintainer decisions embedded above
 
-1. companion = A / B / C (gates N7) — 0.2
+1. ~~companion = A / B / C (gates N7) — 0.2~~ → **CLOSED 2026-05-22: C** (see §5.1)
 2. promote N0–N8 into `EXECUTION-PLAN.md` (plans «active» vs archived) — 0.3
 3. staging-trunk migration: execute or hold — I.1
 4. first launch: N8 R-phase (recommended) vs another track — §4
+
+### §5.1 — Decision record: companion = **C** (closed 2026-05-22)
+
+Maintainer-delegated («Твоё решение», /orchestrator session 2026-05-22). **C = both, on separate layers:** the enforcement substrate stays dependency-free / never coupled (=A posture — AI-agnosticism is the verified moat per N1+N0), while the dev/process layer dogfoods companions (=B posture). This is `build-first-reuse-default` applied per-layer.
+
+- **B rejected for substrate:** coupling the substrate to a companion forfeits AI-agnosticism — the property N0 (June-15 metered storm) proved load-bearing.
+- **Pure A rejected as sole posture:** maintaining homegrown orchestrator/reviewer/worktree skills when Superpowers `subagent-driven-development` + `using-git-worktrees` exist is `#parallel-evolution-creep` / `#adoption-shame` ([build-first-reuse-default.md §4](../../.claude/rules/build-first-reuse-default.md)).
+- **C is what every artifact already presumes** (N7 shape; task 3.1 `DECISION=C`); it also folds N0 in — process-layer dogfooding ⊇ the storm-migration target.
+- **Falsified if** the layers prove inseparable, or AI-agnosticism turns out not to be the moat — neither holds (substrate = `packages/core/principles/*` + `.husky/` + deterministic bash; process = swappable markdown skills; moat verified N1 PR #102 / N0).
+
+**Unblocks:** N7 (task 3.1) and N2's already-completed vocab alignment. The prior memory claim of «decided #103 2026-05-21» was premature — surfaced-not-closed in [research-patches/2026-05-21-niche-strategy-and-growth-roadmap.md §line 95](research-patches/2026-05-21-niche-strategy-and-growth-roadmap.md); this §5.1 is the formal closure.
 
 ## §6 — Parallelism + dependency matrix (orchestrator-facing)
 
@@ -88,7 +99,7 @@ N8 A3 (hybrid dispatch) ⇄ N7   (overlap — coordinate, don't double-build)
 | Group | Items | Condition |
 |---|---|---|
 | **G1 — research** | 1.1 N8 R-phase ∥ 2.1 N1 ∥ 2.2 N4b design | each writes its **own** research-patch file; all free (DeepWiki/WebSearch/local) |
-| **G2 — maintainer decisions** | 0.2 companion A/B/C, 0.3 promote→EXECUTION-PLAN, I.1 staging-trunk go/hold | not orchestrator work; happen async, parallel to anything |
+| **G2 — maintainer decisions** | ~~0.2 companion A/B/C~~ (CLOSED=C), 0.3 promote→EXECUTION-PLAN, I.1 staging-trunk go/hold | not orchestrator work; happen async, parallel to anything |
 
 **Hard precondition for ANY parallel AI sessions:** each runs in its **own `git worktree`** (per [parallel-subwave-isolation.md](../../.claude/rules/parallel-subwave-isolation.md) — shared dir caused branch contamination in Wave 8.1) + `node_modules` symlink in the worktree (tsx hooks fail otherwise). If worktree-add fails → **sequential fallback**, never concurrent shared-dir.
 
@@ -104,7 +115,7 @@ N8 A3 (hybrid dispatch) ⇄ N7   (overlap — coordinate, don't double-build)
 - **Research/design = parallel-safe** (different docs) → fan-out in worktrees.
 - **Anything writing the SAME canonical file** (SSOT, EXECUTION-PLAN, hooks) = serial or partitioned.
 - **Infra that changes git/CI config = solo.**
-- **Decisions block their dependents** — close 0.2 (companion) before N7; finish 1.1 (N8 R) before 1.2/1.3.
+- **Decisions block their dependents** — 0.2 (companion) CLOSED=C → N7 unblocked; finish 1.1 (N8 R) before 1.2/1.3.
 
 ## §7 — Orchestrator entry point (does it know the next action?)
 
