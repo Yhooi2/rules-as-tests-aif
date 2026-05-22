@@ -12,7 +12,7 @@ name: framework-self-template-render
 
 on:
   push:
-    branches: [main, 'chore/**']
+    branches: [staging, main, 'chore/**']
   pull_request:
 
 jobs:

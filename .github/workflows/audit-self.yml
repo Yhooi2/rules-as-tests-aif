@@ -2,8 +2,9 @@ name: audit-self
 
 on:
   push:
-    branches: [main, 'chore/**']
+    branches: [staging, main, 'chore/**']
   pull_request:
+  merge_group:
 
 jobs:
   mechanical:
