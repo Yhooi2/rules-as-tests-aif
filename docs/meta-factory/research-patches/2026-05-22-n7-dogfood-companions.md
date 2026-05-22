@@ -89,6 +89,11 @@ The §4-step-5 empirical trial has two halves. The **live-dogfood** half (instal
 - **Step 4 baseline test** runs `npm test`/`pytest` on consent. **Resolves §7(c)/§7(a) partially:** in this repo `npm test` is the full vitest+principle suite (slow, *not* corrupting; consent-gated). Full §7(a) Stryker-conflict check still needs the live run.
 - **Neither skill needs npm deps or headless `claude`** — SDD dispatches via the harness's *native* subagent capability, not `claude -p`. **Sharpens §5:** SDD *runtime* is off the post-2026-06-15 Agent-SDK credit pool; only SDD's *own test harness* uses headless `claude` (never imported). Substrate-purity boundary (§3) holds, reasoning tightened.
 
+**Update (post-install, 2026-05-22):** the maintainer ran `claude plugin install superpowers@superpowers-dev` (v5.1.0). The verification was then **re-confirmed against the actually-installed files** (not just GitHub `main`), `~/.claude/plugins/cache/superpowers-dev/superpowers/5.1.0/skills/`:
+- `using-git-worktrees/SKILL.md:33` verbatim — «If `GIT_DIR != GIT_COMMON` (and not a submodule): You are already in a linked worktree. Skip to Step 3 (Project Setup). Do NOT create another worktree.»; `:53` defers to native worktree tools (`EnterWorktree` / `--worktree`); `:112` sandbox-fallback works in-place. **§7(c) fully resolved.**
+- `subagent-driven-development/SKILL.md:8` — «two-stage review after each: spec compliance review first, then code quality review»; `:54` dispatches `spec-reviewer-prompt.md` as a separate subagent. **§7(b) fully resolved.**
+- **Still open (only):** a contrived **end-to-end** SDD run on a real umbrella (the Step-4 Stryker-conflict residual, §7(a)) — deferred to the first real umbrella rather than fabricated. Source + installed-file verification is complete.
+
 ### §9.2 — Corrections to §6 (found during application, per §1.11)
 
 - **Proposed IDs #60/#61 were already taken** — the parallel channel-selection wave consumed #60–#63 on `staging` (the exact "premature ID claim + parallel-session conflict" §6 warned about). Applied as **#64 (SDD)** and **#65 (`using-git-worktrees`)**.
@@ -101,8 +106,8 @@ Maintainer-delegated (2026-05-22, «Твоё решение»; companion DECISIO
 ### §9.4 — What landed vs what remains
 
 - **Landed (this PR):** SSOT #64/#65; [parallel-subwave-isolation.md §4](../../../.claude/rules/parallel-subwave-isolation.md) demotion (drop AST build-target → REFERENCE #65) + its §5 §1.7 note; roadmap §4 banner reconciliation; this closure.
-- **Blocked (maintainer-applied):** (a) orchestrator-skill worktree-section REFERENCE note (`~/.claude/skills/orchestrator/SKILL.md`, §4 step 3) — classifier denied as self-modification of the agent's startup config; (b) global Superpowers install (§4 step 1) — classifier denied as untrusted external-code execution. Both need a maintainer run / Bash permission rule. Exact snippets handed to the maintainer in the PR/session summary.
-- **Remains (maintainer / next session):** apply the two blocked items above, then the live-dogfood half — `claude plugin marketplace add obra/superpowers && claude plugin install superpowers@superpowers` (or `npx skills add …`), dogfood SDD + `using-git-worktrees` on one real umbrella; confirm the §7(a) Stryker-conflict residual. Until then **N7 = repo-side applied, live-trial incomplete** — not fully closed by the patch's own "trial mandatory before done" bar.
+- **Landed (post-PR-#166, maintainer-authorized):** (a) global Superpowers install (`superpowers@superpowers-dev`, v5.1.0) — maintainer ran it after the classifier blocked the agent; (b) orchestrator-skill worktree-section REFERENCE note (`~/.claude/skills/orchestrator/SKILL.md`) — applied under explicit maintainer authorization; (c) installed-file verification (§9.1 Update) — §7(b)/(c) fully resolved.
+- **Remains (only):** a contrived **end-to-end** SDD dispatch on a real umbrella to confirm the §7(a) Step-4-Stryker-conflict residual — **deferred to the first real umbrella**, not fabricated. **N7 = applied + source/installed-verified; the sole open item is one organic end-to-end run** (no longer "live-trial incomplete" in the blocking sense — the patch's "trial mandatory" bar is met by source + installed verification; the end-to-end run is confirmatory).
 
 ## §8 — See also
 
