@@ -1,6 +1,6 @@
 # Build-first, reuse-default — operating philosophy
 
-> **Class:** A — companion principle test pending (slot 11, design sketch at [packages/core/principles/11-build-first-reuse-default.design.md](../../packages/core/principles/11-build-first-reuse-default.design.md)).
+> **Class:** A — companion principle test shipped at [packages/core/principles/11-build-first-reuse-default.test.ts](../../packages/core/principles/11-build-first-reuse-default.test.ts) (#75, 2026-05-17). Design sketch retained at [11-build-first-reuse-default.design.md](../../packages/core/principles/11-build-first-reuse-default.design.md).
 > **Authoritative for:** project-wide macro-level scope discipline; relationship to upstream tools, frameworks, and ecosystems; default verdict for new capability proposals.
 > **NOT authoritative for:** per-commit build-vs-reuse — that lives in [CLAUDE.md «Build-vs-reuse invariant (Phase 8.8)»](../../CLAUDE.md). This rule is the macro-level complement to per-commit invariant.
 
@@ -60,14 +60,14 @@ Six layers, each catching different evidence:
 
 ## §5 Promotion to executable test
 
-**Companion principle test** (in design): `packages/core/principles/11-build-first-reuse-default.test.ts`.
+**Companion principle test** (shipped #75, 2026-05-17): `packages/core/principles/11-build-first-reuse-default.test.ts`.
 
-**Promotion timeline (per §4.3 v2 verdict):**
+**Promotion timeline (per §4.3 v2 verdict) — COMPLETE:**
 
-- **Commit A (now, this PR):** prose rule (this file) + [design sketch markdown](../../packages/core/principles/11-build-first-reuse-default.design.md).
-- **Commit B (≤2 weeks):** real principle test implementation. Atomic commit. 3-4 hour budget.
+- **Commit A (2026-05-16):** prose rule (this file) + [design sketch markdown](../../packages/core/principles/11-build-first-reuse-default.design.md). ✅ landed.
+- **Commit B (2026-05-17, #75):** real principle test implementation. ✅ shipped inside the 2-week window — the fallback below never triggered.
 
-**Fallback if Commit B slips past 2-week deadline:** rule retains prose-only status; promotion criterion reverts to violation-rate-based («promote when 3+ violations in 6 months») matching peer rules ([phase-research-coverage.md](phase-research-coverage.md), [reviewer-discipline.md](reviewer-discipline.md), etc.).
+**Fallback (did NOT fire):** had Commit B slipped past the 2-week deadline, the rule would have retained prose-only status with a violation-rate-based promotion criterion («promote when 3+ violations in 6 months») matching peer rules ([phase-research-coverage.md](phase-research-coverage.md), [reviewer-discipline.md](reviewer-discipline.md), etc.).
 
 > **Slot numbering note:** principle slot 10 is permanently occupied by `10-research-patch-annotation.test.ts` (shipped 2026-05-13, pre-1A). BFR-default → slot 11. Cascade applied across 1A roadmap.
 
