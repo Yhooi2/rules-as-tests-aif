@@ -19,15 +19,19 @@
 | N3 | enforcement substrate (= Wave 10) | ✅ DONE | #107/#114/#116/#119/#120/#127/#129 MERGED |
 | N4a | claim-detector fix | ✅ DONE | #98 MERGED |
 | N4b | recommendation-moment gate | 🟡 D6 resolved: H1 SHIPPED (#117), H2 REJECTED, H10 DEFERRED/trigger-gated | `2026-05-22-n4b-recommendation-gate-design.md`; open-questions §13.39 |
-| N5 | give the conscience back | 🔲 not started (sequences after N7) | — |
+| N5 | give the conscience back | 🔲 not started — **BLOCKED** (dependency): gated on N7 *live-dogfood trial* (N7 decision=C ✅ + repo-side applied, but live trial still pending) + N2 application. By design you can't give back until dogfooding reveals what's genuinely unique (niche-roadmap line 91/116) | niche-roadmap §N5 |
 | N6a | coexistence / C-1 | ✅ DONE | #79/#82 MERGED |
-| N6b | one-button install | 🔲 not started (last build) | — |
-| N7 | dogfood companions | 🟡 verdicts done → application pending; **DECISION=C confirmed** | `2026-05-22-n7-dogfood-companions.md` |
+| N6b | one-button install | 🔲 not started — **NOT blocked** (deps met): N3 portable TS-core ✅ (`packages/core/hooks/pre-push.ts` + `checks/`; the 7 `.claude/hooks/*.sh` are thin CC-event glue, not the engine) + N6a ✅. Sequenced "last" by *choice*, **startable anytime**. Scaffold (`npx`) must also template the 7 CC-event hooks | niche-roadmap §N6 (line 82/107) |
+| N7 | dogfood companions | 🟡 **repo-side applied** (SSOT #64/#65, rule §4 demotion, retention=A coexist) → **live-dogfood trial pending** (global Superpowers install blocked by classifier); **DECISION=C** | `2026-05-22-n7-dogfood-companions.md` §9 |
 | N8 | deterministic-offload autonomy economy | ✅ **R-phase DONE** (#158→staging; autonomous Queue-mode: Worker→Reviewer **GO**→orchestrator anti-collusion passed). A-phase (impl) 🔲 D1/D2/D3 resolved by N0 §5.3 (defer-build + arm utilisation trigger; R4 NO-GO; C1 first for correctness) → A-phase now gated on the utilisation trigger, not on a fresh decision | findings `2026-05-22-n8-rphase-findings.md` (R1–R4) + plan `2026-05-22-deterministic-offload-autonomy-economy.md` |
 
 **Infra:** I.1 staging-trunk migration **DONE** (#144/#150 — default branch = `staging`, `main` push-blocked, `ci-success` on both; native Merge Queue unavailable on this repo → `strict:false` substitute). I.2 channel-selection promote + SSOT #60–#63 still maintainer-click. I.3 DN-4 incremental.
 
-**What actually remains:** apply N2 + N7 verdicts (maintainer-owned rule/SSOT edits) · **N8 A-phase** (D1/D2/D3 now answered by the N0 decision §5.3 = defer-build, arm utilisation trigger, R4 NO-GO; the *correctness* offload C1 still worth landing — SSOT rows #64–#68 ship with the capability, not now) · N4b H10 (deferred, trigger-gated) · N5 + N6b (not started). *(N0 decision CLOSED 2026-05-22 — see §5.3; 0.3 promote→`EXECUTION-PLAN.md` CLOSED 2026-05-22 — see §5.2.)*
+**What actually remains:** apply N2 + N7 verdicts (maintainer-owned rule/SSOT edits) · **N8 A-phase** (D1/D2/D3 now answered by the N0 decision §5.3 = defer-build, arm utilisation trigger, R4 NO-GO; the *correctness* offload C1 still worth landing — SSOT rows renumber to **#66+** per the collision note below) · N4b H10 (deferred, trigger-gated) · **N6b** (NOT blocked — deps met, deprioritized) · N5 (blocked on N7 live-dogfood). *(N0 decision CLOSED 2026-05-22 — see §5.3; 0.3 promote→`EXECUTION-PLAN.md` CLOSED 2026-05-22 — see §5.2.)*
+
+> **⚠ SSOT-ID collision:** N8 findings §7 proposed rows **#64–#68**, but N7 application already **took #64/#65** (see N7 row). When N8 A-phase admits its SSOT rows they must renumber to **#66+** (next free). The N8 findings file's §7 numbers are stale on this point — corrected at A-phase admission, not now (findings is a research deliverable, ID assignment happens at capability-commit). The N0 decision record (§5.3) likewise refers to these by *role* (prompt-caching / local-model rows), not by frozen number.
+
+> **🔲 legend (read the cell, don't assume):** 🔲 = *not started* — the cell says **why**. **BLOCKED** = unmet dependency (N5). **NOT blocked** = deps met, just deprioritized → startable now (N6b). 🟡 = partially done (research/repo-side done, application/live-trial pending). ✅ = done+merged. Distinguishing blocked-🔲 from deprioritized-🔲 is the thing sessions keep confusing.
 
 **Mostly research-complete:** the bulk of per-wave *research* across N1/N2/N4b/N7/N8 is done; the open frontier is **application** of verdicts + N0/N8 cost work, not new research.
 
@@ -51,7 +55,7 @@
 |---|---|---|---|
 | 1.1 | **N8 R-phase** (free: local-model dispatch / batch / caching / offload-sweep + «$ above subscription» estimate) | ✅ **DONE** (#158→staging, 2026-05-22) | — |
 | 1.2 | **N0 decision** — how to stay autonomous + cheap, informed by 1.1 | ✅ **DONE 2026-05-22** (§5.3: defer-build + arm trigger) | 1.1 |
-| 1.3 | **N8 A-phase** — apply cheap wins (migrate checks into hooks, autonomy hooks) | start high-ROI items before June 15 | 1.1 |
+| 1.3 | **N8 A-phase** — apply cheap wins (migrate checks into hooks, autonomy hooks) | C1 startable now (correctness); cost-levers gated on the §5.3 utilisation trigger | 1.1; **D1/D2/D3 resolved by N0 §5.3** ([findings §7](research-patches/2026-05-22-n8-rphase-findings.md)) — was: maintainer gates |
 
 ### Track 2 — cheap, no deadline, parallel-safe
 | # | Task | Note |
@@ -125,11 +129,11 @@ Maintainer-delegated (/orchestrator «N0 decision, го итеративно и 
 **D1 — cost lever → defer ALL options + arm a trigger (no optimisation build now; Option A was *not* selected — the verdict is status-quo until the trigger fires, then jump to Option B).**
 - The enforcement substrate never touched `claude -p` and is weatherproof by [no-paid-llm-in-ci](../../.claude/rules/no-paid-llm-in-ci.md) — load-bearing fact, not at risk.
 - At the current ~10 sessions/month load the metered spend is negligible *even fully unoptimised* (findings §3: ≈$13.50/mo → ~6.8% of a $200 credit; the 50-session scaling ceiling is ≈$67.50/mo → ~34% unoptimised, dropping to ≈$33–40 → ~17–20% only *after* the Option-B levers are applied). Building Option B's routing classifier or Option C's local dispatcher now is premature-BUILD for a cost problem that does not yet bind (`#own-stack-blind-spot` / [build-first-reuse-default §4](../../.claude/rules/build-first-reuse-default.md)). Note the findings' own irony flag: the routing classifier itself burns tokens.
-- The one cheap ADOPT — prompt caching via SDK `cache_control` (proposed SSOT #65, not yet landed) — is **folded into any future programmatic-dispatcher work, not built standalone**: interactive Claude Code already caches automatically, so there is nothing to "adopt" until a headless/SDK path exists.
+- The one cheap ADOPT — prompt caching via SDK `cache_control` (the prompt-caching row proposed in findings §7; renumbers to **#66+** per the §0 SSOT-ID collision note, not yet landed) — is **folded into any future programmatic-dispatcher work, not built standalone**: interactive Claude Code already caches automatically, so there is nothing to "adopt" until a headless/SDK path exists.
 - **Armed trigger (revisit → execute Option B = caching + batch + Haiku routing):** Agent-SDK credit utilisation > ~50% of plan in any month, **OR** the maintainer commits to unattended headless loops (`claude -p` cron / GitHub Actions). Until then: pay-the-meter-as-billed, monitor utilisation.
 
 **D2 — R4 local-model bench → NO-GO now (REFERENCE-only).**
-- Local-model dispatch stays proposed SSOT #67 (REFERENCE → conditional-BUILD). Capability floor is INCONCLUSIVE — arXiv 2604.02367 front-door routing (0.793 acc) is an *adjacent* problem class, not our session-loop dispatch (`#pattern-matching-on-name`, [ai-laziness-traps §2 T16](../../.claude/rules/ai-laziness-traps.md)). A 2–3-week bench for a problem that does not bind at current scale is not justified.
+- Local-model dispatch stays the findings §7 local-model row (REFERENCE → conditional-BUILD; renumbers to #66+ per the §0 collision note). Capability floor is INCONCLUSIVE — arXiv 2604.02367 front-door routing (0.793 acc) is an *adjacent* problem class, not our session-loop dispatch (`#pattern-matching-on-name`, [ai-laziness-traps §2 T16](../../.claude/rules/ai-laziness-traps.md)). A 2–3-week bench for a problem that does not bind at current scale is not justified.
 - Gate the bench on the **same trigger** as D1's escalation to Option C.
 
 **D3 — R1 offload migration priority → decoupled from N0 (→ N8 A-phase).**
@@ -149,7 +153,7 @@ N4a (done, #98) ──────────────→ N4b (recommendatio
 N3 (done) + N6a (done) ───────→ N6b (one-button install)
 DECISION=C (0.2) ─────────────→ N7 (dogfood) ──→ N5 (give-back)
 N8 R-phase (1.1) ─────────────→ N0 decision (1.2)
-                └─────────────→ N8 A-phase (1.3)
+                └─→ D1·D2·D3 (findings §7) ──→ N8 A-phase (1.3)
 N8 A3 (hybrid dispatch) ⇄ N7   (overlap — coordinate, don't double-build)
 ```
 
