@@ -34,11 +34,12 @@ else
 fi
 TSX_LOADER="$REAL_NODE_MODULES/tsx/dist/esm/index.mjs"
 
-# build_repo: init repo with origin/main at the initial (good) commit, then add a
-# capability commit (new dep) WITHOUT a Prior-art trailer, then a third innocuous
-# commit. Also synthesises an alt base ref origin/altbase. Echoes the tmp path.
+# build_repo: init repo with origin/staging (the upstreamRef() default) AND
+# origin/main both at the initial (good) commit, then add a capability commit
+# (new dep) WITHOUT a Prior-art trailer, then a third innocuous commit. Also
+# synthesises an alt base ref origin/altbase. Echoes the tmp path.
 # Layout (oldest → newest):
-#   C1 init (origin/main)  →  C2 capability-no-trailer  →  C3 innocuous-doc
+#   C1 init (origin/staging + origin/main)  →  C2 capability-no-trailer  →  C3 innocuous-doc
 build_repo() {
   local tmp
   tmp=$(mktemp -d)
@@ -48,7 +49,8 @@ build_repo() {
   echo '{"name":"test","version":"0.0.0"}' > "$tmp/package.json"
   git -C "$tmp" add package.json
   git -C "$tmp" -c commit.gpgsign=false commit -q -m "init"
-  git -C "$tmp" update-ref refs/remotes/origin/main HEAD   # C1
+  git -C "$tmp" update-ref refs/remotes/origin/main HEAD       # C1
+  git -C "$tmp" update-ref refs/remotes/origin/staging HEAD    # C1 — upstreamRef() default
 
   # Multi-line so the added dep is on its own `+` line (capability-detection
   # regex in prior-art.ts requires `^[+-]\s+"key": "version`).
@@ -71,7 +73,7 @@ PKG
   echo "$tmp"
 }
 
-# run REPO UPSTREAM_REF: invoke §7 with the given upstream ref ('' = default origin/main).
+# run REPO UPSTREAM_REF: invoke §7 with the given upstream ref ('' = default origin/staging).
 run() {
   local repo="$1" ref="${2:-}"
   (
@@ -89,14 +91,14 @@ record() {
   else FAIL=$((FAIL+1)); printf 'FAIL: %s\n' "$desc"; fi
 }
 
-# Test 1 (baseline negative): default base origin/main (= C1) → range C2..C3 incl.
+# Test 1 (baseline negative): default base origin/staging (= C1) → range C2..C3 incl.
 # the trailer-less capability commit C2 → hard-fail (exit 1).
 test_1_default_includes_bad() {
   local repo; repo=$(build_repo)
   if run "$repo"; then
-    record fail "1 — default origin/main should flag trailer-less capability C2 but exited 0"
+    record fail "1 — default origin/staging should flag trailer-less capability C2 but exited 0"
   else
-    record pass "1 — default origin/main base → capability C2 flagged → exit non-zero"
+    record pass "1 — default origin/staging base → capability C2 flagged → exit non-zero"
   fi
   rm -rf "$repo"
 }

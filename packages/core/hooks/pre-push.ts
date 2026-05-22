@@ -41,14 +41,14 @@ const run = (cmd: string, args: readonly string[] = []): CheckResult =>
 
 /**
  * Upstream ref the trailer checks diff against (`<ref>..HEAD`). Defaults to
- * `origin/main` — the pre-push case and PRs targeting main. The CI backstop
- * (audit-self.yml `pr-commit-trailers`) overrides it via PREPUSH_UPSTREAM_REF
- * with the PR base ref. Parameterising the ref (vs hard-coding `origin/main`) is
- * what lets the backstop also gate PRs targeting a non-main base — epic/staging
- * branches per the §13.40 automerge→staging plan, where sub-PRs target staging.
+ * `origin/staging` — the trunk from which feature branches are cut under the
+ * staging-as-trunk model (2026-05-22). The CI backstop (audit-self.yml
+ * `pr-commit-trailers`) overrides it via PREPUSH_UPSTREAM_REF with the PR base
+ * ref. Parameterising the ref (vs hard-coding a branch) is what lets the
+ * backstop gate PRs targeting any base — staging, epic/ID-* branches.
  */
 function upstreamRef(): string {
-  return process.env['PREPUSH_UPSTREAM_REF'] ?? 'origin/main';
+  return process.env['PREPUSH_UPSTREAM_REF'] ?? 'origin/staging';
 }
 
 /** Re-emit a captured result's output to the operator. */
@@ -302,7 +302,7 @@ function main(): void {
     const diff = run('git', [
       'diff',
       '--name-only',
-      'origin/main..HEAD',
+      `${upstreamRef()}..HEAD`,
       '--diff-filter=ACMR',
     ]);
     const changedMd = diff.stdout.split('\n').filter((f) => f.endsWith('.md'));
