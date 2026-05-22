@@ -8,7 +8,7 @@ on:
     paths:
       - '.github/workflows/**'
   push:
-    branches: [main]
+    branches: [staging, main]
     paths:
       - '.github/workflows/**'
 
@@ -27,7 +27,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Assert ci-success is a required status check on main
+      - name: Assert ci-success is a required status check on staging
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -38,7 +38,7 @@ jobs:
           # Rationale: don't block PRs in repos that haven't yet configured branch
           # protection. Once configured, R11 enforcement kicks in automatically.
 
-          protection_json="$(gh api "repos/${{ github.repository }}/branches/main/protection" 2>/dev/null || echo 'null')"
+          protection_json="$(gh api "repos/${{ github.repository }}/branches/staging/protection" 2>/dev/null || echo 'null')"
           rulesets_json="$(gh api "repos/${{ github.repository }}/rulesets" 2>/dev/null || echo '[]')"
 
           has_protection=$(echo "$protection_json" | jq 'if . == null or (type=="object" and has("message")) then false else true end')
@@ -46,11 +46,11 @@ jobs:
 
           if [ "$has_protection" = "true" ]; then
             if echo "$protection_json" | jq -e '.required_status_checks.contexts | contains(["ci-success"])' > /dev/null; then
-              echo "✅ ci-success is required (classic branch protection)"
+              echo "✅ ci-success is required on staging (classic branch protection)"
               exit 0
             fi
-            echo "::error::Branch protection exists on main but ci-success is NOT in required status checks (R11 violated)."
-            echo "::error::Settings → Branches → main → Require status checks → ci-success"
+            echo "::error::Branch protection exists on staging but ci-success is NOT in required status checks (R11 violated)."
+            echo "::error::Settings → Branches → staging → Require status checks → ci-success"
             exit 1
           fi
 
@@ -59,6 +59,6 @@ jobs:
             exit 0
           fi
 
-          echo "::warning::No branch protection or active rulesets on main. R11 not yet adopted in this repo."
-          echo "::warning::Configure: Settings → Branches → main → Require status checks → ci-success"
+          echo "::warning::No branch protection or active rulesets on staging. R11 not yet adopted in this repo."
+          echo "::warning::Configure: Settings → Branches → staging → Require status checks → ci-success"
           exit 0
