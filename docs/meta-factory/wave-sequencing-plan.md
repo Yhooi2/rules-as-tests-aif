@@ -27,7 +27,7 @@
 
 **Infra:** I.1 staging-trunk migration **DONE** (#144/#150 — default branch = `staging`, `main` push-blocked, `ci-success` on both; native Merge Queue unavailable on this repo → `strict:false` substitute). I.2 channel-selection promote + SSOT #60–#63 still maintainer-click. I.3 DN-4 incremental.
 
-**What actually remains:** apply N2 verdicts (maintainer-owned rule/SSOT edits); **N7 applied + verified** (SSOT #64/#65, rule §4 demotion, Superpowers installed + verified) — sole open item = one organic end-to-end SDD run (deferred) · **N8 A-phase** (D1/D2/D3 now answered by the N0 decision §5.3 = defer-build, arm utilisation trigger, R4 NO-GO; the *correctness* offload C1 still worth landing — SSOT rows renumber to **#66+** per the collision note below) · N4b H10 (deferred, trigger-gated) · **N6b** (NOT blocked — deps met, deprioritized) · N5 (blocked on N7 live-dogfood). *(N0 decision CLOSED 2026-05-22 — see §5.3; 0.3 promote→`EXECUTION-PLAN.md` CLOSED 2026-05-22 — see §5.2.)*
+**What actually remains:** apply N2 verdicts (maintainer-owned rule/SSOT edits); **N7 applied + verified** (SSOT #64/#65, rule §4 demotion, Superpowers installed + verified) — sole open item = one organic end-to-end SDD run (deferred) · **N8 A-phase** (D1/D2/D3 now answered by the N0 decision §5.3 = defer-build, arm utilisation trigger, R4 NO-GO; the *correctness* offload C1 still worth landing — SSOT rows renumber to **#66+** per the collision note below) · N4b H10 (deferred, trigger-gated) · **N6b** (NOT blocked — deps met, deprioritized) · N5 (blocked on N7 live-dogfood) · **2.3 channel-earliness audit** (Track 2, $0 parallel-safe research — kickoff authored; run BEFORE any check-building wave). *(N0 decision CLOSED 2026-05-22 — see §5.3; 0.3 promote→`EXECUTION-PLAN.md` CLOSED 2026-05-22 — see §5.2.)*
 
 > **⚠ SSOT-ID collision:** N8 findings §7 proposed rows **#64–#68**, but N7 application already **took #64/#65** (see N7 row). When N8 A-phase admits its SSOT rows they must renumber to **#66+** (next free). The N8 findings file's §7 numbers are stale on this point — corrected at A-phase admission, not now (findings is a research deliverable, ID assignment happens at capability-commit). The N0 decision record (§5.3) likewise refers to these by *role* (prompt-caching / local-model rows), not by frozen number.
 
@@ -62,6 +62,7 @@
 |---|---|---|
 | 2.1 | N1 — niche-validation research (DeepWiki/WebSearch, $0) | parallel to 1.1 |
 | 2.2 | N4b — design recommendation-moment gate | detector (N4a) already shipped; frontier |
+| 2.3 | **Channel-earliness audit** — retroactive sweep of every existing check vs «earliest reachable channel» (the sweep [channel-selection §6](../../.claude/rules/rule-enforcement-channel-selection.md) deferred) | $0 read-only research; own research-patch (`research-patches/<date>-channel-earliness-audit.md`), **no shared-file writes → parallel-safe**. **Run BEFORE any future check-building wave** (incl. N8 A-phase C1–C5): it sets the channel *default* so new checks don't land later than their data permits. Kickoff authored: `.claude/orchestrator-prompts/channel-earliness-audit/kickoff.md` |
 
 ### Track 3 — after dependencies clear
 | # | Task | Gate |
