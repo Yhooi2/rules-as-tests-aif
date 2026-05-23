@@ -81,6 +81,9 @@ if [ -n "$text" ]; then
 fi
 has_claims=false
 [ -n "$claim_hits" ] && has_claims=true
+claim_count=0
+[ -n "$claim_hits" ] && claim_count=$(printf '%s' "$claim_hits" | grep -c '^  ' || true)
+
 
 # Trigger ONLY on (a) a substantial structured answer ("много текста"),
 # (b) a question, or (c) factual claims detected by the scan above.
@@ -106,12 +109,62 @@ elif [ -n "$text" ]; then
   fi
 fi
 
+
+# -- MAJOR-1 idle-suppression guard -------------------------------------------
+# Suppress Branch B (asked=true, long_text=false, has_claims=false) ONLY when
+# ALL three hold:
+#   (a) Previous assistant turn already produced a "## 🟢" recap block.
+#   (b) Current turn text is NOT new -- its first 120 chars appear verbatim in
+#       the previous turn text (same question repeated/re-ping after recap).
+#   (c) has_claims=false -- a claim-bearing short turn always fires Branch D.
+# A genuinely new question will NOT match (b) because it contains content the
+# previous turn never had. Only idle re-pings are suppressed.
+# Guard never fires if only one assistant turn exists in the transcript.
+# B2 fix: NEVER suppress when text is empty (AskUserQuestion-only turn) or
+# has_askuserquestion=true or current_short is empty — a tool-only turn asking a
+# NEW question must always fire. Short-circuit BEFORE the grep -qF call.
+idle_suppress=false
+if [ "$asked" = "true" ] && [ "$long_text" = "false" ] && [ "$has_claims" = "false" ]; then
+  # B2: if text is empty or it's an AskUserQuestion-only turn, never suppress
+  if [ -z "$text" ] || [ "$has_askuserquestion" = "true" ]; then
+    idle_suppress=false
+  else
+    prev_line=$(grep '"type":"assistant"' "$transcript" 2>/dev/null | tail -2 | head -1 || true)
+    if [ -n "$prev_line" ] && [ "$prev_line" != "$last_line" ]; then
+      prev_text=$(printf '%s' "$prev_line" | jq -r '.message.content[]? | select(.type=="text") | .text' 2>/dev/null || true)
+      if printf '%s\n' "${prev_text}" | grep -q '## 🟢'; then
+        current_short=$(printf '%s' "$text" | head -c 120 | tr '\n' ' ')
+        # B2: if current_short is empty, never suppress (empty grep -qF "" matches anything)
+        if [ -n "$current_short" ] && printf '%s\n' "${prev_text}" | grep -qF "${current_short}"; then
+          idle_suppress=true
+        fi
+      fi
+    fi
+  fi
+fi
+
+if [ "$idle_suppress" = "true" ]; then
+  exit 0
+fi
+
+# -- P-user glance-line (systemMessage field) ---------------------------------
+# Shown to the USER in CC UI (not to the model). Format:
+# 🎯 <anchor truncated to 60 chars> [* N fact(s) to re-verify when N>0]
+anchor_short=$(echo "${anchor}" | head -c 60 | tr '\n' ' ')
+if [ "${claim_count}" -gt 0 ]; then
+  glance_line="🎯 ${anchor_short} · ${claim_count} факт(ов) на перепроверку"
+else
+  glance_line="🎯 ${anchor_short}"
+fi
+
 # Three branches:
 #   Branch C — long answer AND a trailing fork-question: needs BOTH the work
 #     recap (+ goal drift verdict) AND the recommendation-first/fork-challenge.
 #     A pure long-wins collapse would drop the recommendation nudge exactly when
 #     a fork is on the table — the highest-value moment for it.
-#   Branch A — long substantive answer, no question: work recap + drift verdict.
+#     DECISION-1=B (gated): Branch C = whole-session recap, Branch A = lighter per-turn body;
+#     maintainer may switch to A by extending the recap to Branch A.
+#   Branch A — long substantive answer, no question: lighter per-turn work recap.
 #   Branch B — a question with no long answer body: fork-challenge + recommend-first.
 #   Branch D — claims present on a short, question-less turn: claim-only re-verify.
 #   Neither (short chatter, bare tool call, no claim) — stay silent (no reminder).
@@ -120,6 +173,7 @@ if [ "$long_text" = "false" ] && [ "$asked" = "false" ] && [ "$has_claims" = "fa
 fi
 
 if [ "$long_text" = "true" ] && [ "$asked" = "true" ]; then
+  # Branch C: whole-session recap + fork-challenge (DECISION-1=B full recap stays here)
   reminder=$(cat <<EOF
 Стоп. Это и длинный ответ, И вопрос-развилка в конце — нужен и пересказ работы, и проверка вопроса. В первую очередь для себя.
 ОБЯЗАТЕЛЬНО начни блок ровно со строки «## 🟢 Простыми словами» — чтобы человек опознал его с ходу.
@@ -128,10 +182,15 @@ if [ "$long_text" = "true" ] && [ "$asked" = "true" ]; then
 Цель сессии (из названия сессии / первого задания): «${anchor}».
 
 Первые 2 строки — так, чтобы человек без контекста понял с ходу:
-• Чем я сейчас занят — одной фразой, простым языком.
-• На той ли я цели — выбери ОДНО: НА ЦЕЛИ / УВЕЛО В СТОРОНУ <тема> (и почему) / СОЗНАТЕЛЬНО СВЕРНУЛ на <тема> (и зачем). Не «вроде на цели».
+• Чем занята сессия В ЦЕЛОМ — одной фразой (не «что прям сейчас правил»).
+• На той ли цели — выбери ОДНО: НА ЦЕЛИ / УВЕЛО В СТОРОНУ <тема> (и почему) / СОЗНАТЕЛЬНО СВЕРНУЛ на <тема> (и зачем). Не «вроде на цели».
 
-Что сделал — коротко, с именами (файл/функция/решение): конкретное изменение + ОДНА вещь, в которой меньше всего уверен и которую стоит перепроверить.
+Дальше — про всю сессию, НЕ про последний ход:
+• Зачем мы это делаем — общая цель своими словами (не пересказ названия): какую задачу закрываем и почему она важна.
+• Что уже сделано к этой цели — НАКОПИТЕЛЬНО, по шагам с именами (файл/PR/решение): всё значимое за сессию, а не только последнее изменение.
+• Что впереди — ВСЁ что осталось до цели, по пунктам: не один следующий шаг, а весь хвост. Если близко к концу — так и скажи.
+• В чём меньше всего уверен — одна вещь на перепроверку (или честно «таких нет»).
+• Где сессия противоречит себе — назови разрыв между заявленной целью и тем, что вышло на деле, или место, где работа подрывает собственную предпосылку (как «проект против doc-bloat сам распух в doc-bloat»). Это «documents lie; tests don’t», наведённое на сам пересказ. Нет настоящего разрыва — пропусти: натянутая ирония хуже её отсутствия.
 
 По вопросу:
 1. Это настоящая развилка — или я перекладываю решение, которое могу принять сам? Один вариант явно лучше по существу (по целям сессии и дисциплине) → НЕ спрашивай: сделай его и скажи, что сделал.
@@ -140,6 +199,7 @@ if [ "$long_text" = "true" ] && [ "$asked" = "true" ]; then
 EOF
 )
 elif [ "$long_text" = "true" ]; then
+  # Branch A: lighter per-turn body (DECISION-1=B — whole-session recap stays in Branch C only)
   reminder=$(cat <<EOF
 Стоп. Прежде чем закончить — пересказ простыми словами, в первую очередь для себя.
 ОБЯЗАТЕЛЬНО начни блок ровно со строки «## 🟢 Простыми словами» — чтобы человек опознал его с ходу.
@@ -192,9 +252,9 @@ fi
 # reach the model. Verified dual-channel 2026-05-21: Claude Code hooks docs (Stop
 # decision-control: "reason must be provided for Claude to know how to proceed")
 # + WebSearch corroboration; #81's systemMessage-delivery never reached the model.
-jq -n --arg msg "$reminder" '{
+jq -n --arg msg "$reminder" --arg gl "${glance_line}" '{
   decision: "block",
   reason: $msg,
-  systemMessage: "End-of-turn recap requested"
+  systemMessage: $gl
 }'
 exit 0

@@ -1,6 +1,6 @@
 # AI laziness traps — discipline rule
 
-> **Class:** A — companion principle test pending (Track 3 Action A → planned slot 12).
+> **Class:** A — companion principle test shipped at [packages/core/principles/12-ai-laziness-traps.test.ts](../../packages/core/principles/12-ai-laziness-traps.test.ts) (#74, 2026-05-17).
 > **Authoritative for:** ai-laziness-traps discipline rule — §1 problem this solves, §2 canonical trap catalogue, §3 kickoff-author obligations (cite + extend, no blanket reference), §4 anti-patterns, §5 promotion / retirement triggers.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Companion to research-discipline rule — see [phase-research-coverage.md](phase-research-coverage.md).
 
@@ -125,6 +125,24 @@ Tempted output: «we adopted Stryker → mutation testing covered», «we adopte
 Concrete shape: driving nails with a screwdriver / screwing screws with a hammer — the tool is real and well-built, but it's the wrong tool for our actual problem because someone matched names instead of functions.
 Counter: for every ADOPTED-MECHANISM or ADAPTED item, write explicitly: **«Upstream problem class: X. Our problem class: Y. Match? evidence: …»**. If X and Y differ, the upstream validation does NOT transfer — escalate to OWN-BUILD-class audit. This is the `#pattern-matching-on-name` antipattern in operational form (see [phase-research-coverage.md §4](phase-research-coverage.md) candidates; documented in [`prior-art-evaluations.md` AIF Handoff overlap analysis](../../docs/meta-factory/prior-art-evaluations.md) entries #27/#28).
 
+### T17 — Destructive delegation without preserving future-value content first
+
+Trigger: about to write a destructive prompt (REMOVE / DELETE / revert) for a junior, or run a destructive op, on content that may have future value.
+Tempted output: dispatch the delete/revert immediately — the junior follows scope strictly and the content is gone with no undo.
+Counter: **BEFORE** writing the destructive prompt, the orchestrator saves deletable content with future value (extract to a preservation note / research-patch / skill-context). Preservation is the *orchestrator's* job — the junior is instructed to follow scope strictly and will not save it for you. *(codifies memory `preserve_before_destructive_delegation`; incident counter 1/3 → promote to a principle test at 3)*
+
+### T18 — Deleting a redundant artifact instead of preserving its unique residue
+
+Trigger: an ours-vs-adopted-upstream collision / redundancy surfaces across docs or agents.
+Tempted output: «it's redundant with the upstream we adopted → delete it».
+Counter: verify the redundancy **empirically** first; keep the file (deletion is the irreversible branch, keeping is reversible); preserve genuinely-unique residue via the upstream-native mechanism (e.g. a skill-context override) — never just delete. *(codifies memory `preserve_unique_residue_via_skill_context`)*
+
+### T19 — Handoff without own cold-QA (CI ≠ design review)
+
+Trigger: a load-bearing / discipline-bearing PR is ready and CI is green.
+Tempted output: «CI green → hand to the maintainer to review and merge».
+Counter: run your **own** adversarial cold-review of the diff (a fresh reviewer over the actual change) BEFORE handoff. CI checks form/structure (lint, trailers, schema), not design substance — the 2026-05-22 DN-4 round-1 (§1.11) and round-2 (§1.12) cold-reviews each caught real MAJOR findings a green CI missed. «Merge» is the maintainer's decision; «QA» is yours. *(codifies memory `own_qa_before_handoff`)*
+
 ## §3 Obligations on kickoff authors
 
 A kickoff document (R-phase brief, audit prompt, multi-session umbrella doc) that delegates work to an AI session MUST:
@@ -148,7 +166,7 @@ Blanket reference («see ai-laziness-traps.md» without enumeration or domain ex
 - **New trap promotion to canonical catalogue (§2):** when 2+ wave-specific T-additions describe structurally the same failure mode, abstract and add to §2. Wave-specific T-XXX deprecates.
 - **Trap retirement:** if a T-N has not been cited as active in any kickoff for 4+ consecutive waves AND no incident has fired matching it, demote to «archived» section (preserve for history, do not require enumeration).
 - **Catalogue split:** if §2 exceeds 25 entries, split by domain (e.g. audit-specific vs. implementation-specific). Avoid bloat-by-accretion.
-- **Companion principle test promotion:** if rule violation rate (kickoffs without proper T-enumeration) reaches ≥3 incidents in 6 months, add `packages/core/principles/11-ai-laziness-traps.test.ts` — mechanical check on kickoff files under `.claude/orchestrator-prompts/*/kickoff.md` for the required citation + enumeration syntax.
+- **Companion principle test — SHIPPED:** [`packages/core/principles/12-ai-laziness-traps.test.ts`](../../packages/core/principles/12-ai-laziness-traps.test.ts) (#74, 2026-05-17) — mechanical check on kickoff files under `.claude/orchestrator-prompts/*/kickoff.md` for the required §3 citation + T-enumeration syntax. Promoted ahead of the «≥3 incidents in 6 months» violation-rate threshold via the 1A roadmap (slot 12, not the originally-sketched slot 11 — that slot went to build-first-reuse-default).
 
 ## See also
 

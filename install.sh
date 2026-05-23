@@ -47,7 +47,7 @@ fi
 # docs/meta-factory/research-patches/2026-05-09-§13.21-l3-revision.md).
 # Mirrors the canonical list at
 # packages/core/principles/09-doc-authority-hierarchy.test.ts
-# (REQUIRED_HEADER_DOCS Wave 2 + Wave 5.1 entries — 13 shipped surfaces).
+# (REQUIRED_HEADER_DOCS Wave 2 + Wave 5.1 + memory-codification-auditor — 16 shipped surfaces).
 # Runs in --dry-run too, so preview also catches drift between PR-side
 # (principle 09 CI) and release-time copy. Positioned before package.json
 # check + stack picker so framework-author drift fails fastest, before any
@@ -66,6 +66,7 @@ SHIPPED_DOCS=(
   "agents/review-sidecar.md"
   "agents/living-docs-auditor.md"
   "agents/compliance-verifier.md"
+  "agents/memory-codification-auditor.md"
   "skills/tool-bootstrapping/SKILL.md"
   "skills/tool-bootstrapping/references/decision-format.md"
 )
@@ -194,6 +195,20 @@ else
   rm -rf "$PROJECT_ROOT/.claude/skills/tool-bootstrapping"
   cp -r "$PKG_ROOT/skills/tool-bootstrapping" "$PROJECT_ROOT/.claude/skills/tool-bootstrapping"
   echo "  ✓ .claude/skills/tool-bootstrapping/"
+fi
+if [ -e "$PROJECT_ROOT/.claude/skills/meta-orchestrator" ] && [ "$FORCE" != "--force" ]; then
+  SKIPPED+=("$PROJECT_ROOT/.claude/skills/meta-orchestrator")
+  if [ "$DRY_RUN" = "--dry-run" ]; then
+    echo "  [dry-run] would skip: .claude/skills/meta-orchestrator (exists)"
+  else
+    echo "  ⊝ .claude/skills/meta-orchestrator (exists — skipping)"
+  fi
+elif [ "$DRY_RUN" = "--dry-run" ]; then
+  echo "  [dry-run] would copy: $PKG_ROOT/skills/meta-orchestrator → $PROJECT_ROOT/.claude/skills/meta-orchestrator"
+else
+  rm -rf "$PROJECT_ROOT/.claude/skills/meta-orchestrator"
+  cp -r "$PKG_ROOT/skills/meta-orchestrator" "$PROJECT_ROOT/.claude/skills/meta-orchestrator"
+  echo "  ✓ .claude/skills/meta-orchestrator/"
 fi
 
 # ─── 1b. Hooks ──────────────────────────────────────────

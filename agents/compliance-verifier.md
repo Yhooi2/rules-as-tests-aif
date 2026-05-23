@@ -72,7 +72,7 @@ You open the file; line 91 is a comment or a different array entry. The line num
 The §1.7 Backward-check must enumerate the **complete set of existing artefacts** that fall under the new rule's scope — not «a few examples» but the exhaustive output of a `find` or `grep` sweep.
 
 **What good looks like:**
-> `grep -nE "^> \*\*Authoritative for" agents/*.md` → one match per shipped agent (e.g. review-sidecar.md:9, living-docs-auditor.md:9, compliance-verifier.md:9). Adding a new agent adds a match.
+> `grep -nE "^> \*\*Authoritative for" agents/*.md` → one match per shipped agent (e.g. review-sidecar.md:9, living-docs-auditor.md:9, compliance-verifier.md:9, memory-codification-auditor.md:11). Adding a new agent adds a match.
 
 This demonstrates an actual sweep was run: the command, the output count, and the line numbers.
 
@@ -84,7 +84,7 @@ No command. No output. No line numbers. The claim is identical whether the sweep
 Ask:
 - Is there a concrete `find`/`grep` command (or equivalent output) in the section?
 - Does the output enumerate a **complete set** — not just «2-3 examples from the scope»?
-- If the scope is «all agents in agents/»: are all 3 existing agents named?
+- If the scope is «all agents in agents/»: are all 4 existing agents named?
 
 **Flag REVISE** if the Backward-check reads like a conclusion without the supporting find/grep output.
 

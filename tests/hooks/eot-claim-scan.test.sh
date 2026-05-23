@@ -19,7 +19,7 @@
 set -uo pipefail
 
 REPO_ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
-HOOK_FILE="$REPO_ROOT/.claude/hooks/end-of-turn-reminder.sh"
+HOOK_FILE="${EOT_HOOK_FILE:-$REPO_ROOT/.claude/hooks/end-of-turn-reminder.sh}"
 
 PASS=0
 FAIL=0
@@ -109,6 +109,77 @@ tr=$(make_transcript "детали см. [the plan](docs/meta-factory/EXECUTION-
 out=$(run_hook "$HOOK_FILE" "$tr")
 reason=$(printf '%s' "$out" | jq -r '.reason // ""' 2>/dev/null)
 if printf '%s' "$reason" | grep -qiE 'EXECUTION-PLAN\.md:45'; then bad "precision: markdown link-target citation wrongly enumerated"; else ok "precision: markdown link-target citation ignored"; fi
+
+# ── 10. MAJOR-2a: idle-suppression fires — turn N produced ## 🟢, turn N+1 is same question ──
+# Turn N: assistant produced a "## 🟢" recap block.
+# Turn N+1 (current): short question-only, same content as in previous turn → should be SUPPRESSED.
+{
+  dir=$(mktemp -d)
+  prev_question="Хочешь ли продолжить?"
+  jq -cn '{type:"user",message:{content:"test anchor"}}' > "$dir/t.jsonl"
+  # Turn N: previous assistant with ## 🟢 recap + the same question text embedded
+  jq -cn --arg t "$(printf '## 🟢 Простыми словами\nПредыдущий пересказ.\nХочешь ли продолжить?')" \
+    '{type:"assistant",message:{content:[{type:"text",text:$t}]}}' >> "$dir/t.jsonl"
+  # Turn N+1 (last): short question, same text
+  jq -cn --arg t "$prev_question" \
+    '{type:"assistant",message:{content:[{type:"text",text:$t}]}}' >> "$dir/t.jsonl"
+  stdin=$(jq -cn --arg p "$dir/t.jsonl" '{stop_hook_active:false, transcript_path:$p}')
+  out=$(printf '%s' "$stdin" | bash "$HOOK_FILE" 2>/dev/null); rc=$?
+  if [ "$rc" -eq 0 ] && [ -z "$out" ]; then ok "MAJOR-2a: idle-suppression suppresses repeat question after ## 🟢 recap"; else bad "MAJOR-2a: idle-suppression did NOT suppress repeat question (rc=$rc out: ${out:0:80})"; fi
+}
+
+# ── 11. MAJOR-2b: idle-suppression does NOT fire — turn N+1 is a genuinely NEW question ──
+# Turn N: assistant produced "## 🟢" recap.
+# Turn N+1 (current): NEW question never seen in previous turn → must NOT be suppressed.
+{
+  dir=$(mktemp -d)
+  jq -cn '{type:"user",message:{content:"test anchor"}}' > "$dir/t.jsonl"
+  # Turn N: previous assistant with ## 🟢 recap (no mention of the new question)
+  jq -cn --arg t "$(printf '## 🟢 Простыми словами\nПредыдущий пересказ про файл X.')" \
+    '{type:"assistant",message:{content:[{type:"text",text:$t}]}}' >> "$dir/t.jsonl"
+  # Turn N+1 (last): genuinely new question about something different
+  jq -cn --arg t "$(printf 'Совершенно новый вопрос: что делать с веткой Y?')" \
+    '{type:"assistant",message:{content:[{type:"text",text:$t}]}}' >> "$dir/t.jsonl"
+  out=$(run_hook "$HOOK_FILE" "$dir/t.jsonl")
+  if [ -n "$out" ] && printf '%s' "$out" | jq -e '.decision=="block"' >/dev/null 2>&1; then ok "MAJOR-2b: idle-suppression does NOT suppress a genuinely new question"; else bad "MAJOR-2b: idle-suppression wrongly suppressed a new question (out: ${out:0:80})"; fi
+}
+
+# ── 12. MAJOR-2c: glance-line — systemMessage carries 🎯 anchor and claim count ──
+{
+  tr=$(make_transcript "поправил 4 files в проекте")
+  out=$(run_hook "$HOOK_FILE" "$tr")
+  sys_msg=$(printf '%s' "$out" | jq -r '.systemMessage // ""' 2>/dev/null)
+  if printf '%s' "$sys_msg" | grep -qE '^(🎯|\xF0\x9F\x8E\xAF)'; then ok "MAJOR-2c: systemMessage starts with 🎯 glance anchor"; else bad "MAJOR-2c: systemMessage missing 🎯 prefix (msg: ${sys_msg:0:80})"; fi
+  if printf '%s' "$sys_msg" | grep -qE '[0-9]+ факт'; then ok "MAJOR-2c: systemMessage includes claim count when claims present"; else bad "MAJOR-2c: claim count missing from systemMessage (msg: ${sys_msg:0:80})"; fi
+}
+
+# ── 13. MAJOR-2d: glance-line — no claim count when no claims ──
+{
+  tr=$(make_transcript "готово, поправил конфиг — всё ок, вопросов нет")
+  # This is a short claim-free turn with no question — should be silent (exit 0)
+  stdin=$(jq -cn --arg p "$tr" '{stop_hook_active:false, transcript_path:$p}')
+  out=$(printf '%s' "$stdin" | bash "$HOOK_FILE" 2>/dev/null); rc=$?
+  if [ "$rc" -eq 0 ] && [ -z "$out" ]; then ok "MAJOR-2d: claim-free turn stays silent (no glance-line test needed — hook silent)"; else
+    sys_msg=$(printf '%s' "$out" | jq -r '.systemMessage // ""' 2>/dev/null)
+    if printf '%s' "$sys_msg" | grep -qE 'факт'; then bad "MAJOR-2d: claim count in systemMessage on claim-free turn (msg: ${sys_msg:0:80})"; else ok "MAJOR-2d: no claim count in systemMessage on claim-free turn"; fi
+  fi
+}
+
+# ── 14. B2: AskUserQuestion-only turn after ## 🟢 recap must NOT be suppressed ──
+# B2 fix: idle-suppression must short-circuit when text is empty (tool-only turn).
+# A model firing AskUserQuestion with no text block is a NEW question — never idle repeat.
+{
+  dir=$(mktemp -d)
+  jq -cn '{type:"user",message:{content:"test anchor"}}' > "$dir/t.jsonl"
+  # Turn N: previous assistant with ## 🟢 recap
+  jq -cn --arg t "$(printf '## 🟢 Простыми словами\nПредыдущий пересказ.')" \
+    '{type:"assistant",message:{content:[{type:"text",text:$t}]}}' >> "$dir/t.jsonl"
+  # Turn N+1 (last): AskUserQuestion tool-only, empty text block — must FIRE (not suppressed)
+  jq -cn '{type:"assistant",message:{content:[{type:"tool_use",id:"toolu_1",name:"AskUserQuestion",input:{question:"Продолжить?"}}]}}' >> "$dir/t.jsonl"
+  stdin=$(jq -cn --arg p "$dir/t.jsonl" '{stop_hook_active:false, transcript_path:$p}')
+  out=$(printf '%s' "$stdin" | bash "$HOOK_FILE" 2>/dev/null); rc=$?
+  if [ -n "$out" ] && printf '%s' "$out" | jq -e '.decision=="block"' >/dev/null 2>&1; then ok "B2: AskUserQuestion-only turn after ## 🟢 fires (not suppressed)"; else bad "B2: AskUserQuestion-only turn was wrongly suppressed (rc=$rc out: ${out:0:80})"; fi
+}
 
 echo "── eot-claim-scan: $PASS passed, $FAIL failed ──"
 [ "$FAIL" -eq 0 ]

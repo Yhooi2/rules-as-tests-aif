@@ -105,6 +105,33 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-doc-authority.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-matching-rule.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-kickoff-traps.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-hook-marker.sh\""
+          }
+        ]
       }
     ],
     "Stop": [

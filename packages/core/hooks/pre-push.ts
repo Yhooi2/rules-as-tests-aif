@@ -23,11 +23,11 @@
  *   - section output is captured and re-emitted after each check rather than
  *     streamed live (acceptable for sub-second checks).
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runCheck, type CheckResult } from './utils/run-check.ts';
-import { runPriorArtCheck } from './checks/prior-art.ts';
+import { runPriorArtCheck, loadSsotIds } from './checks/prior-art.ts';
 import { runS17Check } from './checks/s17.ts';
 import { getCommits, upstreamExists, realGit } from './utils/git.ts';
 
@@ -41,14 +41,14 @@ const run = (cmd: string, args: readonly string[] = []): CheckResult =>
 
 /**
  * Upstream ref the trailer checks diff against (`<ref>..HEAD`). Defaults to
- * `origin/main` — the pre-push case and PRs targeting main. The CI backstop
- * (audit-self.yml `pr-commit-trailers`) overrides it via PREPUSH_UPSTREAM_REF
- * with the PR base ref. Parameterising the ref (vs hard-coding `origin/main`) is
- * what lets the backstop also gate PRs targeting a non-main base — epic/staging
- * branches per the §13.40 automerge→staging plan, where sub-PRs target staging.
+ * `origin/staging` — the trunk from which feature branches are cut under the
+ * staging-as-trunk model (2026-05-22). The CI backstop (audit-self.yml
+ * `pr-commit-trailers`) overrides it via PREPUSH_UPSTREAM_REF with the PR base
+ * ref. Parameterising the ref (vs hard-coding a branch) is what lets the
+ * backstop gate PRs targeting any base — staging, epic/ID-* branches.
  */
 function upstreamRef(): string {
-  return process.env['PREPUSH_UPSTREAM_REF'] ?? 'origin/main';
+  return process.env['PREPUSH_UPSTREAM_REF'] ?? 'origin/staging';
 }
 
 /** Re-emit a captured result's output to the operator. */
@@ -90,12 +90,25 @@ function requireTool(
  * — the anti-tautology end-to-end test exercises only this section and must not
  * depend on the other sections' tools/deps.
  */
+/**
+ * The SSOT register's entry id-set, for the C1 broken-citation arm. Unreadable
+ * register → undefined → existence check is a graceful no-op (never blocks a
+ * push because the file moved).
+ */
+function ssotIds(): ReadonlySet<number> | undefined {
+  try {
+    return loadSsotIds(readFileSync(resolve(REPO_ROOT, 'docs/meta-factory/prior-art-evaluations.md'), 'utf8'));
+  } catch {
+    return undefined;
+  }
+}
+
 function priorArtSection(): void {
   const UPSTREAM_REF = upstreamRef();
   if (!upstreamExists(UPSTREAM_REF)) return;
   const commits = getCommits(UPSTREAM_REF);
   const substanceWarnOnly = (process.env['PA_SUBSTANCE_WARN_ONLY'] ?? 'true') !== 'false';
-  const report = runPriorArtCheck(commits, realGit);
+  const report = runPriorArtCheck(commits, realGit, undefined, ssotIds());
 
   if (report.failures.length > 0) {
     process.stdout.write('\n❌ Prior-art trailer missing or invalid on capability commit(s):\n');
@@ -109,6 +122,19 @@ function priorArtSection(): void {
         '  Prior-art: skipped — refactor only, no new capability\n\n' +
         'Rules: ≥20 chars after "Prior-art:" (or after "skipped — "); placeholder\n' +
         'rationales (TODO / later / n/a / tbd / fixme / placeholder) are rejected.\n\n',
+    );
+    process.exit(1);
+  }
+
+  if (report.brokenCitations.length > 0) {
+    process.stdout.write('\n❌ Prior-art trailer cites a non-existent SSOT entry (C1 existence check):\n');
+    for (const f of report.brokenCitations) {
+      process.stdout.write(`  ${f.sha}  reason: ${f.reason}; ${f.message}\n`);
+    }
+    process.stdout.write(
+      '\nFix: cite an entry that exists in docs/meta-factory/prior-art-evaluations.md,\n' +
+        'or add the entry to the SSOT in the same commit (per CLAUDE.md build-vs-reuse).\n' +
+        'Verify: grep -nE "^\\| *<N> *\\|" docs/meta-factory/prior-art-evaluations.md\n\n',
     );
     process.exit(1);
   }
@@ -302,7 +328,7 @@ function main(): void {
     const diff = run('git', [
       'diff',
       '--name-only',
-      'origin/main..HEAD',
+      `${upstreamRef()}..HEAD`,
       '--diff-filter=ACMR',
     ]);
     const changedMd = diff.stdout.split('\n').filter((f) => f.endsWith('.md'));

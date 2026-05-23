@@ -8,7 +8,7 @@
 # @dual-pair: pre-push-critical-checks
 set -euo pipefail
 
-UPSTREAM_REF="${PREPUSH_UPSTREAM_REF:-origin/main}"
+UPSTREAM_REF="${PREPUSH_UPSTREAM_REF:-origin/staging}"
 HISTORICAL_CUTOFF="2026-05-12"
 # §1.7 allow-list — parity with s17.ts:18 ALLOWLIST_RE (these subjects never require a §1.7 trailer).
 S17_ALLOWLIST_RE='^(docs\(research-patches\)|chore\(snapshot-regen\)|chore\(prior-art-update\)):'
