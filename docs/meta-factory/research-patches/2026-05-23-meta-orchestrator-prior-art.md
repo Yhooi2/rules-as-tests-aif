@@ -1,3 +1,4 @@
+<!-- scope:meta-orchestrator-prior-art -->
 # Research patch — `/meta-orchestrator` skill prior-art survey
 
 > **Class:** R-phase deliverable (research-patch). No code changes; no skill files written; verdict only.
