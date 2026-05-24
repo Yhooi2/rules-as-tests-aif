@@ -1,7 +1,6 @@
 ---
 name: meta-orchestrator
-# @deviation-rationale: dual-implementation-discipline.md §3 — description retains workflow-summary prefix despite Superpowers writing-skills CSO standard. Operationally zero impact (disable-model-invocation:true → CC never auto-matches). Round-2 MAJOR-2.
-description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Russian triggers: «мета-оркестратор», «оркестратор волн», «план волн», «stage-gate», «приоритет umbrella», «волны параллельно/последовательно», «дрифт wave-sequencing-plan». Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
+description: Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Russian triggers: «мета-оркестратор», «оркестратор волн», «план волн», «stage-gate», «приоритет umbrella», «волны параллельно/последовательно», «дрифт wave-sequencing-plan». Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered on Claude Code (disable-model-invocation:true). On non-CC harnesses (Cursor/Aider/Codex) consumers should treat this as a manually-invoked workflow skill — the body §0 specifies invocation form.
 arguments: [umbrella]
 argument-hint: "[umbrella-name]"
 disable-model-invocation: true
