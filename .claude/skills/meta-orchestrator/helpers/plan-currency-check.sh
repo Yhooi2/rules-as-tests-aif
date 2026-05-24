@@ -22,6 +22,19 @@ git -C "${REPO_ROOT}" branch --show-current 2>/dev/null || echo "(no branch)"
 git -C "${REPO_ROOT}" rev-list --count --left-right "origin/staging...HEAD" 2>/dev/null \
   || echo "(no upstream tracking)"
 
+echo "--- fetch + cross-check vs origin/staging (fresh-PR detector — Gap-2 round-2 follow-up) ---"
+# Without this fetch, the ahead/behind above + the open/merged PR lists below all rely
+# on the local copy of origin/staging, which may be days stale → fresh merges since last
+# sync are invisible. We fetch fail-soft (offline/auth-failure → echoed warning, not exit-1).
+git -C "${REPO_ROOT}" fetch --quiet origin staging 2>/dev/null \
+  || echo "(fetch failed — origin/staging may be stale, fresh-PR detection compromised)"
+REMOTE_ONLY="$(git -C "${REPO_ROOT}" rev-list --count "HEAD..origin/staging" 2>/dev/null || echo '?')"
+echo "commits on origin/staging not in HEAD: ${REMOTE_ONLY}"
+if [[ "${REMOTE_ONLY}" != "0" && "${REMOTE_ONLY}" != "?" ]]; then
+  echo "  recent remote-only commits (likely merged PRs since last local sync):"
+  git -C "${REPO_ROOT}" log "HEAD..origin/staging" --oneline -10 2>/dev/null | sed 's/^/    /'
+fi
+
 echo "--- open PRs (json) ---"
 gh pr list \
   --search "is:open" \

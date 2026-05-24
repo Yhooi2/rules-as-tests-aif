@@ -62,6 +62,30 @@ If empty → halt. Do NOT dispatch Stage 2.
 
 ---
 
+## §4a Worker worktree setup (FIRST step in any worker session — Gap-3 round-2 follow-up)
+
+If the worker is dispatched into a `git worktree add`-created directory (default for parallel sub-waves per `parallel-subwave-isolation.md §1`), reconstitute the `node_modules` plumbing the orchestrator's primary workdir already has. Without it, `npm` / test / build commands fail (`packages/core` consumes hoisted modules via a workspaces symlink that `git worktree add` does NOT copy — burns Opus on rediscovery every time).
+
+**Run BEFORE any `npm` / test / build command (idempotent — no-op in primary workdir):**
+
+```bash
+GIT_DIR_REL=$(git rev-parse --git-dir)
+GIT_COMMON_DIR=$(git rev-parse --git-common-dir)
+if [[ "$GIT_DIR_REL" != "$GIT_COMMON_DIR" ]]; then
+  # Inside a worktree (not primary workdir). Share node_modules from primary.
+  PRIMARY_WORKDIR=$(dirname "$(cd "$GIT_COMMON_DIR" && pwd)")
+  [[ ! -e node_modules ]] && ln -sfn "$PRIMARY_WORKDIR/node_modules" node_modules
+  [[ ! -e packages/core/node_modules ]] && ln -sfn ../../node_modules packages/core/node_modules
+  echo "worktree setup OK — node_modules + packages/core/node_modules linked to primary"
+fi
+```
+
+Detection contract: `git rev-parse --git-dir` returns `.git` (relative) in the primary workdir, an absolute path in a worktree; the inequality is the worktree marker (same pattern Superpowers `using-git-worktrees` uses for its nested-worktree skip, per `parallel-subwave-isolation.md §4`).
+
+Skip when the worker runs in the shared/primary workdir — the `if` block is a no-op.
+
+---
+
 ## §5 AI-traps active (per `ai-laziness-traps.md §3`)
 
 See `.claude/rules/ai-laziness-traps.md §2` for full catalogue.
