@@ -28,16 +28,25 @@ fi
 echo "=== launch-table-generator: umbrella=${UMBRELLA} ==="
 echo "kickoff: ${KICKOFF} ($(wc -l < "${KICKOFF}") lines)"
 echo ""
-echo "--- sub-wave candidates (auto-detected) ---"
 
-# Extract sub-wave identifiers from kickoff §2 / §3 sub-wave table (heuristic)
-# Look for lines with | Sub-wave | or | A | or | 1 | pattern in markdown tables
-grep -E '^\| *(Sub-wave|[A-D]|[0-9]+) *\|' "${KICKOFF}" 2>/dev/null \
-  | grep -v 'Sub-wave\|---|Mode\|Type\|Stage' \
-  | while IFS='|' read -r _ sw_raw _; do
-      sw="$(echo "${sw_raw}" | tr -d ' ')"
-      [[ -n "${sw}" ]] && echo "  sub-wave: ${sw}"
-    done
+# Extract sub-wave rows from kickoff §2/§3 sub-wave tables.
+# Recognised first-column shapes (with surrounding spaces):
+#   | A |           plain letter A-D
+#   | **A** |       bold-wrapped letter (Markdown emphasis)
+#   | 1 |           plain digit
+#   | **1** |       bold-wrapped digit
+# Filters: the header row (first cell == 'Sub-wave' literal) and divider rows (cells of `-`/`:`).
+detect_subwaves() {
+  grep -E '^\| *(\*\*)?([A-D]|[0-9]+)(\*\*)? *\|' "${KICKOFF}" 2>/dev/null \
+    | grep -vE '^\|[[:space:]:|-]*\|[[:space:]:|-]*$' \
+    | while IFS='|' read -r _ sw_raw _; do
+        sw="$(echo "${sw_raw}" | tr -d ' *')"
+        [[ -n "${sw}" ]] && echo "${sw}"
+      done
+}
+
+echo "--- sub-wave candidates (auto-detected) ---"
+detect_subwaves | sed 's/^/  sub-wave: /'
 
 echo ""
 echo "--- kickoff type header ---"
@@ -49,10 +58,7 @@ echo "--- table skeleton (fill judgment columns in SKILL.md body) ---"
 echo "| Sub-wave | Type | Mode | SDD? | Stage | Parallel sibling | Volume |"
 echo "|---|---|---|---|---|---|---|"
 
-# Emit one skeleton row per detected sub-wave (SKILL.md body fills actual values)
-grep -E '^\| *(Sub-wave|[A-D]|[0-9]+) *\|' "${KICKOFF}" 2>/dev/null \
-  | grep -v 'Sub-wave\|---|Mode\|Type\|Stage' \
-  | while IFS='|' read -r _ sw_raw _; do
-      sw="$(echo "${sw_raw}" | tr -d ' ')"
-      [[ -n "${sw}" ]] && echo "| ${sw} | ? | ? | ? | ? | ? | ? |"
-    done
+# Emit one skeleton row per detected sub-wave (SKILL.md body fills actual values).
+detect_subwaves | while read -r sw; do
+  echo "| ${sw} | ? | ? | ? | ? | ? | ? |"
+done
