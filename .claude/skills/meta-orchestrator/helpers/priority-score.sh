@@ -55,9 +55,11 @@ for dir in "${PROMPTS_DIR}"/*/; do
     volume="L"
   fi
 
-  # Check for open PRs matching this umbrella prefix
+  # Check for open PRs matching this umbrella prefix.
+  # `grep -c` always emits a count (0 if no match) but exits 1 on no match;
+  # `|| true` keeps `set -e` happy without duplicating the "0" output that `|| echo 0` produced.
   open_prs="$(gh pr list --search "is:open head:${name}" --json number --limit 5 2>/dev/null \
-    | grep -c '"number"' || echo 0)"
+    | grep -c '"number"' || true)"
 
   echo "${name} type=${wave_type} kickoff=exists volume=${volume} open_prs=${open_prs} loc=${loc}"
 done

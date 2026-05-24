@@ -1,7 +1,6 @@
 ---
 name: meta-orchestrator
-description: Plan-preflight + cross-umbrella priority + launch-table + stage-gate-aware dispatch for multi-wave umbrellas. Use when invoking /meta-orchestrator [<umbrella>] to verify wave-sequencing-plan currency + decide next wave + generate meta-kickoff + dispatch with real git gates.
-when_to_use: User explicit invocation only via /meta-orchestrator slash command. Not auto-triggered.
+description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
 arguments: [umbrella]
 argument-hint: "[umbrella-name]"
 disable-model-invocation: true
@@ -64,4 +63,19 @@ Without `/meta-orchestrator`, multi-wave umbrella orchestration relies on manual
 
 ---
 
-For the full behaviour specification (§1 Plan-currency through §11 Failures), see `.claude/skills/meta-orchestrator/SKILL.md` after install.
+## Red flags / Common mistakes
+
+When operating under this skill, these rationalizations mean STOP:
+
+| Rationalization | Reality |
+|---|---|
+| «Plan looked current last session, skip §1» | Plan-currency is per-invocation — PRs merge between invocations |
+| «Launch-table from memory, kickoff hasn't changed» | Kickoff edits between invocations are invisible without re-read |
+| «Stage 1 was 'about to land' so dispatch Stage 2 now» | Stage gate is real `gh pr list --search "is:merged"` — never «about to» |
+| «Both candidates feel similar — I'll pick A» | True ties go to maintainer as DECISION-NEEDED, not the meta-orchestrator |
+| «Maintainer said 'выбирай сам' so DECISION-NEEDED is satisfied, I'll pick» | NO — «pick for me» / «оба норм» / «я устал» = *deferred* DECISION-NEEDED, not answered. Genuine answer is a content tiebreaker. Re-surface or coin-flip; don't silently pick (§2 step 4.1 in full SKILL.md). |
+| «Phase -1 reviewer between stages is optional» | Mandatory regardless of stage size (CI ≠ design review) |
+| «I'll quickly implement this trivial sub-wave inline» | Anti-scope: meta-orchestrator dispatches kickoffs; never implements |
+| «`see ai-laziness-traps.md` is enough in meta-kickoff §5» | Blanket reference is itself T7 — explicit T-enumeration mandatory |
+
+For the full behaviour specification (§1 Plan-currency through §11 Failures, including all anti-patterns and red-flag counters), see `.claude/skills/meta-orchestrator/SKILL.md` after install.

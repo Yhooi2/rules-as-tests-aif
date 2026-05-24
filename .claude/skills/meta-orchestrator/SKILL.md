@@ -1,7 +1,6 @@
 ---
 name: meta-orchestrator
-description: Plan-preflight + cross-umbrella priority + launch-table + stage-gate-aware dispatch for multi-wave umbrellas. Use when invoking /meta-orchestrator [<umbrella>] to verify wave-sequencing-plan currency + decide next wave + generate meta-kickoff + dispatch with real git gates.
-when_to_use: User explicit invocation only via /meta-orchestrator slash command. Not auto-triggered.
+description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
 arguments: [umbrella]
 argument-hint: "[umbrella-name]"
 disable-model-invocation: true
@@ -124,6 +123,25 @@ Priority ranking (as of <date> <git-HEAD-short>):
 - If winner score ≥ 1.5× runner-up AND no explicit maintainer override → commit: «Recommend **<umbrella-A>**, proceeding.» (per phase-research-coverage.md §1.12: lead with reasoned recommendation).
 - If genuine tie OR strategy fork (e.g. «should we do N8 or C-1?») → ask maintainer. Do NOT pick strategy. Surface as: «DECISION-NEEDED: <A> and <B> are tied on all axes — which is the project priority?» (reviewer-discipline.md §2 pattern).
 
+**Step 4.1 — what counts as «maintainer answered DECISION-NEEDED» (anti-rationalization clause):**
+
+A genuine answer is a **content-based tiebreaker** from the maintainer — they name a reason rooted in project priority («pick n7 because the trial output unblocks n8's R3» / «pick n8, deadline is real» / «pick n7, n8 needs an SSOT entry first»). The reason has to be about the umbrellas, not about the maintainer.
+
+The following are **NOT** answers — they are *deferred* DECISION-NEEDED (the maintainer declined to decide, not decided):
+
+- «выбирай сам / you pick / I trust you» — delegation, not decision
+- «оба норм / both fine / either works» — confirmation that the tie is real, not a tiebreaker
+- «я устал / I'm busy / решай быстро» — availability constraint, not a priority signal
+- «не стратегия, технические детали / it's not strategy» — framing, not content (the meta-orchestrator's role is exactly to refuse this framing when scores are equal — if it really were «just technical details», the scores would have separated)
+
+When the maintainer's reply is in this list, the correct response is **re-surface DECISION-NEEDED with sharper framing**, not pick. Example re-surface:
+
+> «Понял что не хочешь решать, но я тоже не могу — scores равны, contentful tiebreaker'а нет. Один встречный вопрос: **есть ли downstream wave, которую один из них unblock'ает сильнее?** Если нет — кинь монетку при мне, я фиксирую результат в state.md как «coin-flip per maintainer 2026-XX-XX». Или скажи «pick n7 because <X>» / «pick n8 because <Y>» — одной строкой.»
+
+This re-surface bounds the maintainer's effort (one question or one coin-flip, not a re-analysis) while preserving the discipline that the meta-orchestrator does not unilaterally pick strategy.
+
+**Rationalization to refuse explicitly:** «maintainer said pick → §2 step 4 is satisfied, I pick» is the `#strategy-decided-by-reviewer` anti-pattern in disguise (see reviewer-discipline.md §3). Naming §2 step 4 while violating its spirit does not make the violation OK.
+
 **§7.14 gap closed:** cross-umbrella priority resolution (gap 2).
 
 ---
@@ -186,15 +204,7 @@ cat "${CLAUDE_SKILL_DIR}/templates/meta-kickoff.template.md"
 
 **Step 2 — instantiate template (Write tool):**
 
-Substitute all `{{PLACEHOLDER}}` values from the §3 launch-table and §1 plan-currency output:
-
-- `{{UMBRELLA}}` → the selected umbrella name
-- `{{STAGE_1_SUBWAVES}}` → comma-separated sub-wave IDs at Stage 1
-- `{{STAGE_N_DEPENDENCIES}}` → list of PRs that must be merged before Stage N
-- `{{T_TRAP_ENUMERATION}}` → explicit T-numbers for this umbrella (from kickoff §5 or composed by inference — DO NOT blanket-reference)
-- `{{DOMAIN_TRAPS}}` → ≥1 umbrella-specific trap (NOT in canonical catalogue; label `T-<UMBRELLA-SHORT>-A`)
-- `{{LAUNCH_TABLE}}` → the table from §3
-- `{{GIT_GATE_STAGE_N}}` → actual `gh pr list --search 'is:merged head:<branch> base:<base>'` command for Stage N dependency
+Substitute every `{{<PLACEHOLDER_NAME>}}` token in both templates. The canonical 39-token list — grouped by source (plan-currency / launch-table / AI-traps / state-companion) with one-line resolution rules per token — lives in [`references/placeholders.md`](references/placeholders.md). Read it once, then substitute from §1+§3 output. The mechanical check that 1:1 enumeration matches the live templates is the maintainer's responsibility (re-run a `comm -23` between the templates' placeholders and the references file when either changes).
 
 **Step 3 — write file:**
 
@@ -427,23 +437,34 @@ The launch-table-generator will detect sub-waves from the kickoff (A, B, C, D). 
 
 ## §11 Failures
 
-> **§7.13 binding.** Class C prose enforcement — `!shell` data is surfaced so AI has no excuse for ignorance; correct response in each case is stated. Re-promotion trigger: ≥2 stage-gate-ignored incidents within 6 months → add pre-push hook verifying stage dependency merged before sub-wave commit.
-
-**F1 — Plan stale (drift detected):** emit numbered `DRIFT-N: <wave> — plan says <claim>, gh shows <reality>. Proposed correction: update line X to Y.` Halt. Do NOT proceed to §2/§3 until maintainer acknowledges.
-
-**F2 — Plan missing entirely:** write stub using Read+Write from README.md + EXECUTION-PLAN.md + `ls .claude/orchestrator-prompts/`. Halt until maintainer confirms.
-
-**F3 — Priority deadlock (true tie):** emit `DECISION-NEEDED: <A> and <B> tied on all axes.` with Option A/B consequences. Do NOT pick strategy (reviewer-discipline.md §2).
-
-**F4 — Stage gate not merged:** emit `STAGE GATE: Stage N NOT clear. Required: <PR list>. Action: HALT Stage N+1.` Hard halt; do not dispatch next stage.
-
-**F5 — Reviewer REVISE (max iterations):** after 3 REVISE cycles with no convergence, emit `ESCALATION: 3 consecutive REVISE on Stage N. Halting — maintainer review required.` Do NOT auto-retry.
-
-**F6 — `gh` CLI unavailable:** emit `DIAGNOSTIC: gh CLI unavailable. Manual verification required.` Ask maintainer; do NOT assume gate is clear.
-
-**F7 — launch-table-generator returns MISSING kickoff:** emit `MISSING kickoff. Halting — create kickoff first.` Do NOT generate launch-table from memory.
+> **§7.13 binding.** Class C prose enforcement — `!shell` data is surfaced so AI has no excuse for ignorance; per-code trigger + required-response table lives at [`references/failures.md`](references/failures.md). Read once before invoking; halt + surface (never assume) on any F-code. Re-promotion trigger: ≥2 stage-gate-ignored incidents within 6 months → add pre-push hook verifying stage dependency merged before sub-wave commit.
 
 ---
+
+## Red flags / Common mistakes
+
+When operating under this skill, the following rationalizations mean STOP and re-read the relevant section:
+
+| Rationalization | Reality | Counter (section) |
+|---|---|---|
+| «Plan looked current last session, skip §1» | Plan-currency is per-invocation, not per-session — PRs merge between invocations | §1 (T4 anti-pattern) |
+| «Launch-table can be from memory, kickoff hasn't changed» | Kickoff edits between invocations are invisible without re-read | §3 (T3 anti-pattern) |
+| «Stage 1 was 'about to land' so dispatch Stage 2 now» | Stage gate is real `gh pr list --search "is:merged"` — never «about to» | §6 (Class C honesty) |
+| «Both candidates feel similar — I'll pick A» | True ties go to maintainer as DECISION-NEEDED, not the meta-orchestrator | §2 step 4 + reviewer-discipline §2 |
+| «Maintainer said 'выбирай сам' so DECISION-NEEDED is satisfied, I'll pick» | **NO** — «pick for me» / «оба норм» / «я устал» = *deferred* DECISION-NEEDED, not answered. Genuine answer is a content tiebreaker («pick X because Y about the umbrellas»). Re-surface with sharper framing or propose a coin-flip; do NOT silently pick. | §2 step 4.1 (anti-rationalization clause) |
+| «Phase -1 reviewer between stages is optional when stage was small» | Mandatory regardless of stage size (CI ≠ design review, T19) | §6 step 3 + §7 |
+| «I'll quickly implement this trivial sub-wave inline» | Anti-scope: meta-orchestrator dispatches kickoffs; never implements | §8 anti-scope |
+| «Modify `~/.claude/skills/orchestrator/` to align with this skill» | That file is agent-uncommittable; wrap, never fork or edit | §8 anti-scope |
+| «`!shell` injection failed — proceed anyway with assumed values» | F6: emit DIAGNOSTIC and halt; do NOT assume gate is clear | §11 F6 |
+| «Reviewer returned REVISE 3× — try once more» | F5: after 3 REVISE cycles, escalate to maintainer | §11 F5 |
+| «`see ai-laziness-traps.md` is enough in the meta-kickoff §5» | Blanket reference is itself T7 — explicit T-enumeration mandatory | §4 step 3 + §5 + ai-laziness-traps.md §3 |
+
+**Red flag phrases — STOP and re-verify:**
+
+- «обновлю план потом / I'll fix the plan-sequencing entry after» → fix BEFORE dispatch; §1 stale plan blocks §2
+- «достаточно одного reviewer'а / one reviewer's enough» → meta-orchestrator's Phase -1 is mandatory between every stage
+- «merged значит runtime-verified / merged means runtime-verified» → stage-gate verifies merge, not runtime behaviour; verify-trace dispatch is separate
+- «гипотетический stage 3 / hypothetical Stage 3» → if Stage 3 isn't in the kickoff, do NOT invent it; surface to maintainer
 
 ## With this skill
 
