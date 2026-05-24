@@ -1,3 +1,4 @@
+<!-- scope:meta-orchestrator-refactor-f3-scope -->
 # Research patch — Sub-wave G: F.3 binding scope + tech debt audit (companion)
 
 > **Inherits authority from** [research-patches/README.md](README.md) folder-level Authoritative-for header. Scope-bound to: §1.4 технический аудит + §1.5 binding scope (12 items) — companion к основному patch `2026-05-24-meta-orchestrator-refactor-design.md`. **NOT authoritative for** project goal (см. [README.md#why-this-exists](../../../README.md#why-this-exists)); UX redesign — см. §1.3 в основном файле.
@@ -440,6 +441,24 @@ detect_subwaves() {
 **Falsifier:** Wrong if consumer mirror has diverged further from authoring since this G audit — re-run `diff -r` before F.3 starts to confirm 2-file state still holds.
 
 **Owner:** F.3 MUST include mirror edits in EVERY commit. No standalone authoring-only commits for semantic changes.
+
+---
+
+## §1.7 — Self-reflexive check (companion)
+
+**Forward-check:**
+
+- **build-first-reuse-default.md §3:** Gap-1 fix uses heuristic keyword filter (ADAPT) или section-scoped awk (BUILD-minimal) — оба подхода проверены на механическом test-case. Principle 18 spec = TypeScript-based structural test (REFERENCE от principle 12 precedent). ✅ Нет BUILD-without-search.
+- **no-paid-llm-in-ci.md §1:** Companion — research-only (session-bound). Principle 18 test = deterministic TypeScript grep/assert, no LLM. ✅
+- **doc-authority-hierarchy.md §2-§3:** Companion inherits authority от folder-level README.md (research-patches/ folder authority pattern). Blockquote header присутствует. ✅
+- **T15 (self-application):** §1.4 Class audit применяет SKILL.md's discipline rules к самому SKILL.md. ✅
+
+**Backward-check:**
+
+- Companion не supersedes ни один существующий SSOT — является split-extension основного patch.
+- §1.5 binding scope не contradicts parent kickoff §1 Sub-wave F.3 lines 192-359 — directly derived from it.
+- F.3 должен cite companion §1.5 как binding spec для каждого edit item.
+- T15 recursive: этот §1.7 = самоприменение правила к companion patch. ✅
 
 ---
 

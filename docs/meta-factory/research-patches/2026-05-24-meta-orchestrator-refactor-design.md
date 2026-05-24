@@ -1,3 +1,4 @@
+<!-- scope:meta-orchestrator-refactor-design -->
 # Research patch — Sub-wave G: полный дизайн рефакторинга /meta-orchestrator skill
 
 > **Inherits authority from** [research-patches/README.md](README.md) folder-level Authoritative-for header. Scope-bound to: дизайн полного рефакторинга `/meta-orchestrator` skill — findings registry, autonomy analysis, UX redesign, technical debt audit, F.3 binding scope. **NOT authoritative for** project goal (см. [README.md#why-this-exists](../../../README.md#why-this-exists)); сама F.3 реализация — F.3 ссылается на этот patch как binding spec.
