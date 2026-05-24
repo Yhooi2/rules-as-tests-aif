@@ -1,6 +1,7 @@
 ---
 name: meta-orchestrator
-description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
+# @deviation-rationale: dual-implementation-discipline.md §3 — description retains workflow-summary prefix despite Superpowers writing-skills CSO standard. Operationally zero impact (disable-model-invocation:true → CC never auto-matches). Round-2 MAJOR-2.
+description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Russian triggers: «мета-оркестратор», «оркестратор волн», «план волн», «stage-gate», «приоритет umbrella», «волны параллельно/последовательно», «дрифт wave-sequencing-plan». Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
 arguments: [umbrella]
 argument-hint: "[umbrella-name]"
 disable-model-invocation: true
@@ -60,6 +61,27 @@ Three bash helpers are included in `helpers/`:
 ## Without this skill
 
 Without `/meta-orchestrator`, multi-wave umbrella orchestration relies on manual plan-currency checks, flat queue dispatch without real stage-gate verification, ad-hoc launch-table decisions, and hand-authored kickoffs with variable AI-trap enumeration quality. The skill closes the four named gaps: plan-actuality, cross-umbrella priority, auto-generated launch-table, and stage-gate vs flat-queue.
+
+---
+
+## Plain-language checkpoint tail (dual-pair with end-of-turn hook)
+
+<!-- @dual-pair: plain-language-tail -->
+<!-- spec: end-of-turn-reminder.sh + this section -->
+
+Generic per-turn end-of-turn substance (recap, on-target check, plain-language reasoning) is enforced by the project's `end-of-turn-reminder.sh` Stop hook. Don't duplicate it here.
+
+**What this skill adds — orchestrator-checkpoint substance.** At 3 checkpoint moments, the inline `## 🟢 Простыми словами` block content names orchestration artefacts rather than per-turn personal reasoning:
+
+| Checkpoint | Block content (in order) |
+|---|---|
+| Sub-wave boundary | (a) what produced; (b) AC item satisfied; (c) next-sub-wave need; (d) DECISION-NEEDED if any |
+| Mid-session quota | (a) cumulative Opus + zone; (b) sub-waves done vs remaining; (c) defer/continue + rationale |
+| Final umbrella | (a) AC `[x]`/`[ ]`; (b) REPORT-trace per item; (c) residuals; (d) follow-up PRs queued |
+
+If the block content is verbatim-copyable from `end-of-turn-reminder.sh` reminder text → `#two-prompts-drift` per dual-implementation-discipline §4. Fix: replace with orchestrator-specific substance (sub-wave names, AC items, file:line, REPORT-traces, dispatch-state).
+
+For full table + examples see `.claude/skills/meta-orchestrator/SKILL.md §10.3a` after install.
 
 ---
 

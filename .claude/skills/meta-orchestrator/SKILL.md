@@ -1,6 +1,7 @@
 ---
 name: meta-orchestrator
-description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
+# @deviation-rationale: dual-implementation-discipline.md §3 — description retains workflow-summary prefix despite Superpowers writing-skills CSO standard. Operationally zero impact (disable-model-invocation:true → CC never auto-matches). Round-2 MAJOR-2.
+description: Plan-currency preflight + cross-umbrella priority scoring + launch-table generation + stage-gate-enforced dispatch for multi-wave umbrellas. Use when you have ≥2 in-flight wave umbrellas with cross-stage dependencies, suspect drift between wave-sequencing-plan.md and live git reality, or need to dispatch the next wave with verified Stage N→N+1 gates. Russian triggers: «мета-оркестратор», «оркестратор волн», «план волн», «stage-gate», «приоритет umbrella», «волны параллельно/последовательно», «дрифт wave-sequencing-plan». Invoked explicitly via /meta-orchestrator slash command only — never auto-triggered (disable-model-invocation:true).
 arguments: [umbrella]
 argument-hint: "[umbrella-name]"
 disable-model-invocation: true
@@ -421,7 +422,7 @@ The launch-table-generator will detect sub-waves from the kickoff (A, B, C, D). 
    Recommended next action: [dispatch Stage 1 / ask maintainer: <decision>]
    Awaiting: [maintainer GO / maintainer DECISION on <fork>]
    ```
-
+   **§10.3a Plain-language checkpoint tail** <!-- @dual-pair: plain-language-tail --> <!-- spec: references/plain-language-tail.md + .claude/hooks/end-of-turn-reminder.sh --> — mandatory `## 🟢 Простыми словами` block at 3 orchestrator-checkpoint moments (sub-wave boundary / mid-session quota / final umbrella). Content names orchestration artefacts (sub-wave, AC item, REPORT-trace), distinct from the hook's per-turn personal-reasoning. Full table + anti-patterns: [`references/plain-language-tail.md`](references/plain-language-tail.md). Falsifier: verbatim-copyable from `end-of-turn-reminder.sh` reminder → `#two-prompts-drift` per `.claude/rules/dual-implementation-discipline.md §4`.
 4. **Dogfood evidence** (first invocation only): `.claude/orchestrator-prompts/<umbrella>/dogfood-run-output.md`
    - Contains: 4-step helper invocation outputs + coherence-call paragraph.
    - This path is gitignored (`.claude/orchestrator-prompts/` in `.gitignore`) — evidence for session tracing only, not repo-committed.
