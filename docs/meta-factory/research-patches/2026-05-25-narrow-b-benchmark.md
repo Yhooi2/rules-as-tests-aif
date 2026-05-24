@@ -1,3 +1,4 @@
+<!-- scope:narrow-b-benchmark -->
 # Narrow-B production-corpus benchmark — FP measurement for Option B
 
 > **Class:** C — исследовательский патч (R-phase output); механизм — I-phase (данный патч закрывает blocker, не шипает механизм).
