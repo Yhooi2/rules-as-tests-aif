@@ -185,7 +185,12 @@ describe('deps-hash-check.sh — UserPromptSubmit deps-drift context injector', 
   it('BOUNDARY: empty deps object ({} + {}) → hash computed; matching stored hash → silent', () => {
     // Edge case: package.json with neither dependencies nor devDependencies.
     // buildDepsJson({}) → "{}", sha256 deterministic.
-    const pkg = { name: 'test', version: '1.0.0' }; // no dep keys
+    // Cast to the deps-only type: name/version are valid package.json fields but
+    // not part of the deps-extraction contract — the hook spreads only dep keys.
+    const pkg = { name: 'test', version: '1.0.0' } as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
     const depsJson = buildDepsJson(pkg);
     const correctHash = computeHash(depsJson);
 
