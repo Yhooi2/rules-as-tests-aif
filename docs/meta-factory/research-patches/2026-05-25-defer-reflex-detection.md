@@ -281,14 +281,17 @@ Gate: ONLY when ALL of:
 
 **Defer-tell phrase regex (bash ERE):**
 ```bash
-DEFER_REGEX='(maintainer[[:space:]]+(click|merge|review)[[:space:]]+required|жд[уёи][[:space:]]+(твой|ваш[еи]?)?[[:space:]]*(клик|мерж|решени[ея])|awaiting[[:space:]]+your[[:space:]]+(decision|approval)|ready[[:space:]]+for[[:space:]]+(review[[:space:]]+and[[:space:]]+)?merge|pending[[:space:]]+maintainer|requires[[:space:]]+your[[:space:]]+click|\[\[[:space:]]*\][[:space:]]*maintainer-owned)'
+DEFER_REGEX='(maintainer[[:space:]]+(click|merge|review)[[:space:]]+required|жд[уёи][[:space:]]+(твой|ваш[еи]?)?[[:space:]]*(клик|мерж|решени[ея])|awaiting[[:space:]]+your[[:space:]]+(decision|approval)|ready[[:space:]]+for[[:space:]]+(review[[:space:]]+and[[:space:]]+)?merge|pending[[:space:]]+maintainer|requires[[:space:]]+your[[:space:]]+click|\[[[:space:]]*\][[:space:]]*maintainer-owned)'
 ```
 
 **PR authorship signal scan (bash, last 20 tool calls):**
 ```bash
-# Read last N lines of transcript; check for gh pr create or gh pr view with open state
-pr_signal=$(grep '"type":"tool_use"' "$transcript" | tail -20 \
-  | jq -r 'select(.message.content[]?.name == "Bash") | .message.content[]? | select(.type=="tool_use") | .input.command // empty' 2>/dev/null \
+# Read last N assistant lines of transcript; extract tool_use commands from .message.content[].
+# JSONL format: tool_use entries are INSIDE assistant lines as .message.content[] items,
+# NOT as top-level lines with "type":"tool_use".
+# Verified against end-of-turn-reminder.sh:30-35 and end-of-turn-reminder.test.ts:81-91 fixtures.
+pr_signal=$(grep '"type":"assistant"' "$transcript" | tail -20 \
+  | jq -r '.message.content[]? | select(.type == "tool_use") | .name + " " + (.input // {} | tostring)' 2>/dev/null \
   | grep -E 'gh pr (create|view|merge)' | tail -5 || true)
 ```
 
@@ -319,6 +322,7 @@ Required paired-negative arms:
 | Arm | Input | Expected output |
 |---|---|---|
 | ✅ POSITIVE — defer-tell on own PR | Last text contains `maintainer click required` + recent `gh pr create` in transcript | `decision: "block"` + defer-tell reason |
+| ✅ POSITIVE — contextual gate fires on JSONL fixture | JSONL transcript with an assistant line whose `.message.content[]` includes a `tool_use` entry with `name="Bash"` and `input.command="gh pr create ..."` (fixture shape: `assistantToolUseOnly("Bash")` from `end-of-turn-reminder.test.ts:93-97`) + final assistant text with defer phrase | `pr_signal` non-empty (gate fires); `decision: "block"` |
 | ❌ NEGATIVE 1 — no defer phrase | Long report without any defer phrase + recent PR creation | `exit 0` silent |
 | ❌ NEGATIVE 2 — defer phrase in tool output | Last text has defer phrase ONLY inside a quoted `gh pr view` result block | `exit 0` silent |
 | ❌ NEGATIVE 3 — target is main | Last text contains `ready for merge` + PR targets main | `exit 0` silent (legitimate defer) |
@@ -344,9 +348,9 @@ Required paired-negative arms:
 ### Forward-check
 
 - `no-paid-llm-in-ci.md §1` (`.claude/rules/no-paid-llm-in-ci.md:12–18`): the proposed mechanism is deterministic bash regex + grep over transcript JSONL. Zero API-billed LLM calls. Benchmark (Stage 2) is manual classification by session. Both comply. ✅
-- `phase-research-coverage.md §1.12` (`.claude/rules/phase-research-coverage.md:§1.12`): this R-phase leads with a concrete mechanism recommendation (EXTEND existing Stop hook) backed by evidence (§1 prior-art survey with T16 checks, §2 phrase catalog with negative examples). Not an option-dump. ✅
-- `phase-research-coverage.md §1.11` (`.claude/rules/phase-research-coverage.md:§1.11`): every prior-art verdict cites a tool call or file:line. ✅
-- `dual-implementation-discipline.md §3` (`.claude/rules/dual-implementation-discipline.md:§3`): proposed hook is `@cc-only-rationale: internal dev tooling — defer-reflex behavioral check for maintainer's CC session; not shipped to consumer projects via install.sh`. Internal tooling classification: CC-native only, no portable fallback required. Channel annotation must be added to the hook header at implementation time. ✅
+- `phase-research-coverage.md §1.12` (file:line: `.claude/rules/phase-research-coverage.md:86`): this R-phase leads with a concrete mechanism recommendation (EXTEND existing Stop hook) backed by evidence (§1 prior-art survey with T16 checks, §2 phrase catalog with negative examples). Not an option-dump. ✅
+- `phase-research-coverage.md §1.11` (file:line: `.claude/rules/phase-research-coverage.md:73`): every prior-art verdict cites a tool call or file:line. ✅
+- `dual-implementation-discipline.md §3` (`.claude/rules/dual-implementation-discipline.md:§3`): proposed hook is classified as internal tooling (`@cc-only-rationale: internal dev tooling — defer-reflex behavioral check for maintainer's CC session; not shipped to consumer projects via install.sh`). CC-native only, no portable fallback required. Note: `end-of-turn-reminder.sh:2` already carries `@cc-only-rationale`; extending the hook with the defer-reflex check inherits this marker — no annotation change required at Stage 3. ✅
 - `doc-authority-hierarchy.md §3` (`.claude/rules/doc-authority-hierarchy.md:§3`): new rule proposed for Stage 3 carries the required Class + Authoritative-for header spec (below). This research-patch itself carries the required `<!-- scope:... -->` first-line annotation and Authoritative-for header. ✅
 - `recommendation-laziness-discipline.md §4` (`.claude/rules/recommendation-laziness-discipline.md:40`): the narrow-B lesson (benchmark before ship) is applied — Stage 2 benchmark is mandatory before Stage 3 implementation. ✅
 
@@ -410,6 +414,20 @@ Applied: §3 mechanism design centers on the Stop hook (deterministic phrase det
 4. **Stage 3 rule Class B vs C:** proposed Class B (compensating mechanism with paired-negative tests) rather than C (prose-only). Rationale: the hook extension + test file constitute a B-level mechanism. Class A (principle test) would require a corpus-level scan not a unit test — deferred to promotion criterion triggered by incidents.
 
 5. **Scope boundary:** §2 negative example 2 (legitimate `→main` deferral) identified that the target-branch gate needs a `→main` exclusion. This is documented in §3.4 as part of the contextual gate design; it is not implemented in this R-phase (Stage 3 work). Risk: if Stage 3 omits this gate, FP rate on legitimate `→main` defers will inflate the Stage 2 benchmark beyond the 20% threshold.
+
+---
+
+### Reviewer round-1 follow-up (2026-05-25, commit following 9040a74)
+
+**BLOCKER + MAJOR-1 + MINOR-1 + MINOR-2 addressed in the follow-up commit.**
+
+**MAJOR 2 — DEFERRED to Stage 2:**
+
+§1.(d) is honest about the DeepWiki gap (claude-code-guide inaccessible from Worker sandbox, per `feedback_claude_code_guide_worker_inaccessible.md`). The kickoff §5's active path was `D4 Option B` (WebFetch + WebSearch as fallback) — which was executed for 3 phrasings. However, the BUILD verdict in §1.(d) and §1 summary table is still partially load-bearing while DeepWiki queries for `obra/superpowers` and `anthropics/anthropic-cookbook` remain untried. **Deferred to Stage 2:** a Reviewer-class session with DeepWiki access should retry those two repo queries before the Stage 3 implementation treats the BUILD verdict as fully load-bearing. If a production-grade analog surfaces, revisit ADAPT vs BUILD at that point.
+
+**MINOR 3 — DEFERRED to Stage 2 housekeeping:**
+
+§6 T19 counter states «re-read this patch end-to-end before finalizing REPORT» — which matches inline cold-QA, not a dispatched cold-review subagent. The wording «cold-QA» in the T19 counter context means self-review (re-read the deliverable before handoff), which is what was done. The ambiguity is a wording issue only. Defer to Stage 2: update §6 T19 counter to «re-read this patch adversarially end-to-end (inline cold-QA, not subagent dispatch — single-author R-phase, no multi-agent split) before finalizing.» No semantic change; wording polish only.
 
 ---
 
