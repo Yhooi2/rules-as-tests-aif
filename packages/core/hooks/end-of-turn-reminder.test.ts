@@ -147,6 +147,10 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     expect(payload.reason.length).toBeGreaterThan(100);
     expect(payload.systemMessage).toMatch(/^🎯 /);
     expect(payload.systemMessage).toContain('Тестовая цель сессии');
+    // Branch A recommendation-laziness nudge (added 2026-05-25, follow-up to
+    // defer-reflex Stage 2 REJECT) — Branch A must mirror Branch B/C fork-check
+    // since defer-reflex incidents happen in long recap turns without questions.
+    expect(payload.reason).toMatch(/рекомендовал|жду твоего решения|перекладывай/i);
   });
 
   it('Branch B (short text ending in ?, no claim) → emits JSON; reason mentions fork-challenge', () => {
