@@ -21,5 +21,10 @@ export default defineConfig({
       'audit-self/**/*.audit.ts',
       'skills/**/*.test.ts',
     ],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.claude/worktrees/**',
+    ],
   },
 });
