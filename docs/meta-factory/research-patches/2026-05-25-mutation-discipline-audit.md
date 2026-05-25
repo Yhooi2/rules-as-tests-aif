@@ -161,7 +161,7 @@ inode=153753152 name=packages/core/hooks/deps-hash-check.sh
 
 **Two physical copies, identical content, different inodes** — not a hardlink, not a symlink. No copy-sync script located in the repo via `grep -rn "deps-hash-check"` in workflows / scripts (out of Stage 1 scope to fully resolve). D.6 verdict: GO as a small R-step (find the sync mechanism or fix the drift risk), low LOC.
 
-### A.3.4 Other `.sh` files — 17 (out of scope for this umbrella)
+### A.3.4 Other `.sh` files — 16 (out of scope for this umbrella)
 
 Surfaced by the T10 sweep but **not addressed by this umbrella's Stage 4 plan**:
 
@@ -173,7 +173,7 @@ Surfaced by the T10 sweep but **not addressed by this umbrella's Stage 4 plan**:
 - `tests/hooks/*.sh` (5 files: `eot-claim-scan.test.sh`, `prepush-upstream-ref.test.sh`, `prior-art-trailer-hook.test.sh`, `s17-trailer-hook.test.sh`, `test-enforce-husky-presence.sh`) — these are test scripts.
 - `skills/meta-orchestrator/helpers/*.sh` (3 files) — content differs from `.claude/skills/meta-orchestrator/helpers/*.sh` per `diff`; relationship between the two skill directories deserves its own audit (out of scope here).
 
-Recommendation: log these 17 files as a future-work surface, do **not** auto-add them to Stage 4. The kickoff's targeted scope (Stage 4 D.1–D.6) stays as written.
+Recommendation: log these 16 files as a future-work surface, do **not** auto-add them to Stage 4. The kickoff's targeted scope (Stage 4 D.1–D.6) stays as written. (Arithmetic check: 31 total − 9 `.claude/hooks/*.sh` − 6 Stage 4 D.1–D.6 targets = 16.)
 
 ### Net A.3 stop-condition F1 check
 
