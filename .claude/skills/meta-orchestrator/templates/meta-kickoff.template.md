@@ -62,6 +62,67 @@ If empty → halt. Do NOT dispatch Stage 2.
 
 ---
 
+## §4b §1.7 PR-body authoring mandate (paths-triggered, applies to ALL Workers below — self-evaluate)
+
+Workers whose target file matches ANY of the following paths MUST include in the **PR body** (not just commit message):
+
+- `.claude/rules/**`
+- `packages/core/principles/**`
+- `docs/meta-factory/EXECUTION-PLAN.md`
+- `docs/meta-factory/prior-art-evaluations.md`
+- `CLAUDE.md`
+- `packages/core/templates/**`
+- `.claude/skills/**`
+- `agents/**`
+
+**Required PR body sections (verbatim shape — CI substance gate is strict):**
+
+```markdown
+### §1.7 Forward-check applied
+
+<≥40 non-whitespace chars enumerating which existing disciplines were checked>
+
+- `doc-authority-hierarchy.md` — <what was checked>. file:line evidence: `<path>:<line>`
+- `phase-research-coverage.md §1.12` — <what was checked>. file:line evidence: `<path>:<line>`
+- `build-first-reuse-default.md` — <verdict + rationale>
+- `no-paid-llm-in-ci.md` — <verdict>
+
+### §1.7 Backward-check applied
+
+<≥40 non-whitespace chars enumerating the sweep of existing artefacts under the new rule's scope>
+
+- `<existing-artefact-name>` — <how this PR interacts; supersedes / extends / orthogonal>. file:line evidence: `<path>:<line>`
+- <repeat for each touched artefact>
+```
+
+> When Worker fills the example above in a real PR body, they convert backticks to full markdown link syntax (square-brackets-then-parens) pointing at the actual rule files in the consumer repo. The backticks above are template-side only — keeping them out of link-syntax avoids the skill-drift broken-ref check tripping on placeholder paths.
+
+**Hard rules (each one has historically failed the gate):**
+
+1. **Heading depth = H3 (`###`), NOT H2 (`##`).** The CI gate's awk regex matches `^### §1\.7 ...` — H2 silently fails while looking plausible in rendered Markdown. (Memory: 5th+ recurrence of this exact bug per `feedback_pr_s17_authoring_checklist`; 2026-05-24 hit it on PR #212 AND PR #215 in the same dispatch.)
+2. **Word «applied» is required.** Headings without «applied» («Forward-check», «Forward-check done») fail the regex.
+3. **≥40 non-whitespace chars in EACH section body** (awk-counted, post-strip).
+4. **≥1 file:line citation per section** matching regex `[^[:space:]]+\.[a-z]+:[0-9]+` (e.g. `.claude/rules/foo.md:42`).
+5. **Mechanical-maintenance escape hatch:** `### §1.7 Skipped: <rationale ≥60 chars>` shortcuts the gate when the PR is purely structural (snapshot regen, typo fix, rename) and no discipline call applies. Rationale must be ≥60 chars and specify *why* this PR has no discipline surface (NOT «TODO», NOT «later»).
+
+**Pre-flight grep — Worker MUST run BEFORE `gh pr create`:**
+
+```bash
+# Compose your intended PR body in a variable first, THEN check before posting.
+echo "$PR_BODY" | grep -cE '^### §1\.7 (Forward|Backward)-check applied'  # must be 2
+echo "$PR_BODY" | awk '/^### §1\.7 Forward-check applied/{c=1;next} /^###/{c=0} c' | tr -d '[:space:]' | wc -c  # must be ≥40
+echo "$PR_BODY" | awk '/^### §1\.7 Backward-check applied/{c=1;next} /^###/{c=0} c' | tr -d '[:space:]' | wc -c  # must be ≥40
+echo "$PR_BODY" | grep -cE '[^[:space:]]+\.[a-z]+:[0-9]+'  # must be ≥2 (one per section minimum)
+```
+
+If any of the four checks fails → fix the body before pushing. CI catches the same failure but burns wall-clock + a maintainer's attention; pre-flight is free.
+
+**Why this mandate exists in the template (not just memory):** memory says «execute the grep» but in-line memory does not reliably activate inside paste-block Worker prompts. The mandate must be in the prompt itself for Workers to act on it. (6× recurrence as of 2026-05-25: #58, #69, #105, #111, #212, #215.)
+
+**If your sub-wave target file does NOT match the path list above:** ignore §4b. The mandate is path-scoped.
+
+---
+
 ## §4a Worker worktree setup (FIRST step in any worker session — Gap-3 round-2 follow-up)
 
 If the worker is dispatched into a `git worktree add`-created directory (default for parallel sub-waves per `parallel-subwave-isolation.md §1`), reconstitute the `node_modules` plumbing the orchestrator's primary workdir already has. Without it, `npm` / test / build commands fail (`packages/core` consumes hoisted modules via a workspaces symlink that `git worktree add` does NOT copy — burns Opus on rediscovery every time).
