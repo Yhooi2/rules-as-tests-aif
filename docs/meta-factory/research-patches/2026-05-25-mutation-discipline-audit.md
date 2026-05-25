@@ -75,24 +75,24 @@ File body: [`packages/core/eslint-rules/no-unsafe-zod-parse.ts`](../../../packag
 | 13:11 | ObjectLiteral | `docs: { description: ... }` → `{}` | **equivalent** — docs metadata |
 | 15:9 | StringLiteral | `description:` text → `""` | **equivalent** — documentation string |
 | 19:9 | StringLiteral | `messages.useSafeParse` text → `""` | **real-gap (low value)** — test asserts `messageId: 'useSafeParse'` (key, not value); a test that also asserts the rendered message text would kill this |
-| 23:19 | ArrayDeclaration | `defaultOptions: []` → `[]` (no-op) | **equivalent — Stryker-known no-op** |
-| 32:48 | StringLiteral | `'// audit:exempt'` → `"Stryker was here!"` | **NoCoverage** — the exempt branch is unreachable from existing tests; this is a real test gap (the exempt-marker behaviour is untested) |
+| 23:19 | ArrayDeclaration | `defaultOptions: []` → `["Stryker was here"]` | **behavioral-equivalent** — Stryker replaces with `["Stryker was here"]` literal, but the rule doesn't read `context.options` so behavior is unchanged |
+| 32:48 | StringLiteral | `?? ''` defensive fallback (empty string in `const currentLine = lines[line - 1] ?? '';`) → `"Stryker was here!"` | **NoCoverage** — out-of-bounds line index path is unreachable from existing tests. Verify: `sed -n '32p;33p' packages/core/eslint-rules/no-unsafe-zod-parse.ts`. Note: the `'// audit:exempt'` ConditionalExpression on line 33 (and StringLiteral L33:C34) are **Killed** per Stryker JSON — the exempt-branch behaviour itself IS tested; the gap is the out-of-bounds-index defensive fallback only. |
 
-**Real-gap count: 1** (NoCoverage on the `// audit:exempt` branch — line 32). The two `low-value` real-gaps are messageId-text vs messageId-key strictness; not load-bearing for R2 enforcement.
+**Real-gap count: 1** (NoCoverage on the `?? ''` defensive fallback at line 32 — out-of-bounds line index never tested; the `// audit:exempt` branch itself IS killed). The two `low-value` real-gaps are messageId-text vs messageId-key strictness; not load-bearing for R2 enforcement.
 
 ### A.2.2 `eslint-rules/no-direct-time-randomness.ts` — 75.86 % (44/58, 13 survived + 1 NoCov)
 
 File body: [`packages/core/eslint-rules/no-direct-time-randomness.ts`](../../../packages/core/eslint-rules/no-direct-time-randomness.ts), 75 lines total; rule covers 4 selectors (Date.now, new Date, Math.random, forbidden imports).
 
-Survived mutants (13) cluster in the same shape as A.2.1: 7 × `StringLiteral` on messageId / docs-description / module-name text, 2 × `ObjectLiteral` on meta-shape, 1 × `ArrowFunction` on docs-URL builder, 1 × `ArrayDeclaration` on `defaultOptions: []`, 1 × `ObjectLiteral` on `messages: {...}`, 1 × `ConditionalExpression` on line 64 (likely the `lineExempt(node.loc.start.line)` early-return inside one of the listener fns — that branch is reachable but the exempt-line case isn't exercised on every selector).
+Survived mutants (13) cluster in the same shape as A.2.1: 7 × `StringLiteral` on messageId / docs-description / module-name text, 2 × `ObjectLiteral` on meta-shape, 1 × `ArrowFunction` on docs-URL builder, 1 × `ArrayDeclaration` on `defaultOptions: []` (**behavioral-equivalent** — Stryker replaces with `["Stryker was here"]` literal, rule doesn't read `context.options` so behaviorally unchanged), 1 × `ObjectLiteral` on `messages: {...}`, 1 × `ConditionalExpression` on line 64 — the `typeof node.source.value !== 'string'` typeguard on the `ImportDeclaration` selector (NoCov 44:64 = StringLiteral on the `?? ''` defensive fallback in the `lineExempt` arrow body). Verify: `sed -n '44p;64p' packages/core/eslint-rules/no-direct-time-randomness.ts`.
 
 | Category | Count |
 |---|---|
 | equivalent (metadata / Stryker no-op / docs) | ~10 |
 | real-gap, low value (messageId text not asserted) | ~2 |
-| real-gap, behaviour-relevant (line-64 ConditionalExpression, the lineExempt early-return on one of the four listeners; NoCov on line 44:64) | ~2 |
+| real-gap, behaviour-relevant (line-64 `typeof node.source.value !== 'string'` typeguard on `ImportDeclaration`; NoCov 44:64 on the `?? ''` defensive fallback in `lineExempt` arrow body) | ~2 |
 
-The behaviour-relevant gap mirrors A.2.1: the `// audit:exempt` line-exemption branch is incompletely covered across all four selectors (Date.now / new Date / Math.random / forbidden-module). Each selector has its own `lineExempt(...)` early-return; the test suite hits the path for at least one selector but not all four uniformly.
+The behaviour-relevant gap is in the `ImportDeclaration` selector's typeguard (`typeof node.source.value !== 'string'`, line 64) and the defensive `?? ''` fallback in `lineExempt` (line 44, column 64) for out-of-bounds line indices — neither path is exercised by existing tests. (Distinct from A.2.1: the exempt-branch ConditionalExpressions themselves are mostly Killed; the gap is the typeguard + defensive-fallback combo.)
 
 ### A.2.3 `eslint-rules/require-otel-span.ts` — 81.15 %, just above the threshold
 
@@ -100,7 +100,7 @@ The behaviour-relevant gap mirrors A.2.1: the `// audit:exempt` line-exemption b
 
 ### Net A.2 finding
 
-Across the 3 sub-80 % ESLint files, the *behaviour-relevant* survived-mutant count is roughly **3–5** (the `// audit:exempt` branches that are incompletely covered across selectors). The other ~40+ survivals are mostly T-MUT-B equivalent mutants on ESLint metadata + message-text strings.
+Across the 3 sub-80 % ESLint files, the *behaviour-relevant* survived-mutant count is roughly **3–5** (defensive `?? ''` fallbacks on out-of-bounds line index + `ImportDeclaration` typeguards — not exercised by existing tests). The other ~40+ survivals are mostly T-MUT-B equivalent mutants on ESLint metadata + message-text strings.
 
 This is **not a critical-coverage gap** (no file <60 %, the real-gap residue is small) — but it does demonstrate that current Stryker scores read worse than the actual test quality because ESLint rule files are mutation-noisy by structure.
 
@@ -236,6 +236,7 @@ This audit's own claims are subject to the discipline it recommends extending:
 - All file-path claims in §A.3 are sourced from `find . -name "*.sh"` + `wc -l` + `grep -cE` per-file, not from memory.
 - The §A.4 verdict on B/C/D is data-justified per row; Stage 2 B.1's own R-step is **not** front-run by this patch (T8: «don't ask the maintainer to avoid doing the work» — and don't pre-empt the next stage either).
 - This patch **does not** ship a mechanism. Stage 1 deliverable = audit doc + verdict only.
+- **Caveat (cold-review #219):** §A.2 per-mutant source-code interpretation was initially paraphrased (line/column descriptions inferred from rule structure) rather than re-read from source per mutant — gap caught by cold-review #219 (MAJOR finding on §A.2.1 L32:48 and §A.2.2 L64:13 / L44:64 attribution errors, fixed in this amend). Mitigation: Stage 2 B.4 dogfood scope should run the bash mutator on test files themselves so future attribution errors are auto-caught by surviving mutants on the audit assertions. T3-on-self: re-deriving from structure ≠ verifying from source.
 
 ---
 
