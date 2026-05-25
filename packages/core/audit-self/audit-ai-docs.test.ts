@@ -55,25 +55,6 @@ function writeFile(dir: string, relPath: string, content: string): string {
   return full;
 }
 
-/**
- * Fast execSync stub for warm-path probeR4 tests (DN-1 Path C, 2026-05-25).
- *
- * Mirrors the subprocess outcomes probeR4 cares about without spawning npx:
- *   - `npx --version` → returns '8.0.0\n' (npx is available)
- *   - `npx --no-install tsx scripts/audit-r4.ts` → throws ENOENT (tsx not installed)
- *
- * These assertions exercise CONDITIONAL LOGIC (early-return branches), not
- * real-subprocess contract. The :344 contract test deliberately omits this
- * stub — semantic preservation is the design intent of Option C.
- */
-const fastExecSyncStub = ((cmd: string): Buffer => {
-  if (cmd.startsWith('npx --version')) return Buffer.from('8.0.0\n');
-  // `npx --no-install tsx ...` → simulate tsx absent (real behaviour on warm-path test envs)
-  const err: NodeJS.ErrnoException = new Error('ENOENT: tsx not found');
-  err.code = 'ENOENT';
-  throw err;
-}) as unknown as typeof import('node:child_process').execSync;
-
 // ─── extractProseText() — remark code-fence-aware extraction ─────────────────
 
 describe('extractProseText()', () => {
@@ -1489,11 +1470,33 @@ describe('extractDeclaredSkills() — codeName.length > 0 guard (L131)', () => {
   });
 });
 
-// ── L160-171: execSync string/object mutations in probeR4() ──────────────────
+// ── execSync call content in probeR4() — exec-injection seam ────────────────
 // These mutants change the command string to "" or change the options object.
 // The test structure for R4 already verifies the result shape; we need to
 // verify the actual command content matters.
-describe('probeR4() — execSync call content (L160-171)', () => {
+describe('probeR4() — execSync call content', () => {
+  /**
+   * Fast execSync stub for warm-path probeR4 tests (DN-1 Path C, 2026-05-25).
+   * Scoped to this describe block (the only consumer) — module-level placement
+   * would risk leaking into unrelated tests if the file extends.
+   *
+   * Mirrors the subprocess outcomes probeR4 cares about without spawning npx:
+   *   - `npx --version` → returns '8.0.0\n' (npx is available)
+   *   - `npx --no-install tsx scripts/audit-r4.ts` → throws ENOENT (tsx absent)
+   *
+   * These assertions exercise CONDITIONAL LOGIC (early-return branches), not
+   * the real-subprocess contract. The sibling contract test (`tsconfig.json
+   * exists but ts-morph missing → still skips OR proceeds`) deliberately omits
+   * this stub — semantic preservation is the design intent of Option C.
+   */
+  const fastExecSyncStub = ((cmd: string): Buffer => {
+    if (cmd.startsWith('npx --version')) return Buffer.from('8.0.0\n');
+    // `npx --no-install tsx ...` → simulate tsx absent (real behaviour on warm-path test envs)
+    const err: NodeJS.ErrnoException = new Error('ENOENT: tsx not found');
+    err.code = 'ENOENT';
+    throw err;
+  }) as unknown as typeof import('node:child_process').execSync;
+
   let dir: string;
   beforeEach(() => { dir = makeTmpDir(); });
   afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
