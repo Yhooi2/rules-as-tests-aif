@@ -35,7 +35,7 @@ Two layers ship per Option D = A+C benchmark verdict:
 
 **(A) H1 wording in `.claude/hooks/inject-session-bootstrap.sh:11`** (Sub-wave A of this I-phase) — always-on UserPromptSubmit injection; deterministic; fires every turn. Channel per [`rule-enforcement-channel-selection.md §4`](rule-enforcement-channel-selection.md): UserPromptSubmit digest, always-on.
 
-**(C) T-trap in `.claude/rules/ai-laziness-traps.md §2`** (Sub-wave C of this I-phase) — expected **T21 per R-phase §1.4 (b) pre-resolution; cross-reference amendable in follow-up commit if Sub-wave C lands with a different number**. Auto-loaded session-start via `.claude/rules/*.md` CC convention; path-scoped reinforcement via `inject-matching-rule.sh` when touching `.claude/rules/**`.
+**(C) T-trap in [`.claude/rules/ai-laziness-traps.md §2 T20`](ai-laziness-traps.md)** (Sub-wave C of this I-phase) — **T20** per maintainer override of R-phase §1.4 (b) pre-resolution (Sub-wave C shipped 2026-05-24 via [PR #212](https://github.com/Yhooi2/rules-as-tests-aif/pull/212), merge commit `eac9dce`). Auto-loaded session-start via `.claude/rules/*.md` CC convention; path-scoped reinforcement via `inject-matching-rule.sh` when touching `.claude/rules/**`.
 
 **(B) Stop-hook scan — EXPLICITLY DROPPED** per [`narrow-b-benchmark.md §1.5`](../../docs/meta-factory/research-patches/2026-05-25-narrow-b-benchmark.md):
 
@@ -47,7 +47,7 @@ Not shipped. Re-introduction requires a new R-phase + benchmark (per benchmark �
 
 ## §5 Anti-patterns
 
-- **`#inline-verdict-without-evidence`** — verdict or recommendation issued in dialogue without a preceding evidence-bearing tool call in the same turn. Specialisation of parent anti-pattern [`#recommendation-skips-own-discipline`](phase-research-coverage.md) (§4 of parent rule) onto the inline-chat surface. Cross-reference to T21 (expected; see §4 (C) caveat above).
+- **`#inline-verdict-without-evidence`** — verdict or recommendation issued in dialogue without a preceding evidence-bearing tool call in the same turn. Specialisation of parent anti-pattern [`#recommendation-skips-own-discipline`](phase-research-coverage.md) (§4 of parent rule) onto the inline-chat surface. Cross-reference to [T20](ai-laziness-traps.md) (per §4 (C) above).
 
 ## §6 Promotion to Class A / retirement
 
@@ -60,7 +60,7 @@ Not shipped. Re-introduction requires a new R-phase + benchmark (per benchmark �
 - [`phase-research-coverage.md §1.12`](phase-research-coverage.md) — parent rule (prose discipline source-of-truth; this file operationalises it, does not supersede it)
 - [`phase-research-coverage.md §1.11`](phase-research-coverage.md) — sibling rule (verify-against-source-of-truth before claim or ship-step)
 - [`phase-research-coverage.md §4 #recommendation-skips-own-discipline`](phase-research-coverage.md) — named anti-pattern this rule operationalises (§5 above is its inline-chat-surface specialisation)
-- [`ai-laziness-traps.md §2`](ai-laziness-traps.md) — T-trap catalogue (T21 expected per Sub-wave C R-phase pre-resolution; amendable in follow-up if Sub-wave C lands with different number)
+- [`ai-laziness-traps.md §2 T20`](ai-laziness-traps.md) — T-trap catalogue (T20 per maintainer override of R-phase §1.4 (b); shipped via PR #212 2026-05-24)
 - [`docs/meta-factory/research-patches/2026-05-24-recommendation-laziness-discipline.md`](../../docs/meta-factory/research-patches/2026-05-24-recommendation-laziness-discipline.md) — R-phase design (merged PR #206/#207)
 - [`docs/meta-factory/research-patches/2026-05-25-narrow-b-benchmark.md`](../../docs/meta-factory/research-patches/2026-05-25-narrow-b-benchmark.md) — benchmark patch (merged PR #210; B-drop verdict)
 - [`doc-authority-hierarchy.md §3`](doc-authority-hierarchy.md) — header format spec this file follows
