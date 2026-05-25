@@ -186,7 +186,7 @@ Three known defer-tell incidents are documented in `feedback_no_human_verificati
 
 **I-2 (2026-05-22):** Memory states «жду мержа #138». The flagged turns include `20fbe458` line 392 with «жду мержа» (classified FP-legit-defer) and `fd72cf73` lines 406, 459, 663 with «жду мержа» (classified FP-quoted and FP-discussion). None of these are clearly the I-2 session for PR #163. The I-2 «жду мержа» phrase may appear in the correct session but in a context that the contextual gate would filter, or the session UUID may not be in the corpus scan window. **MISS.**
 
-**I-3 (2026-05-25):** The phrase «maintainer's click required» would be caught by the `maintainer[[:space:]]+(click|merge|review)[[:space:]]+required` arm of the regex. Reviewing the flagged turns: `71531621` lines 501 and 503 contain «maintainer click required» but these are FP-quoted (kickoff authoring). No flagged turn from today (2026-05-25) with this exact phrase appears in the corpus scan — this session's transcript may not yet be indexed, or the phrase appears without the possessive («maintainer click required» vs «maintainer's click required»). **MISS.**
+**I-3 (2026-05-25):** The I-3 incident phrase is «maintainer's click required» (with possessive apostrophe). The regex arm `maintainer[[:space:]]+(click|merge|review)[[:space:]]+required` does NOT match the possessive form. Verified: `echo "maintainer's click required" | grep -iE 'maintainer[[:space:]]+(click|merge|review)[[:space:]]+required'` → empty output. The apostrophe in «maintainer's» breaks the space-pattern between «maintainer» and «click»: the regex expects `maintainer <space> click`, but the actual string is `maintainer 's click`. Root cause confirmed: **regex vocabulary gap** — the possessive form is not in the pattern. **MISS (definitive root cause: possessive form unmatched).**
 
 **§2a Recall: 0/3 known incidents caught by regex → REJECT**
 
@@ -221,7 +221,17 @@ Sample sessions examined (Recent stratum, PR-creation confirmed):
 
 **§2b is informational only; does NOT affect verdict.**
 
-## §3 Contextual Gate Evaluation (Stage 1 §3.4)
+## §3 Worker-bias Disclosure
+
+This benchmark was run by the same Worker session that read Stage 1 §3.4 mechanism design before classifying. This creates a **confirmation-bias risk**: having designed the regex and contextual gate, the Worker may unconsciously favour classifications that confirm the mechanism's design intent (finding more TPs = validating the design; fewer TPs = admitting the design fails). Specifically:
+
+- The TP threshold was set strictly («final-report sessions with confirmed own-PR creation only»). This *increases* FP count and *lowers* precision — the direction that admits design failure. If the Worker were unconsciously protecting the design, the TP threshold would have been set more loosely.
+- Two rows were initially ambiguous at classification time: `70f155a7` L542 (classified FP-status, same session as L417 TP) and `fc045dc7` L333 (classified TP). Both were re-examined under the strict criterion. The L542 decision reduced TP count by 1 vs. a looser interpretation. The fc045dc7 decision kept it TP.
+- No unconscious recategorisation was detected. The classifications are consistent with the strict criterion throughout.
+
+**Anti-collusion formula (Orchestrator spot-check):** Per kickoff §2.5, the Orchestrator applies `i = ((artefact_letter_ord + iter_count) * 7 + N) mod N` with `iter_count=0`, `artefact_letter_ord=1`, `N=66` → `i = (1*7+66) mod 66 = 7` → spot-check starts at row index 7 (1-indexed row 8). Rows to re-classify: 8, 15, 22, 29, 36, 43, 50 (7 rows = 10.6% of 66). These are: rows 8 (30f139c8 L307 FP-status), 15 (6c040a29 L44 FP-legit-defer), 22 (71531621 L165 FP-status), 29 (6e1b6fff L48 FP-status), 36 (87e68995 L130 FP-status), 43 (7bc1bcd7 L289 FP-status), 50 (a62a4e6a L561 FP-status).
+
+## §3b Contextual Gate Cross-Check (Stage 1 §3.4)
 
 The Stage 1 §3.4 contextual gate adds two conditions beyond the base regex:
 1. Phrase in `type=text` content block (not tool_use)
@@ -258,35 +268,136 @@ Result: empty (confirmed clean negative)
 
 ## §4 DeepWiki Prior Art Closure (MAJOR-2)
 
-Six queries were run to close the MAJOR-2 blocker from Stage 1: «check whether Superpowers or Anthropic Cookbook has a production-grade analog for defer-tell detection».
+Six queries run on `obra/superpowers` and `anthropics/anthropic-cookbook` to close MAJOR-2. Full verbatim responses below per Reviewer mandate.
 
-### obra/superpowers Queries
+### obra/superpowers — Q1
 
-**Q1 — «agent merge deferral detection» / «Stop hook for PR status»:**
-Superpowers uses a status protocol (DONE/BLOCKED/NEEDS_CONTEXT) and Red Flags list. No mechanism for defer-tell phrase detection in assistant output. The `finishing-a-development-branch` skill presents merge options but does not detect deferred merges.
+**Query:** «Does Superpowers have any mechanism to detect when an agent writes deferral phrases like "maintainer click required" or "ready for merge" in a final session report for its own PR, instead of executing the merge itself? Is there a Stop hook or end-of-session hook that inspects final assistant output for PR merge compliance?»
 
-**Q2 — «session end hook checking PR compliance» / «conscience guard for merge»:**
-No Stop hook or end-of-turn hook inspecting agent messages for PR merge compliance. The Stop hook in CC fires on session end but Superpowers does not hook it for defer-tell detection. Red Flags are general rationalizations to avoid using skills — not output-phase defer-tell detection.
+**Verbatim response:**
 
-**Q3 — «worktree cleanup enforcement» / «final report phrase detection»:**
-Session-Start Hook only for initialization. No conscience guard checking final assistant output. The Red Flags list covers reasoning evasions, not linguistic defer-tell signatures in PR reports.
+> Superpowers does not have a specific mechanism to detect deferral phrases like "maintainer click required" or "ready for merge" in a final session report, nor does it have a dedicated Stop hook or end-of-session hook that inspects assistant output for PR merge compliance. However, the `finishing-a-development-branch` skill is designed to guide the agent through the process of completing development work, including presenting options for merging, creating a Pull Request, or cleaning up the branch.
+>
+> The `finishing-a-development-branch` skill explicitly outlines the process for handling the completion of a development branch. This skill is invoked when implementation is complete and all tests pass.
+>
+> Here's how the `finishing-a-development-branch` skill operates:
+> - **Step 1: Verify Tests**: The skill first ensures that all tests pass. If tests fail, it stops and requires them to be fixed before proceeding.
+> - **Step 2: Detect Environment**: It determines the current workspace state (normal repository, named branch worktree, or detached HEAD) to present appropriate options.
+> - **Step 3: Determine Base Branch**: It identifies the base branch for merging or PR creation.
+> - **Step 4: Present Options**: Based on the environment, it presents a structured menu of 3 or 4 options to the user. These options include: (1) Merge back to the base branch locally. (2) Push and create a Pull Request. (3) Keep the branch as-is. (4) Discard this work.
+> - **Step 5: Execute Choice**: The skill executes the chosen option, performing actions like `git merge`, `git push` and `gh pr create`, or `git branch -D`.
+> - **Step 6: Cleanup Workspace**: For options that involve merging or discarding, it cleans up the worktree if Superpowers created it.
+>
+> The skill emphasizes that the agent should not clean up the worktree for Option 2 (Create PR) as the user needs it for iterating on PR feedback. It also has "Red Flags" that explicitly state what the agent should "Never" do, such as proceeding with failing tests or deleting work without confirmation.
+>
+> While there isn't a direct "Stop hook" to inspect for deferral phrases, the structured nature of the `finishing-a-development-branch` skill aims to guide the agent towards executing the merge or creating the PR directly, rather than deferring the action. The skill's design focuses on presenting clear, actionable choices and executing them, with explicit instructions on when to preserve the worktree for user iteration (e.g., for PR feedback).
+>
+> **Notes:** The `SessionStart` hook is an end-of-session hook, but its purpose is to inject Superpowers context at the beginning of an AI session, not to inspect final assistant output for PR merge compliance. The `CLAUDE.md` file provides contributor guidelines for AI agents, including a pre-submission checklist for PRs, but it does not describe a mechanism for detecting deferral phrases in final reports. The `subagent-driven-development` skill includes an example of a "Final reviewer" stating "All requirements met, ready to merge", which is an example of a final report, but there's no explicit mechanism described to detect if this phrase is used inappropriately.
 
-**Conclusion for obra/superpowers:** No production analog. Problem class mismatch — Superpowers manages skill invocation discipline; defer-tell detection is output-phrase classification on final session reports. BUILD verdict stands.
+**Problem class analysis:** Superpowers upstream problem class = skill invocation discipline (guide agent to choose merge/PR/keep/discard via structured menu). Our problem class = output-phrase classification on final session report text. **No match** — the structured menu prevents defer-tell by design (agent is guided to a decision), but does not detect defer-tell phrases when they occur outside the `finishing-a-development-branch` skill flow.
 
-### anthropics/anthropic-cookbook Queries
+### obra/superpowers — Q2
 
-**Q4 — «PR merge deferral detection hook» / «PostToolUse final report check»:**
-No pattern for PR merge deferral detection using Stop hook or transcript scan. PostToolUse example in cookbook is for file audit logging only (Write/Edit compliance tracking).
+**Query:** «Does Superpowers include any session-end or Stop hook that reads the agent's final message text and checks for phrases that indicate the agent is waiting for human action on a PR it created (conscience guard, phrase detection, output compliance)?»
 
-**Q5 — «Stop hook transcript analysis» / «session output compliance check»:**
-PostToolUse examples focus on logging Write/Edit for compliance. No Stop hooks; no phrase detection in assistant output; no pattern matching final report text.
+**Verbatim response:**
 
-**Q6 — «transcript_path reading for audit» / «assistant message scanning hook»:**
-No transcript_path-reading Stop hook examples. Transcript analysis exists in notebooks but not as hooks. Cookbook examples are for non-agent usage (chat API), not Claude Code hooks.
+> Superpowers does not include a session-end or Stop hook that reads the agent's final message text to check for phrases indicating a wait for human action on a created PR. The `hooks.json` configuration only defines a `SessionStart` hook. This `SessionStart` hook is designed to inject bootstrap context at the beginning of a session, not to process messages at the end of a session.
+>
+> The `SessionStart` hook runs synchronously and is triggered on `startup`, `clear`, and `compact` events. Its primary function is to inject the `using-superpowers` skill content as bootstrap context. There is no mention of any `SessionEnd` or `Stop` hooks in the provided codebase that would perform the described phrase detection or output compliance checks.
+>
+> **Notes:** The `CLAUDE.md` file contains "Contributor Guidelines for AI Agents" which includes instructions and warnings for agents regarding PR submissions, but these are guidelines for the agent's behavior during a session, not automated checks performed by a session-end hook. The `RELEASE-NOTES.md` also discusses various improvements and fixes related to agent behavior and skill compliance, but none of these indicate the presence of a session-end hook for message analysis.
 
-**Conclusion for anthropics/anthropic-cookbook:** No production analog. Problem class confirmed distinct from logged cookbook patterns.
+**Problem class analysis:** Confirmed — SessionStart only, no Stop/SessionEnd hook for output inspection. Upstream problem class = session-start bootstrapping. Our problem class = session-end output scanning. **No match.**
 
-**§4 overall conclusion: Branch 1 does NOT fire.** No production-grade analog found. BUILD verdict from Stage 1 stands. The mechanism must be built custom if pursued — but per §5 below, Stage 2 precision result makes Stage 3 NO-GO.
+### obra/superpowers — Q3
+
+**Query:** «What Red Flags does Superpowers define for agent behavior at the end of a development session? Does the finishing-a-development-branch skill or any other skill detect or prevent the agent from writing "pending maintainer" or "awaiting your decision" when the agent could autonomously merge its own PR?»
+
+**Verbatim response:**
+
+> Superpowers defines several "Red Flags" for agent behavior, particularly within the `subagent-driven-development` and `finishing-a-development-branch` skills, which outline actions agents should never take. The `finishing-a-development-branch` skill is designed to prevent an agent from writing "pending maintainer" or "awaiting your decision" when it could autonomously merge its own PR by presenting structured options and requiring specific actions based on the environment.
+>
+> **Red Flags for Agent Behavior:**
+> The `subagent-driven-development` skill lists several "Red Flags" that agents should avoid during the development process. These include: Never starting implementation on the main/master branch without explicit user consent. Never skipping spec compliance or code quality reviews. Never proceeding with unfixed issues. Never dispatching multiple implementation subagents in parallel due to potential conflicts. Never letting the implementer's self-review replace an actual review. Never starting a code quality review before spec compliance is approved.
+>
+> The `finishing-a-development-branch` skill also defines "Red Flags" specifically for the completion phase: Never proceeding with failing tests. Never merging without verifying tests on the result. Never deleting work without confirmation. Never removing a worktree before confirming merge success. Never cleaning up worktrees that were not created by Superpowers (provenance check). Never running `git worktree remove` from inside the worktree.
+>
+> **Detection and Prevention of "Pending Maintainer" or "Awaiting Your Decision":**
+> The `finishing-a-development-branch` skill is designed to prevent the agent from deferring decisions like "pending maintainer" or "awaiting your decision" when it has the autonomy to act. This is achieved through a structured process: (1) Verify Tests. (2) Detect Environment (determines which set of options to present). (3) Present Structured Options — four options: merge locally, push and create a PR, keep the branch as-is, or discard the work. (4) Execute Choice.
+>
+> By providing these explicit options and guiding the agent through the completion process, the `finishing-a-development-branch` skill ensures that the agent either takes a decisive action (merge, PR, discard) or explicitly hands off to the user with clear instructions if it's in a restricted environment. This prevents ambiguous states like "pending maintainer" or "awaiting your decision" when the agent has the capability to proceed.
+>
+> **Notes:** The `RELEASE-NOTES.md` file mentions that `finishing-a-development-branch` now detects when the agent is already running inside an isolated worktree and prefers the harness's native worktree controls before falling back to `git worktree`. This enhancement further refines the agent's ability to act autonomously or provide precise instructions when external controls are necessary. The `codex-tools.md` also details how the agent should handle finishing in a Codex App environment where branch/push operations might be blocked, guiding the agent to inform the user to use the App's native controls.
+
+**Problem class analysis:** The Superpowers approach is *preventive* (structured menu prevents ambiguous deferral state) vs. our *detective* approach (regex scanning final output for deferral phrases). Different mechanisms for a related problem. Preventive mechanism is preferable — but it requires the agent to invoke `finishing-a-development-branch` skill. If the skill is not invoked (agent exits without using it), the defer-tell can still occur. No phrase detection present. **No match on our problem class.** REFERENCE-class observation: Superpowers' preventive approach is the stronger design; our detective approach is a fallback for when prevention is not invoked.
+
+### anthropics/anthropic-cookbook — Q4
+
+**Query:** «Does the Anthropic Cookbook include any pattern for detecting when an AI agent defers a PR merge to a human by writing phrases like "ready for merge" or "awaiting your click" in its final output, when the agent could have merged the PR itself? Is there a Stop hook example that inspects the agent's final message for PR deferral language?»
+
+**Verbatim response:**
+
+> The Anthropic Cookbook does not appear to include a specific pattern or stop hook for detecting when an AI agent defers a PR merge to a human with phrases like "ready for merge" or "awaiting your click". The existing Claude AI-powered workflows, such as `claude-model-check.yml`, `claude-link-review.yml`, and `claude-pr-review.yml`, are designed to provide review comments and feedback on pull requests, but not to autonomously merge them or detect deferral language.
+>
+> The `claude-pr-review.yml` workflow, for instance, uses the `/review-pr-ci` command to analyze code changes and post a review to GitHub. The output format for this review includes a "Recommendation" field that can be `APPROVE`, `REQUEST_CHANGES`, or `COMMENT`. However, the agent's role is to provide feedback, not to perform the merge itself.
+>
+> Similarly, the `claude-code-action@v1` used in these workflows is configured with `allowedTools` that enable it to post comments (`Bash(gh pr comment:*)`) or reviews (`Bash(gh pr review:*)`)`. There is no indication of a tool or mechanism that would allow the AI agent to initiate a merge or to specifically detect and flag deferral phrases in its own output.
+>
+> **Notes:** The provided context focuses on the AI agent's capabilities for reviewing and commenting on PRs, as well as various validation checks within the CI/CD pipeline. While there are examples of "stop" conditions in agent loops within notebooks like `third_party/Pinecone/claude_3_rag_agent.ipynb` and `tool_use/programmatic_tool_calling_ptc.ipynb`, these are related to the agent's internal execution flow and tool usage, not to the detection of specific deferral phrases in its final output for PR merging. The `misc/building_evals.ipynb` notebook discusses different grading methods for AI outputs, including code-based grading using string matching, but this is in the context of evaluating model performance, not for monitoring agent behavior in a CI/CD pipeline.
+
+**Problem class analysis:** Cookbook problem class = PR review automation (CI workflows that post feedback). Our problem class = session-end output scanning for defer-tell phrases. **No match.** The CI PR review pattern is structurally different — it fires per-PR not per-session, and its output is feedback to a human, not a pass/fail on agent behavior.
+
+### anthropics/anthropic-cookbook — Q5
+
+**Query:** «Are there any examples in the Anthropic Cookbook of a Stop hook (Claude Code hook triggered on session end) that reads the transcript or final assistant message to check for PR merge compliance or deferral language? Does the cookbook show how to scan assistant output at session end?»
+
+**Verbatim response:**
+
+> I need to clarify what you're asking about, as the terminology doesn't match what I see in the Anthropic Cookbook codebase.
+>
+> You're asking about a "Stop hook (Claude Code hook triggered on session end)" that would scan assistant output for PR merge compliance or deferral language. However, the Anthropic Cookbook doesn't contain examples of Claude Code hooks or session-end hooks in that sense.
+>
+> What the cookbook *does* contain:
+> 1. **PR Review Automation** via GitHub Actions: shows a workflow that uses `anthropics/claude-code-action@v1` to review PRs, but this runs *during* the PR process, not at session end, and it doesn't check for "merge compliance" or "deferral language."
+> 2. **Conversation Loop Patterns**: shows `run_conversation_loop()` which processes Claude's responses and checks for tool use, but doesn't scan for specific compliance language at the end of a session.
+> 3. **Code Review with Memory**: demonstrates extracting final text from Claude's response (`final_text.append(content.text)`), but doesn't validate it against compliance criteria.
+>
+> The cookbook doesn't show examples of: Session-end hooks that trigger after a conversation completes. Scanning final assistant messages for specific compliance or deferral language patterns. Validation logic that checks whether a PR should be merged based on Claude's output.
+>
+> If you're looking to implement this functionality, you would need to add custom logic after the conversation loop completes to inspect the final response content.
+>
+> **Notes:** The closest related concept is the PR review workflow, but it's GitHub Actions-based rather than a Claude Code hook. If you're asking about a different system or feature, please clarify what you mean by "Stop hook" and "Claude Code hook" — these terms don't appear in the cookbook's current documentation.
+
+**Problem class analysis:** Confirms cookbook does not contain Claude Code hook patterns at all. The cookbook covers notebook/API patterns, not CC session hooks. **No match.** Q5 response additionally confirms «Stop hook» is not a concept in the cookbook — our mechanism would be original.
+
+### anthropics/anthropic-cookbook — Q6
+
+**Query:** «Does the Anthropic Cookbook contain any transcript analysis pattern, regex matching, or string scanning example applied to Claude's own output to detect when Claude unnecessarily defers an action to a human that it could perform itself (autonomy compliance, self-execution check, unnecessary deferral detection)?»
+
+**Verbatim response:**
+
+> The Anthropic Cookbook does not contain specific examples of transcript analysis patterns, regex matching, or string scanning applied to Claude's output to detect unnecessary deferrals to humans (autonomy compliance, self-execution check, unnecessary deferral detection).
+>
+> However, the cookbook does demonstrate general patterns for:
+> - **Code-based grading using regular expressions** for evaluating Claude's output against a "golden answer". This approach is highlighted as fast and reliable for specific tasks.
+> - **Extracting structured information from Claude's output using regex**. For example, in the `multimodal/reading_charts_graphs_powerpoints.ipynb` notebook, a regex pattern `r"<narration>(.*?)</narration>"` is used to extract narration content from Claude's response. Similarly, the `misc/metaprompt.ipynb` notebook uses `re.findall` to extract content between custom XML-like tags.
+> - **Detecting when Claude uses or does not use a tool**. The `tool_use/tool_choice.ipynb` notebook shows examples where the output explicitly states "Claude did NOT call a tool" or "Claude wants to use a tool" based on its interaction with defined tools. This implicitly involves scanning Claude's output for tool-use blocks.
+>
+> While these examples demonstrate the technical capability to analyze Claude's output using string manipulation and regex, they do not specifically address the "unnecessary deferral to a human" scenario.
+>
+> **Notes:** The provided context includes examples of using regular expressions for various purposes, such as cleaning mathematical expressions for a calculator tool, detecting hardcoded secrets, and extracting variables from prompt templates. Additionally, sentence boundary detection using regex is shown in the context of streaming Claude's response to a Text-to-Speech system. These examples illustrate the general applicability of regex and string scanning to Claude's output, which could be adapted for autonomy compliance checks, but no direct implementation for that specific use case is present.
+
+**Problem class analysis:** Cookbook has general regex-on-output patterns but none targeting autonomy compliance or deferral detection. The regex examples are for output parsing (extract tagged content) not behavioral compliance (detect anti-patterns in agent behavior). **No match.**
+
+### §4 Overall Conclusion
+
+**Branch 1 does NOT fire.** Across all 6 queries on both repositories, no production-grade analog was found for:
+- Session-end or Stop hook inspecting final assistant output for defer-tell phrases
+- Autonomy compliance check (unnecessary deferral detection) on agent own-PR reports
+- Regex/string scanning of assistant output for PR merge deferral language
+
+The Superpowers `finishing-a-development-branch` skill is a *preventive* mechanism (different problem class — prevents ambiguous states via structured menu) not a *detective* one. The Anthropic Cookbook contains general regex-on-output patterns but none targeting agent behavioral compliance. BUILD verdict from Stage 1 stands confirmed.
 
 ## §5 Final Verdict
 
@@ -294,13 +405,15 @@ Evaluating branches in order (first match wins):
 
 **Branch 1 (DeepWiki early exit):** §4 found NO production analog matching our problem class. Branch 1 does NOT fire.
 
-**Branch 2 (both §1 and §2a REJECT):** §1 = REJECT (precision 3% << 80%). §2a = REJECT (0/3 known incidents caught). Both failed → Branch 2 fires — but Branch 3 would also fire, so we report the Branch 3 label per kickoff §5 ordered semantics.
+**Branch 2 (both §1 AND §2a REJECT):** §1 = REJECT (precision 3% << 80%). §2a = REJECT (0/3 known incidents caught). Both failed → **Branch 2 fires. First-match-wins: stop evaluation here.**
 
-**Branch 3 (§1 REJECT OR §2a REJECT — either failed):** §1 REJECT → Branch 3 fires.
+Branch 3 would also fire (§1 REJECT satisfies OR condition), but ordered semantics means Branch 2 is evaluated first and its stricter AND condition is met — Branch 2 is the correct verdict label.
 
-**Verdict: STAGE 3 NO-GO**
+**Verdict: REJECT UMBRELLA** (Branch 2 — both §1 AND §2a failed)
 
-The detection mechanism as designed in Stage 1 §3.4 is **not viable for automated gating**. The core failure is that the regex vocabulary is semantically shared across multiple legitimate use cases in this corpus:
+Operational consequence per kickoff §5 Branch 2: «mark in `prior-art-evaluations.md` with REJECT verdict». The Orchestrator will add the SSOT entry; this benchmark file documents the evidence.
+
+Both §1 (precision) and §2a (recall) failed independently, making this a REJECT UMBRELLA rather than a recoverable REVISE. The detection mechanism as designed in Stage 1 §3.4 is **not viable for automated gating**. The core failure has two dimensions: (1) the regex vocabulary is semantically shared across multiple legitimate use cases in this corpus, and (2) the vocabulary even when tuned would miss incident phrases due to morphological variants (possessive form, I-3):
 
 - Status-tracking phrases («pending maintainer», «жду решения») appear legitimately in pipeline-state documentation
 - Kickoff/meta-discussion sessions write the anti-pattern vocabulary verbatim as examples
@@ -334,6 +447,10 @@ Does this benchmark audit itself?
 
 **T19 (own cold-QA before handoff):** The benchmark file was written after all evidence was gathered. The two TPs (rows 16 and 66) were verified by checking that the sessions had prior `gh pr create` evidence before labeling. The precision computation was re-verified by hand (2/66 = 0.0303, Wilson CI computed step-by-step). ✓
 
+**T9 (sampling easy/recent — convenience-recent stratification):** Fully addressed by full-population scan — §0.1 stratified all 493 files and §0.2 scanned all strata. All 66 flagged turns classified, not just the Recent stratum. No convenience-recent bias — Old stratum (25 files) is included. ✓
+
+**T20 (inline-verdict-without-evidence):** §5 verdict (REJECT UMBRELLA, Branch 2) is backed by: §1 precision computation (2/66 = 3.0%, Wilson CI [0.8%, 10.4%] — all computation shown step-by-step), §2a recall result (0/3 incidents caught — each miss analyzed with root-cause), and §4 verbatim DeepWiki responses (6 queries, Branch 1 analysis). No recommendation issued without preceding evidence. ✓
+
 **T-DRD-A (domain-specific trap for this benchmark — fabricating recall by conflating §2a and §2b):** The kickoff explicitly mandates: «Do NOT combine §2a (n=3) and §2b (n=30) into a single recall ratio». §2a and §2b are reported separately throughout. §2b states «informational only, does NOT affect verdict». ✓
 
 ## Decision Log
@@ -346,7 +463,8 @@ Does this benchmark audit itself?
 | 0ce05ba4 L541 | FP-diff-project | No own-PR authorship signal in context; reviewer-session context |
 | §2a I-2 | MISS | «жду мержа» phrase in corpus (fd72cf73) is FP-quoted/discussion; actual I-2 session may be outside corpus or phrased differently |
 | Wilson CI formula | Standard Wilson score interval | Per `narrow-b-benchmark.md §1.5` precedent; same formula as used in the recommendation-laziness benchmark |
-| Branch verdict | Branch 3 (§1 REJECT) | Ordered matrix — Branch 1 did not fire; Branch 3 fires because §1 REJECT; Branch 2 is a superset but Branch 3 is the first match |
+| Branch verdict | Branch 2 (§1 REJECT AND §2a REJECT — first-match-wins) | Ordered matrix — Branch 1 did not fire; Branch 2 condition (both §1 AND §2a REJECT) is satisfied and is evaluated before Branch 3 → Branch 2 wins; consequence = REJECT UMBRELLA + SSOT REJECT entry |
+| §2a I-3 root cause | Definitive MISS: possessive «maintainer's» not matched | Verified: `echo "maintainer's click required" \| grep -iE 'maintainer[[:space:]]+(click\|merge\|review)[[:space:]]+required'` → empty; regex arm requires no possessive; «maintainer's» contains an apostrophe between «maintainer» and the space, breaking the pattern |
 
 ## See Also
 
