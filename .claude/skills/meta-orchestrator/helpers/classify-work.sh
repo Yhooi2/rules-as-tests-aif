@@ -7,8 +7,8 @@
 # work-item classification (fix / R-phase / I-phase-small / I-phase-large) +
 # recommended dispatch mode for the meta-orchestrator. Deterministic; no LLM.
 #
-# Vocabulary ADAPTed from TaskMaster complexity tiers (SSOT #72; LLM impl rejected,
-# vocab adopted) + Superpowers SDD 3-tier model selection (SSOT #73; small/medium/
+# Vocabulary ADAPTed from TaskMaster complexity tiers (SSOT #73; LLM impl rejected,
+# vocab adopted) + Superpowers SDD 3-tier model selection (SSOT #74; small/medium/
 # large maps cleanly to fix/I-phase-small/I-phase-large).
 #
 # @cc-only-rationale: meta-orchestrator skill helper — runs in-session via !shell
@@ -69,7 +69,7 @@ SURFACES="$(echo "${BODY}" \
   | tr -d ' ')"
 
 # ── HEURISTIC 3: SIZE-TIER CLASSIFICATION (SDD 3-tier vocabulary) ─────────────
-# Tier boundaries (SSOT #73 Superpowers SDD):
+# Tier boundaries (SSOT #74 Superpowers SDD):
 #   fix (small/mechanical):   LOC ≤5  AND SURFACES ≤1  → direct-Edit
 #   I-phase-small (medium):   LOC ≤80 AND SURFACES ≤1  → Mode-A
 #   I-phase-large (large):    LOC >80  OR SURFACES ≥2   → Mode-B
