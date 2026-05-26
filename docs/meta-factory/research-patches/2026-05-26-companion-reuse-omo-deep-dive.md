@@ -1,3 +1,4 @@
+<!-- scope:companion-reuse-omo-deep-dive -->
 # Companion-reuse R-phase — oh-my-openagent deep-dive
 
 > **Status:** Sub-wave B of `companion-reuse-deep-dive` umbrella.
