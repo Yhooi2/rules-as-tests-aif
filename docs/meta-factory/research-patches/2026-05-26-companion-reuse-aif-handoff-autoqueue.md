@@ -1,3 +1,4 @@
+<!-- scope:companion-reuse-aif-handoff-autoqueue -->
 # Companion-reuse R-phase — aif-handoff autoQueueMode deep-dive
 
 > **Status:** Sub-wave A of `companion-reuse-deep-dive` umbrella.
