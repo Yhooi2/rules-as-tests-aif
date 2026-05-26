@@ -1,3 +1,4 @@
+<!-- scope:meta-orchestrator-stage-5-dogfood -->
 # Stage 5 dogfood — first `/meta-orchestrator` invocation on real backlog (2026-05-26)
 
 > **Authoritative for:** Stage 5 dogfood findings — §1 substrate invocation trace, §2 routing decision walk, §3 N=1 coherence call, §4 T19 cold-review of own §1-§3, §5 substrate bugs / UX gaps surfaced during the run (severity + repro + 1-line proposed fix scope, NO fixes applied), §6 §1.7 Forward-check applied, §7 §1.7 Backward-check applied.
