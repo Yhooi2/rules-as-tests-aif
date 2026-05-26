@@ -156,7 +156,7 @@ This re-surface bounds the maintainer's effort (one question or one coin-flip, n
 
 > **Integration layer (no separate §7.x binding).** Runs after §2 priority winner selected (no-arg mode) OR after §1 (arg mode). Wires §7.3 (priority) → §7.4 (launch-table) via L3/L4/L5 helpers + design §5 routing tree. Skipping = T7 anti-pattern (premature dispatch without routing).
 
-**Step 1 — read prior delta state:**
+**Step 1 — read prior delta state** (context-priming; deterministic diff in Step 8; reconciliation + T-mem-A counter — [`references/master-backlog-delta.md §2`](references/master-backlog-delta.md)): <!-- @dual-pair: meta-orchestrator-master-backlog-delta -->
 
 ```!
 if [[ -f .claude/orchestrator-prompts/_master-backlog-delta.json ]]; then
@@ -222,7 +222,7 @@ elif TYPE == "I-phase-large":
 1:1 with Step 5 routing tree. Principle 19 (`packages/core/principles/19-meta-orchestrator-alias-routing-consistency.test.ts`) enforces mechanically. `Mode-A-bundle` sub-dispatch defined in bundle-autonomous umbrella.
 
 **Step 7 — emit ALIAS in §10 rendered output:** Stage heading: `### Stage N — <name> (<ALIAS> / <Mode>, ~<cost>)`. Dep-graph bullet: `├── <name>   (<ALIAS> / <Mode>, ~<cost>, <role>)`. Template update deferred to follow-up PR per `feedback_no_drive_by_prs`.
-**Step 8 — delta diff:** Compare candidate `id` set vs Step 1 `untracked_seen[].id`. Emit `NEW-SINCE-LAST: <id>` / `RESOLVED-SINCE-LAST: <id>`. Maintainer updates `wave-sequencing-plan.md §0` manually (Direction A REJECTED per R-phase β-2).
+**Step 8 — delta diff:** invoke `bash ${CLAUDE_SKILL_DIR}/helpers/delta-diff.sh .claude/orchestrator-prompts/_master-backlog-delta.json "<id-1>" "<id-2>" "<...>"` (post-dedup ids from Steps 2-3 as positional args) → emits `NEW-SINCE-LAST: <id>` (current ∖ seen) + `RESOLVED-SINCE-LAST: <id>` (seen ∖ current), sorted; missing delta → all current = NEW; lines feed §10; maintainer manually updates `wave-sequencing-plan.md §0` (Direction A REJECTED per R-phase β-2); semantics + contract: [`references/master-backlog-delta.md`](references/master-backlog-delta.md) + [`packages/core/hooks/delta-diff.test.ts`](../../../packages/core/hooks/delta-diff.test.ts). <!-- @dual-pair: meta-orchestrator-delta-diff -->
 **Step 9 — write-back to `_master-backlog-delta.json`:** `untracked_seen` ← current candidate set (overwrite-shape; `first_seen` = current ts). `closed_since_last` ← prior ids that no longer surface. Concrete `jq` shape in §10 step 5 — do NOT re-specify here.
 
 **§7.14 gap closed:** routing-tree alias-mapping consistency (Stage 2C gap).
@@ -597,3 +597,4 @@ The cost of absence: orchestrator surgery time when a parallel branch contaminat
 - [ai-laziness-traps.md §3](../../rules/ai-laziness-traps.md) — §5 T-enumeration obligation in generated kickoffs
 - [principle 12 test](../../../packages/core/principles/12-ai-laziness-traps.test.ts) — validates §5 T-enumeration in kickoffs
 - [SSOT rows #66-#70](../../../docs/meta-factory/prior-art-evaluations.md) — R-phase survey evidence
+- [references/plan-cache.md](references/plan-cache.md) + [references/master-backlog-delta.md](references/master-backlog-delta.md) — parallel cache + delta discipline (§2.5 Step 1/8 + §10 item 5)
