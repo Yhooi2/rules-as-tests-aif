@@ -1,3 +1,4 @@
+<!-- scope:companion-reuse-devin-replan -->
 # Companion-reuse R-phase — Devin dynamic re-plan viability check
 
 > **Status:** Sub-wave C of `companion-reuse-deep-dive` umbrella.
