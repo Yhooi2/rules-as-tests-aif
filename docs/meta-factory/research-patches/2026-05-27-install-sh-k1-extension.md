@@ -1,9 +1,9 @@
 <!-- scope:install-sh-k1-extension -->
 # install.sh K-1 companion-install extension — Stage 2 R-phase design
 
-> **Status:** R-phase output for Stage 2 of `m-a-full-satellite-transition` umbrella.
+> **Status:** R-phase output for Stage 2 of `m-a-full-satellite-transition` umbrella. **v2 revise 2026-05-27:** fixed AIF framing (install.sh:307-322 is OUR-content-deposit, not companion install) + corrected install command to shell-runnable `claude plugin install ... --scope user` subcommand.
 > **Date:** 2026-05-27.
-> **Authoritative for:** design of optional companion-install prompts in `install.sh` (K-1 extension); interactive prompt shape; per-companion install mechanism survey; AIF auto-install keep-vs-convert recommendation; non-interactive fallback; idempotency; order-of-operations; failure-mode handling. Feeds Stage 5 I-phase.
+> **Authoritative for:** design of optional companion-install prompts in `install.sh` (K-1 extension); interactive prompt shape; per-companion install mechanism survey; AI-Factory content-deposit clarification (install.sh:307-322); non-interactive fallback; idempotency; order-of-operations; failure-mode handling. Feeds Stage 5 I-phase.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). install.sh edits (Stage 5 I-phase). Companion capability inventory — see [2026-05-27-universal-satellite-integration-matrix.md](2026-05-27-universal-satellite-integration-matrix.md) (primary input). Orchestrator skill trim — see Stage 4 I-phase.
 
 ---
@@ -13,11 +13,12 @@
 **Proposed K-1 shape:**
 
 1. **Interactive prompts after Phase 3 (AI Factory templates), before Phase 4 (Scripts)** — user has already committed to install; companion prompts are additive, non-mandatory step. All prompts default `[y/N]` (capital N = default no) per T-Stage2-A guard. No companion is pre-checked or privileged.
-2. **AIF auto-install: KEEP AS-IS** (no convert to opt-in) — back-compat concern outweighs vision purity; AIF is the primary delivery vehicle for our enforcement content; converting to opt-in would create a «consumer installs our framework but none of its enforcement wiring» failure class. See §4.3 for full reasoning.
-3. **Interactive format: `read -rp` style** matching existing install.sh:145 stack picker — keeps the script language/UI consistent. No `select` menu (adds dependency, more complex); no flag-only (interactive preferred for first-run, flags as override).
+2. **install.sh:307-322 is OUR-content-deposit at AIF-convention paths (NOT an AI-Factory tool install).** Keep this Phase 3 as-is. No companion-prompt category applies to it. See §4.3 for clarification.
+3. **Interactive format: `read -rp` style** matching existing install.sh:145 stack picker — keeps the script language/UI consistent. No `select` menu (adds dependency, more complex); no flag-only (interactive preferred for first-run, flags as override). Because the shell-runnable `claude plugin install ... --scope user` subcommand exists, install.sh can ACTUALLY perform the plugin install — making the interactive prompt meaningful rather than a memo.
 4. **Non-interactive fallback: `COMPANIONS=none` env var** (default) skips all companion prompts without any interaction; `COMPANIONS=all` installs all; `COMPANIONS=superpowers,taskmaster` installs named set. CI/headless installs work transparently.
 5. **Idempotency: detect-and-skip** per companion — check for presence of companion-specific files/dirs before invoking install. If already present, print `⊝ <companion> already installed — skipping` (matching existing install.sh style).
 6. **Failure mode: warn-and-continue** — companion install failure prints `⚠ <companion> install failed (exit $N). Continuing...` and does not abort the parent install.sh run. User can retry companion install separately.
+7. **Plugin installs in K-1 use the standalone `claude plugin install <name> --scope user` CLI subcommand**, NOT the interactive-only `/plugin install ...` slash command (verified `claude plugin --help` 2026-05-27). The slash command exists as the user-facing interactive equivalent but is NOT runnable from install.sh shell context.
 
 **7 companions audited (T1 floor = 7, all 7 covered):** AI-Factory (existing auto-install, comparison row), Superpowers, OhMyOpencode, aif-handoff, TaskMaster, Cline, OpenCode+Cursor.
 
@@ -34,6 +35,8 @@
 **Upstream installs verified (T12 anti-training-data: DeepWiki probes 2026-05-27):**
 - Superpowers: DeepWiki `obra/superpowers` probe — CC marketplace + OpenCode git-plugin + CLI
 - OhMyOpencode: DeepWiki `code-yeongyu/oh-my-openagent` probe — `bunx oh-my-openagent install` + `--no-tui` flag
+
+**v2 revise Q-B probe (2026-05-27):** `claude plugin --help` verified that `claude plugin install <name> --scope user` is a first-class CLI subcommand runnable outside any CC session. The v1 `/plugin install superpowers@claude-plugins-official` recommendation was harness-interactive only and NOT runnable from install.sh shell — corrected in this v2 per T16/T20 trap resolution (§5).
 
 **Classification criteria:**
 - Each companion assessed for: (a) install command verifiability, (b) idempotency mechanism, (c) subscription gate, (d) conflict surface with existing install.sh operations
@@ -52,7 +55,7 @@
 | Phase 1: Skills | 202–253 | `▶ Skills → .claude/skills/` | `copy_safe` for rules-as-tests, tool-bootstrapping, meta-orchestrator skills | No — our skills only |
 | Phase 1b: Hooks | 255–285 | `▶ Claude hooks → .claude/hooks/` | Copy deps-hash-check.sh; register in settings.json via jq | No — our hook only |
 | Phase 2: Sub-agents | 287–304 | `▶ Sub-agents → .claude/agents/` | Loop `copy_safe` over `agents/*.md` | No — our agents |
-| Phase 3: AI Factory | 306–327 | `▶ AI Factory templates → .ai-factory/` | Copy DESCRIPTION, ARCHITECTURE, RULES; skill-context overrides (319–322); react-next conditional | **YES — existing companion auto-install (AIF); K-1 INSERT POINT** |
+| Phase 3: AI Factory | 306–327 | `▶ AI Factory templates → .ai-factory/` | Copy DESCRIPTION, ARCHITECTURE, RULES; skill-context overrides (319–322); react-next conditional | **YES — OUR-content-deposit at AIF-convention paths (NOT companion tool install); K-1 INSERT POINT (new companion prompts go AFTER this phase)** |
 | Phase 4: Scripts | 329–337 | `▶ Scripts → scripts/` | Copy audit-ai-docs.sh; react-next variant | No — our scripts |
 | Phase 5: Shared templates | 339–353 | `▶ Shared templates → project root` | .nvmrc, .lintstagedrc.json, tsconfig.json, AGENTS.md, husky hooks, pre-push.fallback.sh | No — our templates |
 | Phase 5b: ESLint rules | 354–374 | `▶ Custom ESLint rules → eslint-rules-local/` | Loop copy_safe over packages/core/eslint-rules/*.ts | No — our rules |
@@ -61,7 +64,7 @@
 
 **K-1 insert point: line 328 (after Phase 3 closes, before Phase 4 `echo "▶ Scripts"`).**
 
-Rationale: AIF templates (Phase 3) are already the companion install block; K-1 extends it naturally. Companion prompts placed here fire AFTER the primary enforcement wiring (skills/hooks/agents/AIF) is complete — no companion install can accidentally step on our Phase 1-3 operations.
+Rationale: Phase 3 deposits our enforcement content at AIF-convention paths; K-1 companion prompts extend naturally after this block. Companion prompts placed here fire AFTER the primary enforcement wiring (skills/hooks/agents/Phase 3 content) is complete — no companion install can accidentally step on our Phase 1-3 operations.
 
 ---
 
@@ -71,11 +74,11 @@ All 7 companions + AI-Factory comparison row. Evidence cites matrix §X.X and up
 
 | Companion | Install command (cite source) | Marketplace / npm / git-clone | Idempotency story | Subscription-gated? | Conflict surface with existing install.sh? |
 |---|---|---|---|---|---|
-| **AI-Factory** (comparison row — existing auto-install) | install.sh:306–327 auto-copies `.ai-factory/` templates + skill-context overrides via `copy_safe`; no external command invoked | None (file-copy; framework ships templates as static files inside PKG_ROOT) | `copy_safe` DEFAULT no-force: skips if target exists (install.sh:165–170) | No subscription gate | Reference row — this IS our install.sh |
-| **Superpowers** (`obra/superpowers`) | **CC**: `/plugin install superpowers@claude-plugins-official` (DeepWiki probe 2026-05-27: «Available via the official Claude plugin marketplace») OR `/plugin marketplace add obra/superpowers-marketplace` then `/plugin install superpowers@superpowers-marketplace`. **OpenCode**: add `"plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]` to `opencode.json`. | CC plugin marketplace (primary); git-backed plugin for OpenCode; npm fallback for Windows OpenCode | Idempotent: marketplace install skips if plugin already registered. Re-running `/plugin install superpowers@...` on existing install is safe (CC plugin system deduplicates). | No billing gate; free to install; requires CC or OpenCode harness to be present | None (matrix §1.2: «No filesystem conflicts: Superpowers does NOT ship files into `.claude/agents/`, `.ai-factory/`, or pre-push hooks.») |
+| **AI-Factory (OUR-content-deposit at AIF-convention paths — NOT an AI-Factory tool install)** | install.sh:307–322 copies OUR `packages/core/templates/shared/*` and `packages/preset-next-15-canonical/RULES.md` (+ 2 skill-context overrides) to `.ai-factory/` via `copy_safe`. No external command invoked. NOT a companion install. Listed here for inventory completeness; excluded from K-1 prompt logic. **K-1 applicability: N/A.** | None (file-copy of OUR static files inside PKG_ROOT — not an AI-Factory tool artifact) | `copy_safe` DEFAULT no-force: skips if target exists (install.sh:165–170) | No subscription gate | Inventory row — this is OUR content deposited at AIF-convention paths. Phase 3 kept as-is (maintainer-confirmed 2026-05-27). |
+| **Superpowers** (`obra/superpowers`) | **CC (shell-runnable):** `claude plugin install superpowers@claude-plugins-official --scope user` (CLI subcommand — verified `claude plugin --help` 2026-05-27; runs OUTSIDE any CC session, installs persistently). **Note:** `/plugin install superpowers@claude-plugins-official` is the user-facing interactive slash-command equivalent but is NOT runnable from install.sh shell context (harness-interactive only). **Alternative:** `claude plugin marketplace add obra/superpowers-marketplace` then `claude plugin install superpowers@superpowers-marketplace --scope user`. **Also:** `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json` = passive pre-seed (defers install to next CC session via trust-prompt; lower-friction than manual but not fully automatic). **OpenCode**: add `"plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]` to `opencode.json`. | CC plugin marketplace (primary); git-backed plugin for OpenCode; npm fallback for Windows OpenCode | Idempotent: marketplace install skips if plugin already registered. Re-running `claude plugin install superpowers@...` on existing install is safe (CC plugin system deduplicates). | No billing gate; free to install; requires CC or OpenCode harness to be present | None (matrix §1.2: «No filesystem conflicts: Superpowers does NOT ship files into `.claude/agents/`, `.ai-factory/`, or pre-push hooks.») |
 | **OhMyOpencode** (`code-yeongyu/oh-my-openagent`) | `bunx oh-my-openagent install` (interactive) OR `bunx oh-my-openagent install --no-tui --claude=max20` (headless). Requires `bun`; do NOT use npm/yarn/pnpm. Verify: `bunx oh-my-openagent doctor`. | npm registry dual-published: `oh-my-openagent` (preferred) + `oh-my-opencode` (legacy). `bunx` installs from npm automatically. | Idempotent: installer detects existing config and treats as update (DeepWiki probe 2026-05-27: «detects your current configuration... treats the operation as an update»). `bunx oh-my-openagent doctor` verifies state. | No billing gate. Requires OpenCode as target harness. | KNOWN: duplicate-tool-names if OhMyOpencode skill plugin AND `.claude/skills/` active simultaneously; escape: set `"claude_code.skills": false` in OhMyOpencode config (matrix §1.3). Pre-push hooks: no conflict. |
 | **aif-handoff** (`lee-to/aif-handoff`) | Server-side Node.js service. Consumer typically uses `aif-handoff` via its npm package + Docker/Postgres self-host OR cloud-hosted instance. There is NO single `install` CLI command analogous to companion tools; it requires server setup. Matrix §1.4: «requires Docker + Postgres for production». | npm package `@aif/handoff` (assumed; matrix §1.4 cites Node.js server; no CLI one-liner install path documented for end-consumer). | N/A — server-side service; idempotency is the server's concern, not install.sh. | Cloud-hosted or self-hosted. No AI subscription gate for the service itself; the AI sessions it orchestrates use the consumer's subscription. | CRITICAL MANAGED: `review-sidecar.md` naming collision managed by `install.sh copy_safe` DEFAULT no-force (install.sh:293–300, matrix §1.4). Our skill-context files (install.sh:319–322) ARE the injection mechanism; no additional install.sh change needed. |
-| **TaskMaster** (`eyaltoledano/claude-task-master`) | CC plugin marketplace: install via CC plugin mechanism (`/plugin install claude-task-master@...` — per matrix §1.5: «migrated to CC plugin marketplace model»; ships `TASKMASTER.md` + `@import` into project `CLAUDE.md`). Also available as MCP server. | CC plugin marketplace (primary). npm package `task-master-ai` for CLI usage. | Idempotent: CC plugin system deduplicates installs; `@import` into CLAUDE.md is additive (matrix §1.5). | No billing gate for TaskMaster itself; `analyze-complexity` command makes LLM calls (SSOT #73 caveat: subscription-bundled when using Claude Code subscription). | Minimal (matrix §1.5: «TaskMaster does NOT ship `.claude/skills/`, `.claude/agents/`, pre-push hooks, or `settings.json` hooks»). `@import` into CLAUDE.md is additive. |
+| **TaskMaster** (`eyaltoledano/claude-task-master`) | CC plugin marketplace: install via CC plugin mechanism — **shell-runnable:** `claude plugin install claude-task-master@claude-plugins-official --scope user` (or marketplace-specific name per matrix §1.5: «migrated to CC plugin marketplace model»). **Note:** `/plugin install claude-task-master@...` is harness-interactive only — NOT runnable from install.sh shell. If TaskMaster ships outside the CC plugin ecosystem for this install path, the actual install command is: `npm install -g task-master-ai` (CLI usage). Ships `TASKMASTER.md` + `@import` into project `CLAUDE.md`. Also available as MCP server. Upstream problem class: «Install CC plugin from marketplace». Our problem class: «Install optional companion tool during framework install». Match: YES — same mechanism as Superpowers. | CC plugin marketplace (primary). npm package `task-master-ai` for CLI usage. | Idempotent: CC plugin system deduplicates installs; `@import` into CLAUDE.md is additive (matrix §1.5). | No billing gate for TaskMaster itself; `analyze-complexity` command makes LLM calls (SSOT #73 caveat: subscription-bundled when using Claude Code subscription). | Minimal (matrix §1.5: «TaskMaster does NOT ship `.claude/skills/`, `.claude/agents/`, pre-push hooks, or `settings.json` hooks»). `@import` into CLAUDE.md is additive. |
 | **Cline** | Cline is a VS Code extension + CLI; installation is via VS Code marketplace (`ext install saoudrizwan.claude-dev`) or npm CLI (`npm install -g cline`). For our purposes, Cline is a developer's chosen harness — not something install.sh can invoke. Our satellite files for Cline (`.clinerules/`) are file deliverables that install.sh could copy, but Cline itself requires VS Code or CLI pre-install by the developer. | VS Code Marketplace (primary); npm CLI. No programmatic install from a bash script. | N/A for the harness itself. Our `.clinerules/` file deliverables: `copy_safe` (same idempotency as other phases). | No billing gate. | Cline hooks (`.clinerules/hooks/`) are SEPARATE from CC `settings.json` hooks — no runtime conflict. Our `.clinerules/` files are additive (matrix §1.6). |
 | **OpenCode** | OpenCode is a separate CLI tool: `npm install -g opencode` or `npx opencode` or `brew install opencode/tap/opencode`. Our satellite files for OpenCode (`.opencode/plugins/*.js`) would be file deliverables. OpenCode itself requires developer pre-install. | npm package `opencode-ai` (per OpenCode docs). No programmatic install from a bash script for the tool itself. Our plugin file: copy into `.opencode/plugins/`. | N/A for the harness itself. Our `.opencode/plugins/` file deliverable: `copy_safe`. | No billing gate. | CC PostToolUse hooks NOT loaded in OpenCode (matrix §1.7). No conflict from current install.sh operations. |
 | **Cursor** | Cursor is an IDE — developer installs via cursor.com; no programmatic install. Our satellite files for Cursor (`.cursor/rules/*.mdc`) are file deliverables that install.sh could copy. | IDE install via cursor.com; no CLI install. Our rule files: copy into `.cursor/rules/`. | N/A for the harness itself. Our `.cursor/rules/*.mdc` files: `copy_safe`. | No billing gate; Cursor Pro for advanced features (not required for rules injection). | Zero filesystem conflict with our current stack (matrix §1.6 Cursor section). |
@@ -97,6 +100,8 @@ read -rp "Choose [1/2]: " choice
 
 **Why not flags-only (`--with-superpowers`):** Interactive is appropriate for first-run installs where the user hasn't pre-planned companion choices. Flag-based override layer (§4.4 non-interactive fallback) covers headless/CI usage. Both: flag overrides interactive, not the reverse.
 
+**Rationale strengthened (v2 revise):** Because the shell-runnable `claude plugin install <name> --scope user` subcommand exists (verified `claude plugin --help` 2026-05-27), install.sh can ACTUALLY perform the plugin install when the user answers `y` — not merely print instructions. This makes the interactive prompt genuinely meaningful rather than a memo that says «please go type this yourself». The interactive prompt is now a functional install trigger, not a help-text display.
+
 **T16 problem-class check:** Upstream problem class = «installer prompting for optional feature selection». Our problem class = «optional companion install prompt». Match: `read -rp` is the standard bash interactive-prompt mechanism. No pattern-matching-on-name issue; the mechanism is correct for the problem.
 
 **Prompt structure per companion:**
@@ -115,8 +120,8 @@ esac
 Companion prompts in proposed insertion order (see §4.6):
 
 ```text
-  Install Superpowers skills? (CC plugin marketplace — /plugin install) [y/N]:
-  Install TaskMaster? (CC plugin marketplace — /plugin install) [y/N]:
+  Install Superpowers skills? (CC plugin — claude plugin install superpowers@claude-plugins-official --scope user) [y/N]:
+  Install TaskMaster? (CC plugin — claude plugin install claude-task-master@... --scope user) [y/N]:
   Install OhMyOpencode? (requires bun — bunx oh-my-openagent install) [y/N]:
 ```
 
@@ -128,21 +133,21 @@ Companion prompts in proposed insertion order (see §4.6):
 
 **Companions that DO get prompts:** Superpowers, TaskMaster, OhMyOpencode. These have programmatic install commands invokable from bash.
 
-### §4.3 AIF auto-install — keep or convert
+### §4.3 AI-Factory content deposit at install.sh:307-322 — clarification
 
-**Recommendation: KEEP auto-install AS-IS (no convert to opt-in).**
+**This Phase 3 of install.sh is NOT a companion install.** It is a deposit of OUR own content (4 templates + 2 skill-context overrides) at `.ai-factory/`-convention paths. The AI-Factory tool itself is a separate concern; install.sh does not install it. Maintainer-confirmed (2026-05-27): keep this Phase 3 unchanged.
 
-**Reasoning (T20 — evidence before verdict; verified from install.sh:306–327):**
+**File-content evidence:** install.sh:309-322 `copy_safe` calls all reference `$PKG_ROOT/packages/...` — these are OUR files, not AI-Factory tool artifacts. Specifically:
+- `packages/core/templates/shared/DESCRIPTION.template.md` → `.ai-factory/DESCRIPTION.template.md`
+- `packages/core/templates/shared/ARCHITECTURE.ts-server.md` → `.ai-factory/ARCHITECTURE.ts-server.md`
+- `packages/preset-next-15-canonical/RULES.md` → `.ai-factory/RULES.md`
+- `integration-rules.md` → `.ai-factory/integration-rules.md`
+- `packages/core/templates/shared/skill-context/aif-review/SKILL.md` → `.ai-factory/skill-context/aif-review/SKILL.md`
+- `packages/core/templates/shared/skill-context/aif-rules-check/SKILL.md` → `.ai-factory/skill-context/aif-rules-check/SKILL.md`
 
-1. **Back-compat concern is real**: AIF is already shipped to all existing consumers. Converting to opt-in would cause a silent regression for any consumer re-running install.sh after an update — they'd get «AIF skipped» and lose the enforcement wiring without understanding why.
+**K-1 extension placement:** K-1 adds NEW companion prompts AFTER this Phase 3 (at line 328, before Phase 4 Scripts). It does NOT modify Phase 3. There is no «keep auto vs convert to opt-in» decision applicable here; that framing was a v1 error caught at orchestrator review (T16 problem-class mismatch — Worker pattern-matched on the label «AIF auto-install» without verifying what was actually being installed).
 
-2. **AIF is not an optional companion in the satellite vision**: Unlike Superpowers/TaskMaster/OhMyOpencode which are workflow tools, AIF (`lee-to/ai-factory`) is the delivery vehicle for our enforcement content. Our `.ai-factory/` templates (RULES.md, DESCRIPTION template, skill-context overrides) are the primary Living Doc injection mechanism. Without them, the satellite enforcement layer is weakened. This is a structural difference from the other companions.
-
-3. **Universal-satellite vision compliance**: The kickoff's concern (kickoff §1 Stage 2: «add prompt for consistency») is about cosmetic consistency, not vision purity. «Universal satellite» means «works with all companions», not «everything is opt-in». AIF auto-install is the consistent baseline all companions build on top of.
-
-4. **Consistency compromise (if maintainer prefers it)**: An alternative that preserves back-compat while adding consistency is to print an informational line «▶ AI Factory templates → .ai-factory/ (auto)» followed by the existing copy operations, making it transparent without adding an interactive prompt. This satisfies «visibility» without adding a regression risk. Surface as DECISION-NEEDED D4 in §7.
-
-**T-Stage2-A guard (forced-default-creep):** AIF is auto (no prompt at all), which is a stronger form of default-yes. This is the pre-existing behavior. K-1 does NOT introduce new forced-default-yes behavior — all new companion prompts default `[y/N]`. The guard is satisfied.
+**T-Stage2-A guard (forced-default-creep):** Phase 3 is auto (no prompt), which is pre-existing behavior. K-1 does NOT introduce new forced-default-yes behavior — all new companion prompts default `[y/N]`. The guard is satisfied.
 
 ### §4.4 Non-interactive fallback
 
@@ -211,7 +216,7 @@ echo "  ✓ aif-handoff integration: skill-context files installed at .ai-factor
 ```bash
 if ! install_superpowers_fn 2>&1; then
   echo "  ⚠ Superpowers install failed — check output above and retry manually"
-  echo "    Manual: /plugin install superpowers@claude-plugins-official"
+  echo "    Manual: claude plugin install superpowers@claude-plugins-official --scope user"
 fi
 ```
 
@@ -284,30 +289,36 @@ Self-application: does this design doc fall into any of its own recommended trap
 
 | Companion | Upstream problem class | Our problem class | Match? | Evidence |
 |---|---|---|---|---|
-| Superpowers `/plugin install` | «Install CC plugin from marketplace registry» | «Install optional companion tool during framework install» | YES for mechanism; the CC plugin system handles the install, de-dup, and update lifecycle | DeepWiki probe 2026-05-27: «Available via the official Claude plugin marketplace» + `/plugin install superpowers@claude-plugins-official` |
+| Superpowers `claude plugin install superpowers@claude-plugins-official --scope user` | «Install CC plugin from marketplace registry via CLI subcommand» | «Install optional companion tool during framework install (from bash script)» | YES — `claude plugin install ... --scope user` is a first-class CLI subcommand running OUTSIDE any CC session; shell-runnable; handles install, de-dup, and update lifecycle | `claude plugin --help` probe 2026-05-27 (verified shell-runnable). DeepWiki probe 2026-05-27: «Available via the official Claude plugin marketplace». |
+| Superpowers `/plugin install` (v1 patch — WRONG) | «Install CC plugin from interactive CC session» | «Install optional companion tool during framework install (from bash script)» | **NO — mismatch.** v1 patch's T16 walk cited `/plugin install superpowers@claude-plugins-official` without verifying it can run from install.sh shell. Upstream problem class = «user types this in their interactive CC session». Our problem class = «install.sh bash script invokes this». Slash commands are NOT `-p` mode invokable. **This is the T16 trap detected in v1 review.** Corrected via `claude plugin install ... --scope user` subcommand (v2). | `claude plugin --help` 2026-05-27 confirms slash-command is harness-interactive only. |
 | OhMyOpencode `bunx oh-my-openagent install` | «Interactive installer for OpenCode plugin; configures AI subscription mappings» | «Install optional companion tool during framework install» | PARTIAL — `bunx oh-my-openagent install` installs the OpenCode plugin. But it also interactively configures AI subscriptions (Claude/Gemini/OpenAI). This is MORE than a simple companion install — it's a subscription configuration wizard. **Our prompt should NOT invoke the full interactive wizard from within install.sh** without warning the user. Recommend: prompt user to run `bunx oh-my-openagent install` manually, OR invoke with `--no-tui --claude=max20` for a minimal non-interactive install. | DeepWiki probe 2026-05-27: «interactive setup wizard... configures your AI subscriptions». T16 ALERT: mismatch on configuration scope. |
-| TaskMaster `/plugin install` | «Install CC plugin from marketplace» | «Install optional companion tool during framework install» | YES — same mechanism as Superpowers | matrix §1.5: «migrated to CC plugin marketplace model» |
+| TaskMaster `claude plugin install claude-task-master@... --scope user` | «Install CC plugin from marketplace via CLI subcommand» | «Install optional companion tool during framework install (from bash script)» | YES — same mechanism class as Superpowers (corrected from v1 which cited interactive slash command) | matrix §1.5: «migrated to CC plugin marketplace model». Same shell-runnable subcommand pattern as Superpowers. |
 | `read -rp` (interactive prompt pattern) | «Bash interactive prompt with default response» | «Present optional companion install choice with default-no» | YES — exact match; idiomatic bash | install.sh:145 precedent (read and verified) |
 
 **T16 ALERT — OhMyOpencode install scope mismatch**: invoking the full `bunx oh-my-openagent install` interactive wizard from within install.sh would surprise the user with a subscription configuration dialog mid-install. Recommended mitigation: print the install command and instruct user to run it separately after install.sh completes, OR invoke with `--no-tui --claude=max20` as a minimal preset. Surface as DECISION-NEEDED D5 in §7.
 
+**T16 v1 error (now corrected):** v1 patch's T16 walk for Superpowers had a problem-class mismatch: it cited `/plugin install superpowers@claude-plugins-official` as the install command without verifying it can run from install.sh shell. Upstream problem class: «user types this in their interactive CC session». Our problem class: «install.sh bash script invokes this». Match? NO — slash commands are not `-p` mode invokable. Corrected via `claude plugin install ... --scope user` subcommand (verified via `claude plugin --help` 2026-05-27). This is the T16 trap detected in v1 review. The same correction applies to TaskMaster.
+
 **T19 (own cold-QA before PR):** Executed below in self-cold-QA section.
 
 **T20 (no inline-verdict without evidence):** This document has no inline verdicts absent a preceding tool call. All verdicts are backed by:
-- install.sh reads (DO step 5, 9, verified line ranges)
-- Matrix reads (DO step 7)
-- DeepWiki probes (DO step 10, 2026-05-27)
+- install.sh reads (verified line ranges throughout)
+- Matrix reads (§1.1–§1.7 per companion)
+- DeepWiki probes (2026-05-27)
+- `claude plugin --help` probe (2026-05-27, v2 revise Q-B)
+
+**T20 v1 error (now corrected):** v1 patch's «`/plugin install` slash-command from shell» recommendation was an inline-verdict-without-evidence — Worker pattern-matched on the CC user-facing command without running `claude --help` / `claude plugin --help` to verify shell-runnability. This is the T20 trap: recommendation backed by training-data recall, not present-moment verification. Corrected via Q-B probe 2026-05-27 that confirmed `claude plugin install ... --scope user` is the shell-runnable equivalent.
 
 **T-CR-A (within-one-project disambiguation — companion with multiple install paths):**
 
-- Superpowers has multiple install paths: CC marketplace (`/plugin install superpowers@claude-plugins-official`), Superpowers marketplace (two-step), OpenCode plugin, Windows npm fallback. **For K-1 design**, the relevant path is CC marketplace primary (consumer is installing into a CC project). OpenCode path is a separate deliverable concern. Design scope = CC primary. Disambiguation: stated explicitly in §4.2.
+- Superpowers has multiple install paths: CC marketplace (`claude plugin install superpowers@claude-plugins-official --scope user` — shell-runnable CLI subcommand, verified 2026-05-27), Superpowers community marketplace (two-step), OpenCode plugin, Windows npm fallback. **For K-1 design**, the relevant path is CC marketplace primary via shell-runnable subcommand (consumer is installing into a CC project from bash). OpenCode path is a separate deliverable concern. Design scope = CC primary. Disambiguation: stated explicitly in §4.2.
 - OhMyOpencode has dual package names (`oh-my-openagent` preferred, `oh-my-opencode` legacy). Design uses `oh-my-openagent` (preferred). Stated in §3 companion table.
 
 **T-MA-A (12-wrong-narrow-framing recurrence — cite SPECIFIC install commands with upstream evidence):**
 
 Each companion's install command is cited to:
-- AI-Factory: `install.sh:306–327` (read and verified — no external command)
-- Superpowers: DeepWiki probe 2026-05-27 `/plugin install superpowers@claude-plugins-official`
+- AI-Factory: `install.sh:307–322` (read and verified — OUR content deposit, no external command, NOT companion install)
+- Superpowers: DeepWiki probe 2026-05-27 (marketplace identity) + `claude plugin --help` probe 2026-05-27 (shell-runnable subcommand: `claude plugin install superpowers@claude-plugins-official --scope user`)
 - OhMyOpencode: DeepWiki probe 2026-05-27 `bunx oh-my-openagent install --no-tui --claude=max20`
 - TaskMaster: matrix §1.5 «CC plugin marketplace model»
 - Cline: harness-only (VS Code marketplace — no single bash command)
@@ -336,15 +347,16 @@ All new companion prompts in §4.2 use `[y/N]` (capital N = default no). Zero oc
 - **Trigger sweep (§1.6)**: Not the scope of this R-phase. ✓
 - **Doc-authority (artefacts produced)**: This file carries `<!-- scope:... -->` + `> Authoritative for` + `> NOT authoritative for` per `doc-authority-hierarchy.md §3` (research-patches folder-level authority). ✓
 - **No paid LLM in CI (no-paid-llm-in-ci.md)**: All research via DeepWiki MCP (subscription-bundled) + install.sh direct read + matrix read. Zero API-billed calls. ✓
-- **Universal-satellite vision (kickoff §5)**: No companion is mandatory or default-yes. AIF keep-as-is is the pre-existing auto behavior, not a new mandatory default. All new prompts default `[y/N]`. ✓
+- **Universal-satellite vision (kickoff §5)**: No companion is mandatory or default-yes. Phase 3 auto behavior is the pre-existing baseline (OUR content deposit, not a companion). All new K-1 prompts default `[y/N]`. ✓
 - **PR strategy (CLAUDE.md)**: Single-file R-phase output; one PR scoped to Stage 2 design. No drive-by edits to install.sh, CLAUDE.md, or any other file. ✓
+- **Forward-check applied to v2 revise**: Each install command in §3 is now verified shell-runnable (Q-B `claude plugin --help` probe 2026-05-27); claim-evidence-falsifier triplet present per H1. **Falsifier:** wrong if `claude plugin install <plugin> --scope user` is NOT a valid `claude` CLI subcommand on the consumer's machine — would be falsified by `claude plugin --help` not listing `install` subcommand. ✓
 
 ### §1.7 Backward-check applied
 
 **Does this R-phase silently supersede any existing artefact?**
 
 - **install.sh**: NOT edited — research-only stage. No lines changed. No backward supersession. ✓
-- **AIF auto-install behavior**: NOT changed; §4.3 explicitly recommends KEEP-AS-IS. This patch documents the current behavior and recommends not changing it. ✓
+- **install.sh:307-322 (AIF content deposit)**: NOT changed; §4.3 clarifies what it is (OUR content deposit) and confirms Phase 3 is kept as-is (maintainer-confirmed 2026-05-27). This patch corrects the v1 framing error; it does NOT change install.sh behavior. ✓
 - **Stage 1 patch (2026-05-27-orchestrator-skill-audit.md)**: NOT edited. This patch is Stage 2 output; Stage 1 patch is a separate closed artefact. ✓
 - **Integration matrix (2026-05-27-universal-satellite-integration-matrix.md)**: NOT edited. Used as PRIMARY input only. ✓
 - **`.claude/rules/*.md`**: NOT edited. No rule changes in this stage. ✓
@@ -353,7 +365,7 @@ All new companion prompts in §4.2 use `[y/N]` (capital N = default no). Zero oc
 **Are there any artefacts that THIS patch's scope implicitly touches without stating?**
 
 - The design touches aif-handoff integration implicitly (§4.2 explains why no prompt needed). This is documented explicitly — not a silent supersession.
-- The design touches the «universal-satellite vision» from kickoff §0. Not a new authority claim; the patch defers vision decisions to the kickoff and to the maintainer (DECISION-NEEDED D4 in §7).
+- **v2 revise backward-check:** Revise removes the false «AIF keep-or-convert» dilemma that was a v1 framing error. Does NOT silently supersede or change install.sh:307-322 behavior; does not edit install.sh; does not edit any rule file. The only artefact changed is this single research-patch file. ✓
 
 **Conclusion:** No silent supersession. No scope creep. ✓
 
@@ -381,18 +393,19 @@ All new companion prompts in §4.2 use `[y/N]` (capital N = default no). Zero oc
 - **Consequence of A**: minor effort; high reach (Cursor is widely used). Likely worth it.
 - **Consequence of B**: Cursor consumers get CLAUDE.md context only; no Cursor-native Agent-type rule.
 
-**D4 — AIF auto-install: add informational echo or convert to opt-in?**
-- **Option A (keep fully auto, add echo only)**: Print `echo "▶ AI Factory templates → .ai-factory/ (auto)"` to make the auto behavior transparent. No change to copy_safe behavior.
-- **Option B (convert to opt-in prompt)**: Add `read -rp "Install AI Factory templates? [Y/n]: "` — NOTE this would be `[Y/n]` (default yes) for back-compat, not `[y/N]`. Breaking change risk if consumer uses `--non-interactive`.
-- **Option C (no change)**: Leave current behavior and echoes as-is.
-- **Recommendation from this patch: Option A or C** — do not convert to opt-in (§4.3 reasoning). Maintainer decides between A (more transparent) and C (minimal change).
-
 **D5 — OhMyOpencode install scope (T16 ALERT: subscription configuration scope mismatch):**
 - **Option A (print command, instruct manual)**: K-1 prints `bunx oh-my-openagent install` and tells user to run it after install.sh. No automated invocation from install.sh.
 - **Option B (invoke non-interactive preset)**: K-1 invokes `bunx oh-my-openagent install --no-tui --claude=max20` automatically. Installs with Claude Max subscription preset; no interactive wizard.
 - **Option C (skip OhMyOpencode from prompt)**: Remove OhMyOpencode from K-1 scope; document in INSTALL.md instead.
 - **T16 context**: full interactive wizard is broader than «companion install» — it configures AI subscriptions. Option A or B are safer; Option C is the minimal-risk choice.
 - **Recommendation from this patch: Option A or B** — avoid Option C (OhMyOpencode is high-value per matrix §1.3). Maintainer decides invoke-vs-print.
+
+**D6 — Superpowers + TaskMaster plugin install method in K-1: active vs passive?**
+- **Option A (active install — `claude plugin install ... --scope user`)**: K-1 invokes the shell-runnable CLI subcommand directly from install.sh when user answers `y`. Plugin is installed persistently at the named scope. Requires `claude` CLI to be on PATH at install time.
+- **Option B (passive pre-seed — `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json`)**: K-1 edits the consumer's `.claude/settings.json` to pre-seed the marketplace and plugin entry. On next CC session, user sees a trust-prompt then install. NOT fully automatic but lower-friction than asking user to type the command. Does NOT require `claude` CLI on PATH during install.
+- **Consequence of A**: Requires `claude` CLI available at install time; installs immediately; stronger UX guarantee. Risk: `claude` not on PATH in some environments (docker, CI, fresh machine before CC setup).
+- **Consequence of B**: Works without `claude` CLI during install; defers to next CC session; less immediately satisfying but more resilient. Risk: user may not notice the pending install prompt.
+- **Recommendation from this patch: Option A primary, Option B as fallback** — attempt `claude plugin install ... --scope user`; if `claude` is not on PATH, fall back to Option B pre-seed + print informational note «CC plugin pre-seeded — install will complete on next CC session». Maintainer decides if fallback complexity is worth the resilience gain.
 
 ### Per-companion testability notes for Stage 5
 
