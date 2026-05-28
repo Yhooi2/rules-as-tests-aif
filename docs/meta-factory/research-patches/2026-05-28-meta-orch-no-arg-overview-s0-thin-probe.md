@@ -1,3 +1,4 @@
+<!-- scope:meta-orch-no-arg-overview-s0-thin-probe -->
 # Stage 0-thin §1.5d probe — meta-orch-no-arg-overview
 
 > **Authoritative for:** §1.5d probe shipping unit + §5b conditional verdict matrix (Stage 0-thin scope) for the `meta-orch-no-arg-overview` umbrella.
