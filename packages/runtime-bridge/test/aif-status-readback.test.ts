@@ -4,7 +4,8 @@
  * Contract under test:
  *   1. Events for OUR taskId → status transitions correctly + state-file appended ✓
  *   2. Events for OTHER taskIds → ignored (no state change, no state-file write) ✓
- *   3. WS disconnect mid-task → awaitDone rejects with BackendError code 'unavailable' ✓
+ *   3. WS disconnect mid-task → awaitDone rejects with BackendError code 'unavailable'
+ *      AND state.md notes the disconnection (event=ws_disconnected) — not a silent drop ✓
  *   4. State-file unset → status processing clean no-op (no crash) ✓
  *   5. Bridge-discipline: AifHandoffBackend.awaitDone surfaces WS drop as BackendError('unavailable') ✓
  *   6. getStatus returns mapped TaskStatus from REST snapshot ✓
@@ -289,6 +290,61 @@ describe('Test 3 — WS disconnect mid-task → BackendError unavailable (bridge
         err.code === 'unavailable' &&
         err.backend === 'aif-handoff';
     });
+  });
+
+  it('disconnect with stateFilePath set → state.md NOTES the disconnection (not a silent drop)', async () => {
+    // Source: aifWsStatus.ts onclose handler — appendStateLine('event=ws_disconnected …')
+    // Kickoff §3 SW-C item 5: "aif-handoff disconnect → state.md notes the disconnection
+    // AND awaitDone returns a graceful error (NOT silent drop)". Asserts BOTH halves.
+    const taskId = 'task-drop-state-333b';
+    const sandbox = makeSandbox();
+    const stateFile = join(sandbox, 'state.md');
+    const { Ctor, ctrl } = makeFakeWebSocket();
+
+    const p = awaitTaskDone({
+      taskId,
+      wsUrl: 'ws://localhost:3009/ws',
+      stateFilePath: stateFile,
+      maxReconnectAttempts: 0, // exhaust immediately → terminal disconnect note
+      WebSocketImpl: Ctor,
+    });
+
+    ctrl.triggerOpen();
+    ctrl.triggerClose();
+
+    // Half 1: graceful error (not silent resolve)
+    await expect(p).rejects.toSatisfy((err: unknown) =>
+      err instanceof BackendError && err.code === 'unavailable',
+    );
+
+    // Half 2: state.md records the disconnection event
+    const contents = readFileSync(stateFile, 'utf8');
+    expect(contents).toContain('event=ws_disconnected');
+    expect(contents).toContain(`taskId=${taskId}`);
+    expect(contents).toContain('terminal=true');
+  });
+
+  it('NEGATIVE: a clean done does NOT write a ws_disconnected event to state.md', async () => {
+    // Guards against the disconnect note firing on the happy path.
+    const taskId = 'task-clean-state-333c';
+    const sandbox = makeSandbox();
+    const stateFile = join(sandbox, 'state.md');
+    const { Ctor, ctrl } = makeFakeWebSocket();
+
+    const p = awaitTaskDone({
+      taskId,
+      wsUrl: 'ws://localhost:3009/ws',
+      stateFilePath: stateFile,
+      WebSocketImpl: Ctor,
+    });
+
+    ctrl.triggerOpen();
+    ctrl.triggerMessage({ type: 'task:updated', payload: { id: taskId, title: 'T', status: 'done' } });
+    await p;
+
+    const contents = readFileSync(stateFile, 'utf8');
+    expect(contents).toContain('status=done');
+    expect(contents).not.toContain('ws_disconnected'); // Must NOT spuriously note a disconnect
   });
 
   it('AifHandoffBackend.awaitDone surfaces WS drop as BackendError unavailable (integration)', async () => {

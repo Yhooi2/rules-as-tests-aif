@@ -42,7 +42,9 @@
  *     resolves on terminal status (done/verified → success, blocked_external → !success).
  *   - WS disconnect → rejects with BackendError('unavailable').
  *   - Bounded reconnect (≤3 attempts) before giving up.
- *   - stateFilePath: when set, appends status lines to the file (append-only, no rewrite).
+ *   - stateFilePath: when set, appends status lines AND disconnect events
+ *     (event=ws_disconnected …) to the file (append-only, no rewrite) — item 5:
+ *     a disconnect is noted, never silently dropped.
  *   - getTaskStatus: REST GET /tasks/:id (non-blocking point-in-time snapshot).
  */
 import { WebSocket } from 'node:http';
@@ -169,14 +171,24 @@ export function awaitTaskDone(opts: AwaitTaskDoneOptions): Promise<AwaitTaskDone
       reject(err);
     }
 
-    function appendStateFile(status: string) {
+    /**
+     * Append an arbitrary key=value line to the state file (append-only).
+     * Used for both status transitions (status=…) and lifecycle events
+     * (event=ws_disconnected …) per kickoff §3 SW-C item 5: a disconnect MUST
+     * be noted in state.md, not silently dropped.
+     */
+    function appendStateLine(content: string) {
       if (!stateFilePath) return;
       try {
-        const line = `[${new Date().toISOString()}] taskId=${taskId} status=${status}\n`;
+        const line = `[${new Date().toISOString()}] taskId=${taskId} ${content}\n`;
         appendFileSync(stateFilePath, line, 'utf8');
       } catch {
         // Best-effort; don't crash the stream for a file write error.
       }
+    }
+
+    function appendStateFile(status: string) {
+      appendStateLine(`status=${status}`);
     }
 
     function connect() {
@@ -224,9 +236,13 @@ export function awaitTaskDone(opts: AwaitTaskDoneOptions): Promise<AwaitTaskDone
         currentWs = null;
         if (attemptsLeft > 0) {
           attemptsLeft--;
-          // Brief pause before reconnect — avoids tight loop on flapping server
+          // Note the disconnect in state.md (item 5: never a silent drop), then
+          // pause briefly before reconnect — avoids tight loop on flapping server.
+          appendStateLine(`event=ws_disconnected reconnecting attempts_left=${attemptsLeft}`);
           setTimeout(connect, 100);
         } else {
+          // Terminal disconnect: note it in state.md before surfacing the error.
+          appendStateLine('event=ws_disconnected terminal=true');
           fail(
             new BackendError(
               `aif-handoff WebSocket disconnected after ${maxReconnectAttempts} reconnect attempt(s) — task ${taskId}`,
