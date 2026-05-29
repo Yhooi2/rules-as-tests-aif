@@ -232,6 +232,8 @@ jobs:
         run: bash tests/hooks/s17-trailer-hook.test.sh
       - name: Run PREPUSH_UPSTREAM_REF override paired-negative (non-main base backstop)
         run: bash tests/hooks/prepush-upstream-ref.test.sh
+      - name: Run pre-push base-ref stdin-detection paired-negative (hook-base-ref-detection I-phase)
+        run: bash tests/hooks/prepush-fallback-base-ref.test.sh
       - name: Run ci-success aggregate-gate paired-negative
         run: bash scripts/ci-success-gate.test.sh
       - name: Run end-of-turn claim-scan hook test (autonomous-self-audit §11.1)
