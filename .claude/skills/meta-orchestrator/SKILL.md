@@ -326,7 +326,7 @@ Use `${CLAUDE_SKILL_DIR}/templates/state.md.template` as the skeleton; fill §1 
 | R-phase, multiple sequential | Queue mode (sequential) | ≥2 R-phase kickoffs queued; each completes before the next begins (queue-mode.md §1 Triggers: «≥2 sequential kickoffs»). |
 | R-phase, multiple parallel | Mode A × N inline Agents | Single-session multi-dispatch via Agent tool calls in one message. No worktrees needed (R-phases produce docs, not code). |
 | Execution-build, single | Mode A inline | Direct Opus session with kickoff pasted or Read. |
-| Execution-build, parallel ≥2 in same stage | Mode B × N worktrees | Per parallel-subwave-isolation.md §1: `git worktree add ../<repo>-<wave>-<N> staging && git checkout -b <branch>` for each session. SP `using-git-worktrees` SSOT #65 is the preventive mechanism (dogfooded, not rebuilt). |
+| Execution-build, parallel ≥2 in same stage | Mode B × N worktrees | Preferred: `claude -w <umbrella>-<wave-N>` per CC native `--worktree` (worktree under `.claude/worktrees/`, branch `worktree-<name>`, base `origin/HEAD`; PR #279 hook auto-symlinks `node_modules`). Fallback (non-CC harness or settings.json unwired): `git worktree add ../<repo>-<wave>-<N> staging && git checkout -b <branch>` per `parallel-subwave-isolation.md §1`. SP `using-git-worktrees` SSOT #65 is the upstream preventive mechanism (dogfooded, not rebuilt). |
 | Wiring (thin CI/config) | Mode A inline | Single session; low blast radius; worktrees add overhead without isolation benefit. |
 | Manual liveness probing | Session-bound | Never CI-side. SP companion-type. |
 
@@ -350,7 +350,7 @@ When Mode B worktrees are unavailable (e.g. filesystem constraints per parallel-
 - «Queue mode» = orchestrator skill queue-mode.md vocabulary.
 
 **Antipatterns (§7.6 binding):**
-- `#worker-dispatch-via-subagent` — Worker dispatch via Agent tool from the meta-orchestrator session. Agent tool is ONLY for Phase -1 read-only reviewer (`reviewer-discipline.md §2`) + read-only research subagents (text return). Write-task Worker dispatch belongs in a fresh CC session opened by the maintainer pasting a §10 1-liner block. Channel matters — maintainer-paste = external loop-close; Agent-tool = subagent = wrong channel for writes. **Falsifier:** the channel boundary holds even when prompt shapes converge — the test is «who invokes», not «what the prompt looks like».
+- `#worker-dispatch-via-subagent` — Worker dispatch via Agent tool from the meta-orchestrator session. Agent tool is ONLY for Phase -1 read-only reviewer (`reviewer-discipline.md §2`) + read-only research subagents (text return). Write-task Worker dispatch belongs in a fresh CC session opened by the maintainer pasting a §10 1-liner block. Channel matters — maintainer-paste = external loop-close; Agent-tool = subagent = wrong channel for writes. **Empirical backstop:** [bug #39886](https://github.com/anthropics/claude-code/issues/39886) confirms Agent tool + `isolation:"worktree"` for WRITE tasks silently fails (closed-as-duplicate; status uncertain in CC 2.1.143) — independent evidence the channel boundary holds for writes; read-only Agent dispatch remains OK. **Falsifier:** the channel boundary holds even when prompt shapes converge — the test is «who invokes», not «what the prompt looks like».
 - `#commit-on-behalf-of-worker` — the meta-orchestrator running `git commit` / `gh pr create` for work it dispatched. Worker commits its own work under its own audit trail. **Falsifier:** Worker session crashed mid-task with the diff fully authored there → surface to maintainer, never silently absorb.
 ---
 ## §5.5 Bundle composition
@@ -456,7 +456,7 @@ SP `requesting-code-review` upstream problem class = «dispatch a reviewer subag
 
 **How to invoke the dogfood test:**
 
-1. From the worktree `rules-as-tests-aif-meta-orchestrator-iphase/`, run:
+1. Open a fresh worktree session via `claude -w meta-orchestrator-iphase` (CC native `--worktree`; manual `git worktree add` fallback when outside CC). In the new session, run:
 
    ```bash
    bash .claude/skills/meta-orchestrator/helpers/plan-currency-check.sh meta-orchestrator-iphase

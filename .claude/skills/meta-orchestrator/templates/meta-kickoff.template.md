@@ -121,29 +121,7 @@ If any of the four checks fails → fix the body before pushing. CI catches the 
 
 **If your sub-wave target file does NOT match the path list above:** ignore §4b. The mandate is path-scoped.
 
----
-
-## §4a Worker worktree setup (FIRST step in any worker session — Gap-3 round-2 follow-up)
-
-If the worker is dispatched into a `git worktree add`-created directory (default for parallel sub-waves per `parallel-subwave-isolation.md §1`), reconstitute the `node_modules` plumbing the orchestrator's primary workdir already has. Without it, `npm` / test / build commands fail (`packages/core` consumes hoisted modules via a workspaces symlink that `git worktree add` does NOT copy — burns Opus on rediscovery every time).
-
-**Run BEFORE any `npm` / test / build command (idempotent — no-op in primary workdir):**
-
-```bash
-GIT_DIR_REL=$(git rev-parse --git-dir)
-GIT_COMMON_DIR=$(git rev-parse --git-common-dir)
-if [[ "$GIT_DIR_REL" != "$GIT_COMMON_DIR" ]]; then
-  # Inside a worktree (not primary workdir). Share node_modules from primary.
-  PRIMARY_WORKDIR=$(dirname "$(cd "$GIT_COMMON_DIR" && pwd)")
-  [[ ! -e node_modules ]] && ln -sfn "$PRIMARY_WORKDIR/node_modules" node_modules
-  [[ ! -e packages/core/node_modules ]] && ln -sfn ../../node_modules packages/core/node_modules
-  echo "worktree setup OK — node_modules + packages/core/node_modules linked to primary"
-fi
-```
-
-Detection contract: `git rev-parse --git-dir` returns `.git` (relative) in the primary workdir, an absolute path in a worktree; the inequality is the worktree marker (same pattern Superpowers `using-git-worktrees` uses for its nested-worktree skip, per `parallel-subwave-isolation.md §4`).
-
-Skip when the worker runs in the shared/primary workdir — the `if` block is a no-op.
+> **Note:** §4a Worker worktree setup was REMOVED 2026-05-29 per PR #271 §8 item 4. PR #279 (WorktreeCreate hook `.claude/hooks/worktree-setup.sh`) now handles `node_modules` symlinks transparently when the maintainer has applied the §Install patch to `.claude/settings.json`. For unwired-hook setups or non-CC harnesses, fall back to `parallel-subwave-isolation.md §1` (manual `git worktree add` + symlink bash). Falsifier: if a Worker session reports `npm` / test failures on first run AND the hook is unwired, restore the §4a block (`git revert <this-commit>`).
 
 ---
 
