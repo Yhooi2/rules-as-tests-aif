@@ -57,6 +57,16 @@ if [[ ! -d "${PROMPTS_DIR}" ]]; then
   exit 0
 fi
 
+# ── BRANCH-MATCHER: fetch merged-PR headRefNames once (Stage 2 of meta-orch-no-arg-overview) ─
+# Counters T-NoArg-A `#open-prs-zero-equals-no-work`: open_prs=0 alone is not a
+# completion signal. A merged PR with headRefName `feat/<umbrella>` (or fix/chore/
+# docs/research prefix) signals umbrella DONE via exact-match after prefix strip.
+# Multi-stage umbrellas use `feat/<umbrella>-s<N>` branches — these stay candidates
+# by convention (no false DONE on partial-progress, matching kickoff §3 self-app test).
+# Counters T-NoArg-B: does NOT grep '#<num>' from kickoff (kickoff written before PRs).
+# Counters T-NoArg-C: does NOT rely on PR-title word overlap.
+merged_prs_json="$(${MO_GH_BIN} pr list --state merged --json number,headRefName --limit 100 2>/dev/null || echo '[]')"
+
 # ── REAL KICKOFF ENTRIES (existing behaviour — T17 preserve) ─────────────────
 
 for dir in "${PROMPTS_DIR}"/*/; do
@@ -97,7 +107,22 @@ for dir in "${PROMPTS_DIR}"/*/; do
   open_prs="$(${MO_GH_BIN} pr list --search "is:open head:${name}" --json number --limit 5 2>/dev/null \
     | grep -c '"number"' || true)"
 
-  echo "${name} type=${wave_type} kickoff=exists volume=${volume} open_prs=${open_prs} loc=${loc}"
+  # Branch-matcher (consumes merged_prs_json fetched above): exact-match umbrella
+  # name against merged-PR headRefName after stripping conventional branch prefix.
+  # Skipped silently if jq absent or merged_prs_json is empty.
+  done_pr=""
+  if command -v jq &>/dev/null && [[ -n "${merged_prs_json}" && "${merged_prs_json}" != "[]" ]]; then
+    done_pr="$(echo "${merged_prs_json}" \
+      | jq -r --arg name "${name}" \
+          '.[] | select((.headRefName | sub("^(feat|fix|chore|docs|research)/"; "")) == $name) | .number' \
+      2>/dev/null | head -n1 || true)"
+  fi
+
+  if [[ -n "${done_pr}" ]]; then
+    echo "${name} type=${wave_type} kickoff=exists volume=${volume} open_prs=${open_prs} loc=${loc} status=DONE done_pr=${done_pr}"
+  else
+    echo "${name} type=${wave_type} kickoff=exists volume=${volume} open_prs=${open_prs} loc=${loc}"
+  fi
 done
 
 # ── SYNTHETIC ENTRIES (L1 extension — non-kickoff discovery surfaces) ────────
