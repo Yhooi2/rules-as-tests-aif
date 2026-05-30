@@ -121,7 +121,7 @@ If any of the four checks fails → fix the body before pushing. CI catches the 
 
 **If your sub-wave target file does NOT match the path list above:** ignore §4b. The mandate is path-scoped.
 
-> **Note:** §4a Worker worktree setup was REMOVED 2026-05-29 per PR #271 §8 item 4. PR #279 (WorktreeCreate hook `.claude/hooks/worktree-setup.sh`) now handles `node_modules` symlinks transparently when the maintainer has applied the §Install patch to `.claude/settings.json`. For unwired-hook setups or non-CC harnesses, fall back to `parallel-subwave-isolation.md §1` (manual `git worktree add` + symlink bash). Falsifier: if a Worker session reports `npm` / test failures on first run AND the hook is unwired, restore the §4a block (`git revert <this-commit>`).
+> **Note:** §4a Worker worktree setup was REMOVED 2026-05-29 per PR #271 §8 item 4. PR #279 (WorktreeCreate hook `.claude/hooks/worktree-setup.sh`) now handles `node_modules` symlinks transparently when the maintainer has applied the §Install patch to `.claude/settings.json`. For unwired-hook setups or non-CC harnesses (Cursor, Aider, Codex, plain CLI), use the portable sibling `bash scripts/create-worktree.sh <name>` — same `.claude/worktrees/<name>/` layout + `node_modules` symlinks, no CC dependency, base ref auto-resolved (Bug 1 fix). See `parallel-subwave-isolation.md §1`. Falsifier: if a Worker session reports `npm` / test failures on first run AND neither the hook nor the script ran, restore the §4a block (`git revert <this-commit>`).
 
 ---
 
