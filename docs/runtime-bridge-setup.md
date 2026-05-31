@@ -14,7 +14,7 @@ bash packages/runtime-bridge/scripts/setup-runtime-bridge.sh
 
 The script probes for a reachable aif-handoff coordinator, then asks whether to enable the bridge:
 
-- **yes** → it writes the required `RUNTIME_BRIDGE_*` env to your shell rc, copies the PostToolUse hook into `.claude/hooks/`, and prints the exact `settings.json` entry for you to paste (it never edits `settings.json` for you — that file is agent-protected).
+- **yes** → it writes the required `RUNTIME_BRIDGE_*` env to your shell rc, copies the PostToolUse hook into `.claude/hooks/`, and **offers to auto-write** the PostToolUse entry to `.claude/settings.json` (idempotent — skips if the entry is already present; backs up to `settings.json.bak` before writing; JSON-validates before swapping; preserves all existing hooks). Pass `--no-write-settings` or decline the prompt to fall back to printing the snippet for manual pasting. Note: the *agent* (Claude Code) is deny-listed from editing `settings.json` via its `Edit(.claude/settings.json)` / `Write(.claude/settings.json)` tool permissions — that deny-list binds the agent's tool calls, not this human-run setup script, which is why the script may write safely with backup + validation + consent.
 - **no** → it prints the per-task opt-out marker and changes nothing.
 
 The script **detects and instructs — it never installs aif-handoff for you** (`docker compose up`, MCP server bring-up, and the `transport: "cli"` profile change are yours to run).
