@@ -277,6 +277,17 @@ Adversarial read of this patch:
 
 ---
 
+## §9 Correction (2026-06-01, post-merge — DeepWiki re-survey)
+
+The original survey ran **WebSearch-only (no DeepWiki, see §1)**, which produced two Superset errors corrected here:
+
+1. **Row #10 (Slack-agent) is WRONG.** WebSearch «Superset Slack» surfaced **Apache Superset** (the BI tool), not `superset.sh` → false `INCONCLUSIVE-drop`. DeepWiki on `superset-sh/superset` confirms a real **Slack-agent** (`runSlackAgent`). Re-verdict logged as **SSOT #98** (REFERENCE-shipped / ADOPT-available-operator). `#negative-existence-claim` false-negative (§1.4 adversarial check unreachable without DeepWiki).
+2. **Two-axis reframe (load-bearing).** The survey's Superset verdicts were computed on the *shipped-to-consumer* axis only. The maintainer **runs Claude Code through Superset**, so on the *operator-workflow* axis its features (MCP `start_agent_session`, multi-device `deviceId`-dispatch, session-persistence, notifications, Slack) ARE available and may enter `/meta-orchestrator` as operator-side enhancements with graceful degradation (per `dual-implementation-discipline.md §3`, like runtime-bridge/aif). SSOT **#86 clarified** + **#99** (multi-device, the one genuinely-new capability) added. «REJECT #86» = shipped-substrate only, NOT «operator may not use Superset».
+
+Lesson: a WebSearch-only survey of a niche-named tool that collides with a famous namesake (`superset.sh` vs Apache Superset) is structurally prone to false-negatives — DeepWiki / source-confirm is mandatory for such candidates.
+
+---
+
 ## 🟢 Простыми словами
 
 Я прошёл по всем известным фичам Superpowers / Superset / aif-handoff, которые у нас ещё не зарегистрированы в SSOT, и проверил каждую против стадий пайплайна `/meta-orchestrator`. Из 11 рассмотренных — 3 советую принять **сейчас как vocabulary** (никакого кода, только обновить термины в правилах/скилле): `tracing-knowledge-lineages` (для Phase 4.5 — ровно то, что я в этом патче делал вручную), `when-stuck` (для воркер-side fork-discipline — парная #88 autoQueueMode), `preserving-productive-tensions` (для `reviewer-discipline.md §2` — это и есть upstream-имя нашего правила). Ещё одну — Superset Automations + MCP — рекомендую как fast-follow с уточнённым триггером пересмотра SSOT #86. **T-CCS-B сработал**: в kickoff §2 было «Superset cron — DeepWiki не нашёл»; я перепроверил против [docs.superset.sh/automations](https://docs.superset.sh/automations) — **cron есть** (RRule расписания + `superset agents run`). Brainstorm Visual Companion и 4 из 5 problem-solving скилов — REJECT/KEEP-NARROW (либо нет surface, либо subsume под `when-stuck`). Slack-agent для Superset не подтвердился — drop INCONCLUSIVE. Пять новых строк #92–#96 в SSOT + два update'а (#55 Last reviewed, #86 trigger sharpening) — все append-only, без переписывания старых вердиктов. PR никаких файлов вне `docs/meta-factory/` не трогает. Решение по adopt-now — за тобой.
