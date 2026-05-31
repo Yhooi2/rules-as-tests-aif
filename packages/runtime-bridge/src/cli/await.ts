@@ -54,6 +54,49 @@ function parseArgs(argv: string[]): { taskId?: string; once: boolean; timeoutMs?
   return { taskId, once, timeoutMs };
 }
 
+/**
+ * Always surface the clickable task URL, and reconcile aif's optimistic 'done'.
+ * aif auto-closes to `done` when its review finds "no blocking findings" — which
+ * is NOT "the work is really complete". When aif's own review advisory flags a
+ * zero-code halt or a "should be blocked, not done" mismatch, relabel as BLOCKED
+ * so the coordinator re-dispatches instead of trusting a false 'done'.
+ * (implementationLog is the agent's reasoning transcript, NOT code — it is non-empty
+ * even on a no-code halt, so the signal is the review advisory, not log length.
+ * Live-confirmed task a4bdff98, 2026-05-31: log=9490 chars, zero code.)
+ * Best-effort: REST detail fetch failures are swallowed (links still printed).
+ */
+async function printLinksAndReconcile(
+  taskId: string,
+  backendName: string,
+  status: string,
+): Promise<void> {
+  if (backendName !== 'aif-handoff') return;
+  const base = process.env['RUNTIME_BRIDGE_AIF_URL'] ?? 'http://localhost:3009';
+  process.stderr.write(`[runtime-bridge] view: ${base}/tasks/${taskId}\n`);
+  if (status !== 'done') return;
+  try {
+    const res = await fetch(`${base}/tasks/${taskId}`);
+    if (!res.ok) return;
+    const t = (await res.json()) as { reviewComments?: string };
+    const rc = t.reviewComments ?? '';
+    // aif's review explicitly flags the mismatch in its advisory text.
+    const blockedSignal =
+      /zero code|should be .{0,12}blocked|as .{0,8}['"]?blocked|treat .{0,40}blocked|BLOCKER-\d/i.test(rc);
+    if (blockedSignal) {
+      const advisory = rc.replace(/\s+/g, ' ').slice(0, 240);
+      process.stderr.write(
+        `[runtime-bridge] ⚠ RECONCILE: aif reports 'done' but its review flags a no-code / ` +
+          `blocked halt — treat as BLOCKED, not done. Likely an orchestration/meta kickoff or an ` +
+          `unmet precondition. Re-dispatch a single buildable sub-wave kickoff.` +
+          (advisory ? ` Advisory: ${advisory}` : '') +
+          '\n',
+      );
+    }
+  } catch {
+    /* best-effort reconcile — never fail the read-back on a detail-fetch error */
+  }
+}
+
 async function main(): Promise<void> {
   const { taskId, once, timeoutMs } = parseArgs(process.argv.slice(2));
 
@@ -75,6 +118,7 @@ async function main(): Promise<void> {
     if (once) {
       const status = await backend.getStatus(handle);
       process.stdout.write(JSON.stringify(status) + '\n');
+      await printLinksAndReconcile(taskId, backend.name, status.status);
       // A point-in-time snapshot: exit 0 unless the backend reports an error state.
       process.exit(status.status === 'error' ? 1 : 0);
     }
@@ -86,6 +130,7 @@ async function main(): Promise<void> {
     }
     const result = await backend.awaitDone(handle, timeoutMs);
     process.stdout.write(JSON.stringify(result) + '\n');
+    await printLinksAndReconcile(taskId, backend.name, result.success ? 'done' : 'error');
     process.exit(result.success ? 0 : 1);
   } catch (err) {
     if (err instanceof BackendError) {

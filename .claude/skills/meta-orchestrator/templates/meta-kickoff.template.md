@@ -148,7 +148,11 @@ export AGENT_SKIP_REVIEW=false
 
 **Trust is a tunable dial, not baked-in distrust (design §1):** `MAX_REVIEW_ITERATIONS` high = trust aif more / low = hand off more. The loop (collect → resolve-in-chat → resume) is **identical at any dial setting** — so the trust level never blocks the build. Start trust-but-verify (middle), run 2–3 real umbrellas, then adjust by observed error rate. Do NOT over-design the dial upfront.
 
-**Pre-dispatch gate (run before `dispatch.ts`):** confirm this kickoff contains the Lever-2 block (`grep -q 'park it as a question' <this-kickoff>`) AND the env carries Lever-1 (`echo "$AGENT_MAX_REVIEW_ITERATIONS"` non-empty). Either missing → STOP; do not dispatch autonomously.
+**Form (load-bearing — what to actually dispatch):** aif treats the dispatched kickoff as ONE implementation spec. Dispatch a **single buildable sub-wave kickoff** (e.g. «build `cli/questions.ts`: read parked questions from aif REST, print them»), NOT this `-meta-launch` orchestration wrapper — a meta-plan (launch-table + stage-gates + N sub-waves) gives aif no single task to build, so it investigates and **halts with zero code** (live-confirmed task a4bdff98, 2026-05-31: $5.66 spent, no code). `dispatch.ts` emits a warning when handed a meta-launch kickoff.
+
+**Read-back:** `tsx packages/runtime-bridge/src/cli/dispatch.ts <kickoff>` prints the task URL (`$RUNTIME_BRIDGE_AIF_URL/tasks/<id>`); `tsx packages/runtime-bridge/src/cli/await.ts <taskId> --once` prints the URL again and **reconciles aif's optimistic `done`→BLOCKED** when its review flags a no-code halt (aif auto-closes on "no blocking findings", which is not "really complete").
+
+**Pre-dispatch gate (run before `dispatch.ts`):** confirm this kickoff contains the Lever-2 block (`grep -q 'park it as a question' <this-kickoff>`) AND the env carries Lever-1 (`echo "$AGENT_MAX_REVIEW_ITERATIONS"` non-empty) AND the target is a single buildable sub-wave kickoff (NOT `-meta-launch`). Any missing → STOP; do not dispatch autonomously.
 
 ---
 
