@@ -24,9 +24,12 @@
 #   This hook exits 0 always (injection, never a gate per
 #   .claude/rules/rule-enforcement-channel-selection.md §4).
 #
-# NC-3 (round-6): Do NOT wire this into .claude/settings.json automatically.
-#   The agent-self-protection deny-list blocks Write/Edit on settings.json.
-#   Maintainer wires via the «Maintainer apply manually» section in the SW-B PR body.
+# NC-3 (round-6, scoped 2026-05-31): The AI *agent* must NOT write settings.json —
+#   the deny-list ("Edit(.claude/settings.json)", "Write(.claude/settings.json)") in
+#   .claude/settings.json blocks the agent's Write/Edit tool calls.
+#   The *human-run consumer setup script* (packages/runtime-bridge/scripts/
+#   setup-runtime-bridge.sh) MAY write settings.json with backup + JSON-validation +
+#   consent — it is not bound by the agent tool-permission deny-list.
 set -uo pipefail
 
 # ── Dependency guard ─────────────────────────────────────────────────────────

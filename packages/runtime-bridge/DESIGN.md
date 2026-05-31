@@ -50,6 +50,32 @@ PostToolUse (CC hook)
   - `.claude/hooks/runtime-bridge-dispatch.sh` — new PostToolUse hook
   - PR body «Maintainer apply manually» section — settings.json PostToolUse entry snippet
 
+## NC-3 scope history (2026-05-31)
+
+**Original (round-6):** NC-3 = "print, don't auto-write settings.json" — the setup
+script only printed the PostToolUse JSON snippet for the consumer to paste by hand,
+because `settings.json` was described as "agent-self-protected".
+
+**Scoped 2026-05-31:** NC-3 applies only to the *AI agent's tool calls*. The
+`"Edit(.claude/settings.json)"` / `"Write(.claude/settings.json)"` entries in
+`.claude/settings.json` are Claude Code *tool-permission* deny-list entries — they
+block the agent's Edit/Write tool invocations, not filesystem writes made by a
+human-run shell script. Therefore:
+
+- **Agent deny-list stays intact** — the agent must never write `settings.json` via
+  its Edit/Write tools.
+- **Human-run consumer setup script** (`packages/runtime-bridge/scripts/
+  setup-runtime-bridge.sh`) **may** write `settings.json` with:
+  - explicit user consent (Y/n sub-prompt, or `--no-write-settings` to skip),
+  - idempotency check (skip if runtime-bridge entry already present),
+  - backup to `settings.json.bak` before writing,
+  - JSON validation before atomic swap,
+  - print-only fallback when declined, `--no-write-settings` passed, or python3 absent.
+
+**Tracked here because** the original NC-3 decision lived in
+`.claude/orchestrator-prompts/` (gitignored); this DESIGN.md is the repo-tracked
+rationale home for the scoping.
+
 ### Self-reflexive (T15)
 
 - T1: negative-existence claim («no `accept_existing_plan`») verified by reading createTask.ts + pushPlan.ts + syncStatus.ts + updateTask.ts + index.ts — 5 files, ≥5 samples. ✓
