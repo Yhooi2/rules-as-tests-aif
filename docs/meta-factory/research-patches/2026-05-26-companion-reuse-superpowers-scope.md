@@ -19,7 +19,7 @@ Superpowers `brainstorming` v5.0+ introduces **scope-assessment** — a judgment
 
 **Verdict: ADOPT VOCABULARY** — «sub-project boundary as decision moment» is the correct term for what our meta-orchestrator does between umbrella stages. REJECT automated-orchestration analogy — Superpowers has none; ours requires explicit BUILD.
 
-New SSOT row proposed at **[next-available-slot]** (parallel sub-waves A and C may reserve rows first; maintainer assigns final ID at merge).
+New SSOT row proposed at **#90** (parallel sub-waves A and C may reserve rows first; maintainer assigns final ID at merge).
 
 ---
 
@@ -205,16 +205,16 @@ The «sub-project boundary as decision moment» concept from Superpowers brainst
 
 **Verdict on existing SSOT rows:** No amendments needed to existing Superpowers rows (#55/#64/#65/#71/#74/#76) — this is a net-new capability surface (brainstorming scope-assessment) not covered by any of them.
 
-**New SSOT row:** YES — proposed at **[next-available-slot]** (see §5).
+**New SSOT row:** YES — proposed at **#90** (see §5).
 
 ---
 
-## §5 Recommendation: new SSOT row at [next-available-slot]
+## §5 Recommendation: new SSOT row at #90
 
 Row template for maintainer to insert at the next available ID after parallel sub-waves A and C have claimed their rows:
 
 ```text
-| [next-available-slot] | Superpowers (`obra/superpowers`) `brainstorming` v5.0+ scope-assessment — «multiple independent subsystems» trigger that gates spec refinement until decomposition into sub-projects (each with its own brainstorm → spec → plan → implementation cycle); `writing-plans` Scope Check backstop; no automated orchestration — user manually re-invokes per sub-project; judgment-based (no LOC/phase-count threshold) | `/meta-orchestrator` §2 vocabulary — «sub-project boundary as decision moment» maps to our «umbrella boundary as decision moment» before Stage N+1 dispatch; confirms «scope gating before planning» as externally-validated pattern; REJECT automated-orchestration analogy (Superpowers has none; our Stage-gate automation is BUILD) | 2026-05-26 | 2026-05-26 | ADOPT VOCABULARY | Sub-wave D DeepWiki sweep (5 probes with explicit within-one-project disambiguation per T-CR-A; all confirmed via `obra/superpowers` wiki 2026-05-26). **T16 problem-class check:** upstream = «within-session scope gating for single feature request → multiple sub-projects; AI judgment; no automation»; ours = «cross-session umbrella-stage sequencing; deterministic LOC/surface classifier; scripted Stage N gate». **Match? Vocabulary ~80%, mechanism ~15%, automation 0%.** Sub-project boundary concept transfers as vocabulary; scripted Stage sequencing is BUILD. No existing Superpowers rows (#55/#64/#65/#71/#74/#76) cover brainstorming scope-assessment — new row warranted. | Superpowers ships automated multi-sub-project orchestration (currently none — only sequential manual); OR brainstorming scope-assessment ships a deterministic heuristic (LOC threshold, phase count) making mechanism match upgrade to ADAPT viable. |
+| #90 | Superpowers (`obra/superpowers`) `brainstorming` v5.0+ scope-assessment — «multiple independent subsystems» trigger that gates spec refinement until decomposition into sub-projects (each with its own brainstorm → spec → plan → implementation cycle); `writing-plans` Scope Check backstop; no automated orchestration — user manually re-invokes per sub-project; judgment-based (no LOC/phase-count threshold) | `/meta-orchestrator` §2 vocabulary — «sub-project boundary as decision moment» maps to our «umbrella boundary as decision moment» before Stage N+1 dispatch; confirms «scope gating before planning» as externally-validated pattern; REJECT automated-orchestration analogy (Superpowers has none; our Stage-gate automation is BUILD) | 2026-05-26 | 2026-05-26 | ADOPT VOCABULARY | Sub-wave D DeepWiki sweep (5 probes with explicit within-one-project disambiguation per T-CR-A; all confirmed via `obra/superpowers` wiki 2026-05-26). **T16 problem-class check:** upstream = «within-session scope gating for single feature request → multiple sub-projects; AI judgment; no automation»; ours = «cross-session umbrella-stage sequencing; deterministic LOC/surface classifier; scripted Stage N gate». **Match? Vocabulary ~80%, mechanism ~15%, automation 0%.** Sub-project boundary concept transfers as vocabulary; scripted Stage sequencing is BUILD. No existing Superpowers rows (#55/#64/#65/#71/#74/#76) cover brainstorming scope-assessment — new row warranted. | Superpowers ships automated multi-sub-project orchestration (currently none — only sequential manual); OR brainstorming scope-assessment ships a deterministic heuristic (LOC threshold, phase count) making mechanism match upgrade to ADAPT viable. |
 ```
 
 **Note on row-number collision avoidance:** Sub-waves A and C are dispatched in parallel and may also propose new rows. Do NOT hardcode the ID. Maintainer resolves ordering at merge time per kickoff §2 collision-avoidance rule.
@@ -231,7 +231,7 @@ Checking this research patch against all currently-active disciplines:
 
 3. **Commit-level (capability-commit gate + `Prior-art:` trailer):** Research patches are explicitly NOT capability commits per CLAUDE.md «Refactors, doc edits, test additions for existing capabilities — NOT capability commits». The `Prior-art:` trailer convention IS appropriate for this commit as it records a BFR-default verdict. Trailer included in commit message.
 
-4. **Build-vs-reuse SSOT (prior-art-evaluations.md):** Proposed new row at [next-available-slot]; maintains append-only pattern per §3. No amendment to existing rows needed (brainstorming scope-assessment is not covered by any existing row).
+4. **Build-vs-reuse SSOT (prior-art-evaluations.md):** Proposed new row at #90; maintains append-only pattern per §3. No amendment to existing rows needed (brainstorming scope-assessment is not covered by any existing row).
 
 5. **Doc-authority (artefacts carry compliant headers):** This patch carries `Authoritative for:` / `NOT authoritative for:` header. Compliant with doc-authority-hierarchy.md §2.
 
@@ -273,7 +273,7 @@ Checking that this patch does not silently supersede or conflict with existing a
 
 ## §8 See also
 
-- [`docs/meta-factory/prior-art-evaluations.md`](../prior-art-evaluations.md) — existing Superpowers rows #55/#64/#65/#71/#74/#76; proposed new row at [next-available-slot].
+- [`docs/meta-factory/prior-art-evaluations.md`](../prior-art-evaluations.md) — existing Superpowers rows #55/#64/#65/#71/#74/#76; proposed new row at #90.
 - [`.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md`](../../../.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md) — umbrella scope; Sub-wave D spec.
 - [`docs/meta-factory/research-patches/2026-05-23-meta-orchestrator-prior-art.md`](2026-05-23-meta-orchestrator-prior-art.md) — initial meta-orchestrator R-phase that under-credited brainstorming scope-assessment due to T-CR-A muddied-scope framing.
 - [`.claude/rules/ai-laziness-traps.md §2 T16`](../../../.claude/rules/ai-laziness-traps.md) — the T16 «pattern-matching-on-name» trap this umbrella corrects against.

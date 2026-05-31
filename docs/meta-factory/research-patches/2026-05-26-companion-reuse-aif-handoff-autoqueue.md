@@ -3,7 +3,7 @@
 
 > **Status:** Sub-wave A of `companion-reuse-deep-dive` umbrella.
 > **Date:** 2026-05-26.
-> **Authoritative for:** aif-handoff `autoQueueMode` evaluation against build-first-reuse-default ladder under corrected within-one-project scope; SSOT new-row proposal at `[next-available-slot]`.
+> **Authoritative for:** aif-handoff `autoQueueMode` evaluation against build-first-reuse-default ladder under corrected within-one-project scope; SSOT new-row proposal at `#88`.
 > **NOT authoritative for:** project goal (see README#why-this-exists); substrate refactor decisions; SSOT #67 verdict (full Kanban runtime — preserved as-is).
 
 ---
@@ -12,7 +12,7 @@
 
 `autoQueueMode` in `lee-to/aif-handoff` is a well-specified, production-grade within-project task-queue-advancement subsystem. Its **scheduling logic** (position ordering + scheduledAt gate + pool-depth cap) is cleanly separable from the Docker+DB infra that caused SSOT #67 REJECT. The logic itself is **ADAPT-viable as a pure-bash priority-ordering helper** under J5 Option C (tracked `kickoff.md` frontmatter), and **ADOPT VOCABULARY** of its `roadmapAlias`/`phase:N`/`seq:NN` tag schema is viable under BOTH J5 Option A and C.
 
-Verdict: **ADOPT VOCABULARY** (primary) for the tag schema as umbrella-sequencing vocabulary; **REFERENCE** for the pool-slot-allocation pattern as a design precedent. Match score revised from initial estimate ~22% (muddied-scope full-runtime) to **~45%** (corrected sub-component scope: scheduling logic only, not Docker+DB). New SSOT row proposed at `[next-available-slot]`.
+Verdict: **ADOPT VOCABULARY** (primary) for the tag schema as umbrella-sequencing vocabulary; **REFERENCE** for the pool-slot-allocation pattern as a design precedent. Match score revised from initial estimate ~22% (muddied-scope full-runtime) to **~45%** (corrected sub-component scope: scheduling logic only, not Docker+DB). New SSOT row proposed at `#88`.
 
 SSOT #67 REJECT verdict is **preserved as-is** (correct for the full Kanban runtime). Additive note proposed on #67's «Trigger to revisit» field.
 
@@ -214,7 +214,7 @@ Per `build-first-reuse-default.md §1` verdict ladder:
 ### New SSOT row proposal
 
 ```markdown
-| [next-available-slot] | aif-handoff (`lee-to/aif-handoff`) autoQueueMode pool-slot-allocation LOGIC
+| #88 | aif-handoff (`lee-to/aif-handoff`) autoQueueMode pool-slot-allocation LOGIC
   — `processAutoQueueAdvance` sub-component (ascending `position` selection +
   `scheduledAt` gate + `parallelEnabled`/`COORDINATOR_MAX_CONCURRENT_TASKS` cap +
   dirty-worktree guard + CAS claim; tag schema: `roadmapAlias`, `rm:<alias>`,
@@ -249,7 +249,7 @@ Per `build-first-reuse-default.md §1` verdict ladder:
 
 Proposed additive note (append to existing #67 «Trigger to revisit», do NOT replace):
 
-> «Sub-component re-evaluated separately in Sub-wave A (2026-05-26): `autoQueueMode` LOGIC proposed as new SSOT row at `[next-available-slot]` (ADOPT VOCABULARY + REFERENCE). The #67 REJECT verdict for the **full Kanban runtime** remains correct and unchanged. The additive note records that the sub-component evaluation was deferred from the initial #67 sweep due to T-CR-A muddied-scope trap.»
+> «Sub-component re-evaluated separately in Sub-wave A (2026-05-26): `autoQueueMode` LOGIC proposed as new SSOT row at `#88` (ADOPT VOCABULARY + REFERENCE). The #67 REJECT verdict for the **full Kanban runtime** remains correct and unchanged. The additive note records that the sub-component evaluation was deferred from the initial #67 sweep due to T-CR-A muddied-scope trap.»
 
 ---
 
@@ -292,7 +292,7 @@ Proposed additive note (append to existing #67 «Trigger to revisit», do NOT re
   - Sub-wave B (oh-my-openagent): different companion project, no overlap.
   - Sub-wave C (Devin dynamic re-plan): different companion project, no overlap.
   - Sub-wave D (Superpowers brainstorming): different companion project, no overlap.
-  - SSOT slot collision risk: all sub-waves use `[next-available-slot]` placeholder. Maintainer resolves numbering at merge time (first-to-merge gets first available slot after #81).
+  - SSOT slot collision risk: all sub-waves use `#88` placeholder. Maintainer resolves numbering at merge time (first-to-merge gets first available slot after #81).
 
 - **No rules modified.** No `.claude/rules/*.md` files touched. No `packages/core/principles/*.test.ts` files touched.
 

@@ -15,7 +15,7 @@
 - **Verdicts:**
   - `#68` amendment: REFERENCE verdict stands, but match-score revised 30% → ~50%. Adopted vocabulary expands to include `session-plan-affinity` recency pattern.
   - `#81` amendment: SSOT #81's cited repo (`Doriandarko/oh-my-openagent`) does not exist. Vendor field must be corrected to `code-yeongyu/oh-my-openagent`. The alias routing pattern described in #81 is partially confirmed (runtime normalization via `agent-display-names.ts`), but the **problem-class match drops from ~60% to ~30%**: omo's alias system is runtime dispatch normalization (display-name → config-key), NOT a static planning-time vocabulary table.
-  - New row `[next-available-slot]`: **ADOPT VOCABULARY** for `session-plan-affinity` recency algorithm as a named pattern for session-aware umbrella selection (not yet registered separately).
+  - New row `#89`: **ADOPT VOCABULARY** for `session-plan-affinity` recency algorithm as a named pattern for session-aware umbrella selection (not yet registered separately).
 
 ---
 
@@ -244,7 +244,7 @@ Rationale:
 
 **Implication:** omo REFERENCES the alias-routing *concept* (mapping user strings to internal handlers) as production-grade. Our static planning-time vocabulary table is a specialized instantiation that omo does not provide.
 
-### §4.3 For new row [next-available-slot]
+### §4.3 For new row #89
 
 **Session-plan-affinity (recency fallback) pattern — `code-yeongyu/oh-my-openagent` `src/hooks/start-work/session-plan-affinity.ts` + `context-info-builder.ts`**
 
@@ -282,10 +282,10 @@ Exact amendment text for the rationale field:
 
 ### §5.3 New SSOT row proposal
 
-**Row `[next-available-slot]`** (do not hardcode #82 — Sub-wave A may claim it first):
+**Row `#89`** (do not hardcode #82 — Sub-wave A may claim it first):
 
 ```text
-| [next-available-slot] | oh-my-openagent session-plan-affinity recency algorithm (`code-yeongyu/oh-my-openagent` — `src/hooks/start-work/session-plan-affinity.ts` + `findRecentSessionPlanPath` in `context-info-builder.ts`; scans session message history in reverse-chronological order; extracts file-path references matching PLAN_PATH_PATTERN; returns first match against available-plans set; enables auto-selection of most-recently-referenced plan without explicit user input) | `/meta-orchestrator` optional auto-umbrella-selection — session-aware auto-selection of active umbrella (kickoff.md path) based on recent session message context; avoids requiring explicit umbrella argument every invocation | 2026-05-26 | 2026-05-26 | ADOPT VOCABULARY | Sub-wave B research patch `2026-05-26-companion-reuse-omo-deep-dive.md §2.1+§3.1+§4.3` (DeepWiki `code-yeongyu/oh-my-openagent` query «within-one-project session-history recency fallback», 2026-05-26). **T16 problem-class check:** upstream = «within-one-project plan auto-selection via reverse-scan of session messages for recently referenced plan paths»; ours = «within-one-project umbrella auto-selection via same mechanism». **Match: ~85%.** Algorithm is directly transferable: replace `PLAN_PATH_PATTERN` with kickoff.md pattern; replace `availablePlans` set with discovered kickoff.md paths. ADOPT VOCABULARY: name the pattern `session-plan-affinity`; BUILD a kickoff-path variant if auto-selection is desired. BUILD gate: «/meta-orchestrator invoked ≥10 times without explicit umbrella arg in session» — recency pattern becomes valuable above that frequency. | If auto-umbrella-selection is implemented (BUILD trigger: ≥10 invocations without explicit arg in single session); OR if kickoff.md tracking is formalized per J5 Option C |
+| #89 | oh-my-openagent session-plan-affinity recency algorithm (`code-yeongyu/oh-my-openagent` — `src/hooks/start-work/session-plan-affinity.ts` + `findRecentSessionPlanPath` in `context-info-builder.ts`; scans session message history in reverse-chronological order; extracts file-path references matching PLAN_PATH_PATTERN; returns first match against available-plans set; enables auto-selection of most-recently-referenced plan without explicit user input) | `/meta-orchestrator` optional auto-umbrella-selection — session-aware auto-selection of active umbrella (kickoff.md path) based on recent session message context; avoids requiring explicit umbrella argument every invocation | 2026-05-26 | 2026-05-26 | ADOPT VOCABULARY | Sub-wave B research patch `2026-05-26-companion-reuse-omo-deep-dive.md §2.1+§3.1+§4.3` (DeepWiki `code-yeongyu/oh-my-openagent` query «within-one-project session-history recency fallback», 2026-05-26). **T16 problem-class check:** upstream = «within-one-project plan auto-selection via reverse-scan of session messages for recently referenced plan paths»; ours = «within-one-project umbrella auto-selection via same mechanism». **Match: ~85%.** Algorithm is directly transferable: replace `PLAN_PATH_PATTERN` with kickoff.md pattern; replace `availablePlans` set with discovered kickoff.md paths. ADOPT VOCABULARY: name the pattern `session-plan-affinity`; BUILD a kickoff-path variant if auto-selection is desired. BUILD gate: «/meta-orchestrator invoked ≥10 times without explicit umbrella arg in session» — recency pattern becomes valuable above that frequency. | If auto-umbrella-selection is implemented (BUILD trigger: ≥10 invocations without explicit arg in single session); OR if kickoff.md tracking is formalized per J5 Option C |
 ```
 
 ---
@@ -329,7 +329,7 @@ Exact amendment text for the rationale field:
 - **No `.claude/rules/*.md` modified**: this is a research-patch deliverable only.
 - **No `packages/core/principles/*.test.ts` modified**.
 - **No substrate edits**: no SKILL.md, no hooks, no templates changed.
-- **New row [next-available-slot]:** does not conflict with Sub-wave A's new row (Sub-wave A proposes a row for `aif-handoff autoQueueMode`; Sub-wave B proposes a row for `session-plan-affinity`; both are distinct capability areas under the same project canonical `code-yeongyu/oh-my-openagent`). No collision.
+- **New row #89:** does not conflict with Sub-wave A's new row (Sub-wave A proposes a row for `aif-handoff autoQueueMode`; Sub-wave B proposes a row for `session-plan-affinity`; both are distinct capability areas under the same project canonical `code-yeongyu/oh-my-openagent`). No collision.
 - **Artifact Ownership Contract:** `prior-art-evaluations.md` is owned by «phase research sessions, capability-commit authors». This patch qualifies. Read-only constraint for reviewer agents does not apply here (this is a research Worker, not a reviewer).
 
 ---
