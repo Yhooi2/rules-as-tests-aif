@@ -35,6 +35,57 @@ The bridge is **non-functional** if `RUNTIME_BRIDGE_AIF_PROJECT_ID` is unset —
 - **`transport: "cli"`** in the aif-handoff Claude runtime profile. This is **NOT** the default — the default is the metered SDK transport (`RuntimeTransport.SDK`, `packages/runtime/src/adapters/claude/index.ts:449`). The CLI transport runs through the official Claude Code CLI and is safe on a Max/Pro subscription; the SDK transport is API-metered. Verify with `aif-handoff config show`.
 - **`AGENT_AUTO_REVIEW_STRATEGY=closure_first`** — aligns aif-handoff's auto-review with the layered-review design (see *Auto-review escalation* below).
 
+## Workspace currency (avoid stale-clone no-ops)
+
+aif-handoff keeps a **per-project clone** under `<PROJECTS_HOST_ROOT>/<repo>/` (bind-mounted to `/home/www` in the agent container). By default it does **not** auto-update — it silently drifts behind your trunk and the agent works against stale code. **Incident 2026-05-31:** the clone was ~50 commits behind `staging`; a full dispatch produced **zero code** ($5.84 burned) because the agent could not see the current files/spec and *correctly* refused to guess. The fix uses aif's **own** knobs (ADOPT, per `build-first-reuse-default` — not a custom sync script):
+
+`<clone>/.ai-factory/config.yaml`:
+
+```yaml
+git:
+  base_branch: staging          # your trunk, NOT the default `main`
+  strict_base_update: true      # `git pull --ff-only origin <base>` before EACH task;
+                                # on pull failure → block the task (base_update_failed),
+                                # never silently fall back to the stale local base
+```
+
+With `strict_base_update: true` every dispatch starts from a freshly-pulled base; if the pull can't run, the task parks loudly instead of shipping a stale no-op. Optional: `AIF_TASK_WORKTREES_ENABLED=true` (deployment `.env`) for per-task git-worktree isolation when running tasks in parallel.
+
+## Git authentication (the clone must `pull`, and optionally `push`)
+
+The agent container has **no ssh client** — an SSH remote (`git@github.com:…`) makes `strict_base_update`'s `git pull` fail. Use **HTTPS**:
+
+```bash
+git -C <clone> remote set-url origin https://github.com/<owner>/<repo>.git
+```
+
+- **Public repo:** HTTPS fetch works with no credentials.
+- **Private repo** (or to let aif push its own PR): add a **GitHub token** to the deployment `.env` (auto-injected — both `agent` and `api` services use `env_file: .env`):
+
+  ```
+  GH_TOKEN=github_pat_…   # fine-grained PAT; scope: Contents: Read  (+ Contents: Write & Pull requests: Write to push)
+  ```
+
+  then wire a credential helper in the clone (token never lands in the URL/config):
+
+  ```bash
+  git -C <clone> config credential.helper \
+    '!f(){ echo username=x-access-token; echo "password=$GH_TOKEN"; };f'
+  ```
+
+  The token lives only in the gitignored `.env` — never in the image, never in a commit.
+
+## Notifications (Telegram — the "park → ping a human" half)
+
+aif-handoff fires a **Telegram push per parked question** natively (0 code). Set in the deployment `.env`:
+
+```
+TELEGRAM_BOT_TOKEN=…   # @BotFather → /newbot → copy the token
+TELEGRAM_USER_ID=…     # your numeric id from @userinfobot
+```
+
+Recreate containers (`docker compose up -d`) so `env_file: .env` picks them up. Notify-only by design — resolve the parked questions in a chat via `cli/questions.ts`, not in Telegram.
+
 ## Ports
 
 aif-handoff exposes more than one surface; they do **not** share a port:
@@ -64,6 +115,8 @@ aif-handoff exposes more than one surface; they do **not** share a port:
   ```
 
   Exit code: `0` = terminal success, `1` = non-success / timeout / error.
+
+  > ⚠️ **Known bug — verify on your setup (2026-05-31):** the **blocking** `await.ts <taskId>` (WebSocket `awaitDone`) **missed the terminal `done` event and ran out the full `--timeout-ms`** on a task that actually completed in ~3 min — the WS subscription appears to start *after* a fast task has already transitioned. The `--once` REST snapshot reported `done` correctly the whole time. **Until fixed, poll with `--once` (or short `--timeout-ms` + retry); do not rely on the blocking WS mode for completion.** Tracked as a runtime-bridge read-back (#296) follow-up. To reproduce: dispatch a small task, immediately run `await.ts <id>` (blocking) and `await.ts <id> --once` in parallel — the `--once` flips to `done` while the blocking call hangs.
 
 > **Clean-worktree precondition (verify this before relying on autonomy):** aif-handoff refuses to advance a task to `plan_ready` while the target project worktree is dirty (a branch-isolation guard). A dirty tree surfaces as `dispatch_failed`; `dispatch()` then best-effort **deletes** the half-created task (rollback — no orphan) and the bridge falls back to `ManualBackend`. Commit/stash/gitignore the target tree, then re-run `verify-bridge.sh` to confirm a full `backlog → plan_ready` run. (The same guard applies to the MCP path — it is not REST-specific.) The REST dispatch HTTP mechanics + error mapping are unit- and live-verified; the end-to-end `plan_ready` + coordinator-pickup step is the operator's clean-worktree smoke-test check.
 
