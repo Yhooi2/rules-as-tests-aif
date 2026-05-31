@@ -71,11 +71,16 @@ async function printLinksAndReconcile(
   status: string,
 ): Promise<void> {
   if (backendName !== 'aif-handoff') return;
-  const base = process.env['RUNTIME_BRIDGE_AIF_URL'] ?? 'http://localhost:3009';
-  process.stderr.write(`[runtime-bridge] view: ${base}/tasks/${taskId}\n`);
+  // Human-facing UI (the board), NOT the :3009 REST API (raw JSON).
+  const webBase = process.env['RUNTIME_BRIDGE_AIF_WEB_URL'] ?? 'http://localhost:5180';
+  const projectId = process.env['RUNTIME_BRIDGE_AIF_PROJECT_ID'];
+  const uiUrl = projectId ? `${webBase}/projects/${projectId}` : webBase;
+  process.stderr.write(`[runtime-bridge] open the board: ${uiUrl} (task ${taskId})\n`);
   if (status !== 'done') return;
+  // Reconcile reads task detail from the REST API (:3009), distinct from the UI (:5180).
+  const apiBase = process.env['RUNTIME_BRIDGE_AIF_URL'] ?? 'http://localhost:3009';
   try {
-    const res = await fetch(`${base}/tasks/${taskId}`);
+    const res = await fetch(`${apiBase}/tasks/${taskId}`);
     if (!res.ok) return;
     const t = (await res.json()) as { reviewComments?: string };
     const rc = t.reviewComments ?? '';

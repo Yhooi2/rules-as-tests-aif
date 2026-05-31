@@ -87,12 +87,14 @@ async function main(): Promise<void> {
   // ── Step 5: Record dedup + output additionalContext ───────────────────────
   recordDispatch(kickoff.contentHash, handle);
 
-  const aifBase = process.env['RUNTIME_BRIDGE_AIF_URL'] ?? 'http://localhost:3009';
-  const taskUrl = `${aifBase}/tasks/${handle.taskId}`;
+  // Human-facing UI (the board), NOT the :3009 REST API (which returns raw JSON).
+  const webBase = process.env['RUNTIME_BRIDGE_AIF_WEB_URL'] ?? 'http://localhost:5180';
+  const projectId = process.env['RUNTIME_BRIDGE_AIF_PROJECT_ID'];
+  const uiUrl = projectId ? `${webBase}/projects/${projectId}` : webBase;
   const msg =
     backend.name === 'manual'
       ? `[runtime-bridge] ManualBackend: kickoff written to /tmp/runtime-bridge-${handle.taskId}.md — paste into a new Claude Code session`
-      : `[runtime-bridge] Dispatched to ${backend.name} (taskId=${handle.taskId}) — watch it: ${taskUrl}`;
+      : `[runtime-bridge] Dispatched to ${backend.name} (taskId=${handle.taskId}) — open the board: ${uiUrl}`;
 
   // Form guard (non-blocking; exit-0 contract preserved): an orchestration
   // meta-kickoff is NOT a single buildable task — aif investigates and halts
