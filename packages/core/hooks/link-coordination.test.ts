@@ -375,4 +375,57 @@ describe('link-coordination.sh', () => {
       teardown(wt);
     });
   });
+
+  // ── (h) ON-CONFLICT flag (Task A1) ─────────────────────────────────────────
+
+  it('on-conflict=canon: canonical wins, worktree file relinked', () => {
+    mkdirSync(resolve(canon, 'u1'), { recursive: true });
+    writeFileSync(resolve(canon, 'u1/kickoff.md'), 'CANON');
+    const wt = setupWorktreeDir(primaryRepo, 'lnk-oc-canon');
+    mkdirSync(resolve(wt, '.claude/orchestrator-prompts/u1'), { recursive: true });
+    writeFileSync(resolve(wt, '.claude/orchestrator-prompts/u1/kickoff.md'), 'WORKTREE');
+    const r = runHelper([wt, '', '--on-conflict=canon'], { CLAUDE_COORDINATION_DIR: canon });
+    expect(r.status, `helper stderr: ${r.stderr}`).toBe(0);
+    const p = resolve(wt, '.claude/orchestrator-prompts/u1/kickoff.md');
+    expect(lstatSync(p).isSymbolicLink()).toBe(true);
+    expect(readFileSync(p, 'utf8')).toBe('CANON');
+    teardown(wt);
+  });
+
+  it('on-conflict=worktree: worktree wins, adopted into CANON', () => {
+    mkdirSync(resolve(canon, 'u1'), { recursive: true });
+    writeFileSync(resolve(canon, 'u1/kickoff.md'), 'CANON');
+    const wt = setupWorktreeDir(primaryRepo, 'lnk-oc-worktree');
+    mkdirSync(resolve(wt, '.claude/orchestrator-prompts/u1'), { recursive: true });
+    writeFileSync(resolve(wt, '.claude/orchestrator-prompts/u1/kickoff.md'), 'WORKTREE');
+    const r = runHelper([wt, '', '--on-conflict=worktree'], { CLAUDE_COORDINATION_DIR: canon });
+    expect(r.status, `helper stderr: ${r.stderr}`).toBe(0);
+    const p = resolve(wt, '.claude/orchestrator-prompts/u1/kickoff.md');
+    expect(lstatSync(p).isSymbolicLink()).toBe(true);
+    expect(readFileSync(resolve(canon, 'u1/kickoff.md'), 'utf8')).toBe('WORKTREE');
+    teardown(wt);
+  });
+
+  it('on-conflict=skip (default): exits 1, leaves both files intact', () => {
+    mkdirSync(resolve(canon, 'u1'), { recursive: true });
+    writeFileSync(resolve(canon, 'u1/kickoff.md'), 'CANON');
+    const wt = setupWorktreeDir(primaryRepo, 'lnk-oc-skip');
+    mkdirSync(resolve(wt, '.claude/orchestrator-prompts/u1'), { recursive: true });
+    writeFileSync(resolve(wt, '.claude/orchestrator-prompts/u1/kickoff.md'), 'WORKTREE');
+    const r = runHelper([wt], { CLAUDE_COORDINATION_DIR: canon });
+    expect(r.status).toBe(1);
+    expect(
+      readFileSync(resolve(wt, '.claude/orchestrator-prompts/u1/kickoff.md'), 'utf8'),
+    ).toBe('WORKTREE');
+    expect(readFileSync(resolve(canon, 'u1/kickoff.md'), 'utf8')).toBe('CANON');
+    teardown(wt);
+  });
+
+  it('on-conflict=bogus: exits 2 (validation)', () => {
+    const wt = setupWorktreeDir(primaryRepo, 'lnk-oc-bogus');
+    const r = runHelper([wt, '', '--on-conflict=bogus'], { CLAUDE_COORDINATION_DIR: canon });
+    expect(r.status).toBe(2);
+    teardown(wt);
+  });
+
 });

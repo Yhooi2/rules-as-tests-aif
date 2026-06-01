@@ -40,8 +40,20 @@ set -euo pipefail
 
 # ── ARGS ──────────────────────────────────────────────────────────────────────
 
-WT_DIR="${1:-}"
-SEED_SRC="${2:-}"
+ON_CONFLICT="skip"
+POSITIONAL=()
+for arg in "$@"; do
+  case "$arg" in
+    --on-conflict=*) ON_CONFLICT="${arg#*=}" ;;
+    *)               POSITIONAL+=("$arg") ;;
+  esac
+done
+WT_DIR="${POSITIONAL[0]:-}"
+SEED_SRC="${POSITIONAL[1]:-}"
+case "$ON_CONFLICT" in
+  canon|worktree|skip) ;;
+  *) echo "link-coordination: invalid --on-conflict='$ON_CONFLICT' (canon|worktree|skip)" >&2; exit 2 ;;
+esac
 
 if [[ -z "$WT_DIR" ]]; then
   WT_DIR="$(git rev-parse --show-toplevel 2>/dev/null)" || {
@@ -113,9 +125,17 @@ if [[ -d "$WT_PROMPTS" ]]; then
         ln -s "$canon_target" "$file_path"
         echo "link-coordination: adopted $umbrella/$filename → \$CANON" >&2
       else
-        # Both real worktree file AND canonical file exist → CONFLICT
-        echo "CONFLICT: $file_path exists as real file AND $canon_target exists in \$CANON — resolve manually then re-run" >&2
-        CONFLICT=1
+        case "$ON_CONFLICT" in
+          skip)
+            echo "CONFLICT: $file_path exists as real file AND $canon_target exists in \$CANON — resolve manually then re-run" >&2
+            CONFLICT=1 ;;
+          canon)
+            rm -f "$file_path"; ln -s "$canon_target" "$file_path"
+            echo "link-coordination: on-conflict=canon → canonical wins, relinked $umbrella/$filename" >&2 ;;
+          worktree)
+            mv -f "$file_path" "$canon_target"; ln -s "$canon_target" "$file_path"
+            echo "link-coordination: on-conflict=worktree → worktree wins, adopted $umbrella/$filename" >&2 ;;
+        esac
       fi
     done
   done
