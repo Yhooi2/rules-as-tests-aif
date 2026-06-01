@@ -63,12 +63,12 @@ Maintainer requirement: *agnostic, but uses CC's advantages when present, AND ha
 | **G** git `post-checkout` (the "own hook") | committed `.husky/post-checkout` → `link-coordination.sh`; rides existing husky (`core.hooksPath` set, `pre-commit`/`pre-push` already committed) | **agnostic floor — works everywhere git is** | committed (`.husky/` = maintainer-applied per §7) | any `git worktree add` (plain CLI, Aider, Codex, Cursor, …) |
 | **B** CC `SessionStart` | `.claude/settings.json` → `SessionStart` hook → linker | **CC-native advantage + re-heal catch** if G didn't fire | committed (settings.json = maintainer-applied) | CC session start (incl. inside Superset) |
 | **C** Superset-native | `~/.superset/projects/<uuid>/config.json` `setup` — replace rsync with linker | **Superset-native + removes the rsync ROOT CAUSE** (load-bearing regardless of G — see §2.4a) | per-machine runbook (un-committable: per-UUID, lives in `~/.superset/`) | Superset worktree-create |
-| **A** skill §0 self-heal | meta-orchestrator `SKILL.md §1` prepends an idempotent link call | **orchestrator-local last-resort** backstop | committed | meta-orchestrator runs |
+| ~~**A** skill §0 self-heal~~ | ~~meta-orchestrator `SKILL.md §1`~~ | **DROPPED (2026-06-01)** — redundant once **G** exists: B fires at *every* CC session-start, a strict superset of "when meta-orchestrator runs", so A added no unique coverage, only a 4th `@dual-pair` to keep in sync. A was the pre-G "portable floor" stand-in; **G** (git post-checkout) is the real agnostic floor the maintainer asked for, superseding A's role. Falsifier for dropping: a CC session where B didn't fire AND no worktree-create hook ran AND linking is needed right then — narrow, and B-disabled would defeat A too. | — | — |
 
 **Idempotency contract (the Q1 "meaty" answer):**
 - All four call the **same** idempotent `link-coordination.sh`. Any order, any overlap, any subset firing is safe: the second+ caller sees correct symlinks and no-ops; a fresh worktree's empty prompts dir means the linker only *creates* symlinks (no conflicts possible).
-- Layering by reach: **G** is the universal floor; **B** adds CC's richer lifecycle and re-heals if G missed; **C** is mandatory on Superset (it must kill the rsync root cause, and Superset may not fire G — §2.4a); **A** is the cheapest backstop when the orchestrator runs.
-- No channel hard-depends on another. Drop CC → G+C+(maybe A) still work. Drop Superset → G+B+A still work. Drop everything but git → G alone works. This is the "works everywhere" guarantee.
+- Layering by reach: **G** is the universal floor; **B** adds CC's richer lifecycle and re-heals if G missed; **C** is mandatory on Superset (it must kill the rsync root cause, and Superset may not fire G — §2.4a). (Channel **A** skill-self-heal was dropped — see matrix: redundant once G exists.)
+- No channel hard-depends on another. Drop CC → G+C still work. Drop Superset → G+B still work. Drop everything but git → G alone works. This is the "works everywhere" guarantee.
 
 ### §2.3 Q2 — migration of already-diverged worktrees
 
@@ -119,7 +119,7 @@ Add a loop over the two known root files (`_plan-cache.md`, `_master-backlog-del
 |---|---|---|---|---|
 | **A** | `link-coordination.sh`: root-file loop (§2.6) + `--on-conflict` flag (§2.3) + bash tests | I-phase-small | with B | committed |
 | **B** | make 3 cache/delta helpers symlink-aware (write-through resolved target) + paired-negative tests (§2.4) | I-phase-small | with A | committed |
-| **C** | wiring (4 channels): **G** `.husky/post-checkout` (agnostic floor) + **B** CC `SessionStart` in settings.json + **A** skill §0 self-heal + **C** Superset `setup`-array runbook; all call the extended linker | wiring | after SW-A | mixed commit/runbook |
+| **C** | wiring (3 channels via one-click `scripts/install-coordination-wiring.sh`): **G** `.husky/post-checkout` (agnostic floor) + **B** CC `SessionStart` in settings.json + **C** Superset `setup`-array; all call the extended linker. (Channel A skill-self-heal dropped — redundant after G.) | wiring | after SW-A | installer committed; maintainer runs one-click |
 
 SW-A ⟂ SW-B (file-disjoint: linker+its tests vs helper tests). SW-C depends on SW-A (every channel calls the *extended* linker). Within SW-C, the git hook (G) + settings.json (B) + skill §0 (A) are committed (maintainer-applied for `.husky/` and `settings.json`); the Superset `setup` edit (C) is a per-machine runbook.
 
