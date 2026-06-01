@@ -88,17 +88,13 @@ if [[ -d "$WORKTREE_DIR/packages/core" ]] && [[ ! -e "$WORKTREE_DIR/packages/cor
   ln -sfn ../../node_modules "$WORKTREE_DIR/packages/core/node_modules"
 fi
 
-# Hydrate gitignored orchestrator-prompts from the primary checkout so a fresh
-# worktree is not blind to umbrella kickoffs (J5 fix — see research-patch
-# 2026-05-31-j5-orchestrator-prompts-hydration.md). Non-destructive: --ignore-existing
-# preserves the just-checked-out tracked README.md/done.md; only untracked
-# (gitignored) kickoff content is added. Source = PROJECT_DIR (primary checkout).
-SRC_OP="$PROJECT_DIR/.claude/orchestrator-prompts"
-DST_OP="$WORKTREE_DIR/.claude/orchestrator-prompts"
-if [[ -d "$SRC_OP" ]] && [[ "$SRC_OP" != "$DST_OP" ]] && command -v rsync >/dev/null 2>&1; then
-  mkdir -p "$DST_OP"
-  rsync -a --ignore-existing "$SRC_OP/" "$DST_OP/" >/dev/null 2>&1 || true
-fi
+# Link gitignored orchestrator-prompts to a canonical store outside every
+# worktree so edits in any worktree are live-shared (symlink-to-canonical,
+# SSOT #110). Supersedes the J5 one-way rsync copy (stale snapshot) with a
+# live-shared identity: one file, N symlinks.
+# `>&2` keeps helper output off this script's stdout (stdout = worktree path only).
+# `|| true` prevents a link conflict from aborting worktree creation (set -euo pipefail).
+bash "$PROJECT_DIR/scripts/link-coordination.sh" "$WORKTREE_DIR" "$PROJECT_DIR" >&2 || true
 
 # Print path — the ONLY thing on stdout (orchestration contract).
 printf '%s\n' "$WORKTREE_DIR"
