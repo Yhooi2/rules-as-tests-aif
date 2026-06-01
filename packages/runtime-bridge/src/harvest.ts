@@ -30,6 +30,19 @@ const TERMINAL_STATUSES = new Set(['done', 'verified']);
 
 /** The injected side-effects harvest performs, in order. */
 export interface HarvestDeps {
+  /**
+   * Whether the branch's checkout has uncommitted changes. aif commits only on
+   * its approve_done && commitOnApprove path; the request_changes→implementing→done
+   * rework path leaves the work uncommitted (working tree dirty, branch == base
+   * HEAD). True here means harvest must commit before it has anything to push.
+   */
+  hasUncommittedChanges: (branchName: string) => Promise<boolean>;
+  /**
+   * Deterministically commit all changes on the branch (git add -A && git commit
+   * -m <message>). ZERO LLM — the message is templated from the task, never
+   * generated — so the rework leg stays within no-paid-llm-in-ci.md.
+   */
+  commitAll: (branchName: string, message: string) => Promise<void>;
   /** Push the (already-committed) feature branch from aif's checkout to origin. */
   pushBranch: (branchName: string) => Promise<void>;
   /** Open a PR for the pushed branch against `base`; returns the PR URL. */
@@ -52,6 +65,9 @@ export interface HarvestResult {
   branch: string;
   pushed: boolean;
   autoMerge: boolean;
+  /** True when harvest had to commit a dirty tree (rework leg); false on the
+   *  normal path where aif already committed. */
+  committed: boolean;
 }
 
 /** The subset of an aif task harvest reads. */
@@ -68,7 +84,10 @@ export interface HarvestableTask {
  * Order is load-bearing and fail-fast:
  *  1. guard status is terminal (work is committed) — else throw BEFORE any push.
  *  2. guard branchName present — else throw BEFORE opening a PR.
- *  3. push → createPr → (optional) enableAutoMerge. If createPr throws, auto-merge
+ *  3. rework-commit gap: if the tree is dirty (aif's request_changes→done path
+ *     left it uncommitted), commit it deterministically BEFORE the push. If the
+ *     commit throws, nothing is pushed (the operator runs the printed fallback).
+ *  4. push → createPr → (optional) enableAutoMerge. If createPr throws, auto-merge
  *     is never armed (no half-merged state).
  */
 export async function harvestTask(
@@ -86,6 +105,16 @@ export async function harvestTask(
     throw new Error(`harvest: task ${task.id} has no branchName — aif did not create/persist a feature branch`);
   }
 
+  // Rework-commit gap: aif commits only on approve_done && commitOnApprove; the
+  // request_changes→implementing→done rework path strands the work uncommitted.
+  // Commit it deterministically (templated message, ZERO LLM) so there is a real
+  // commit to push. No-op on the normal path (tree already clean).
+  let committed = false;
+  if (await deps.hasUncommittedChanges(branch)) {
+    await deps.commitAll(branch, `chore(harvest): commit reworked aif task ${task.id} — ${task.title}`);
+    committed = true;
+  }
+
   await deps.pushBranch(branch);
   const prUrl = await deps.createPr({ branch, base: opts.baseBranch, title: task.title, body: opts.body });
 
@@ -95,5 +124,5 @@ export async function harvestTask(
     autoMerge = true;
   }
 
-  return { prUrl, branch, pushed: true, autoMerge };
+  return { prUrl, branch, pushed: true, autoMerge, committed };
 }
