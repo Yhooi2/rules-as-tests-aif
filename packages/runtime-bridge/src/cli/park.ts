@@ -130,6 +130,20 @@ export interface ParkResult {
 export async function parkTask(baseUrl: string, taskId: string, question: string): Promise<ParkResult> {
   const reason = question.trim();
   const task = await getTask(baseUrl, taskId);
+  // Finding F guard (qloop-ux-probe 2026-06-01): a park AFTER the implement→review
+  // transition leaves status=review, paused=true — but aif has zero human re-entry from
+  // `review` (HUMAN_ACTIONS_BY_STATUS.review = []), so resume runs the review pipeline to
+  // `done` WITHOUT re-implementing the injected answer, and the next chain question never
+  // parks (live: task ba3b4bf6 answered c1 → done, c2 silently lost). Refuse the park here
+  // so the silent loss becomes a loud, actionable error rather than a misleading "resolved".
+  if (task.status === 'review') {
+    throw new Error(
+      `cannot park task ${taskId} at status=review — aif resumes a review-stage task to ` +
+        `"done" without re-implementing the answer (the next chain question is never parked). ` +
+        `Park before the implement→review transition, or wait until status=done and use ` +
+        `answer.ts (request_changes).`,
+    );
+  }
   const plan = buildOpenQuestionPlan(task.plan, reason);
   await putTask(baseUrl, taskId, { paused: true, blockedReason: reason, plan });
   return { taskId, paused: true, blockedReason: reason };
