@@ -1,9 +1,32 @@
 // packages/runtime-bridge/test/aif-park.test.ts
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { parseParkArgs, validateParkArgs, buildOpenQuestionPlan } from '../src/cli/park.js';
+import { parseParkArgs, validateParkArgs, buildOpenQuestionPlan, resolveAifBaseUrl } from '../src/cli/park.js';
 import { parkTask } from '../src/cli/park.js';
 
 afterEach(() => vi.restoreAllMocks());
+
+// park.ts is the ONLY CLI run from INSIDE the aif agent container (the agent invokes it
+// on a fork). The container exposes the service as API_BASE_URL=http://api:3009 and does
+// NOT set RUNTIME_BRIDGE_AIF_URL — so a localhost-only default makes park unreachable
+// there (qloop-ux-probe 2026-06-01, Finding C: "fetch failed" → agent could not park).
+describe('resolveAifBaseUrl — container-aware base URL precedence', () => {
+  it('prefers RUNTIME_BRIDGE_AIF_URL when set (explicit override wins)', () => {
+    expect(resolveAifBaseUrl({ RUNTIME_BRIDGE_AIF_URL: 'http://explicit:1', API_BASE_URL: 'http://api:3009' }))
+      .toBe('http://explicit:1');
+  });
+  it('falls back to API_BASE_URL when RUNTIME_BRIDGE_AIF_URL is unset (the container case — Finding C fix)', () => {
+    expect(resolveAifBaseUrl({ API_BASE_URL: 'http://api:3009' })).toBe('http://api:3009');
+  });
+  it('falls back to http://localhost:3009 when neither is set (host orchestrator default)', () => {
+    expect(resolveAifBaseUrl({})).toBe('http://localhost:3009');
+  });
+
+  // Negative guard: green on the fixed resolver, RED if the API_BASE_URL fallback ever
+  // regresses to localhost-only (the exact Finding-C breakage). Proves the test catches it.
+  it('GUARD: does NOT fall through to localhost while API_BASE_URL is set', () => {
+    expect(resolveAifBaseUrl({ API_BASE_URL: 'http://api:3009' })).not.toBe('http://localhost:3009');
+  });
+});
 
 describe('parseParkArgs', () => {
   it('reads --task and --question; --task overrides HANDOFF_TASK_ID env', () => {
