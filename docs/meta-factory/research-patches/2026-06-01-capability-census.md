@@ -41,7 +41,7 @@ Legend: **[S]** already in SSOT (row#) · **[N]** new (not previously enumerated
 
 | Capability | Status |
 |---|---|
-| Parallel execution (10+ agents) | [N] ↔ amux #85, CC background agent-view #100 |
+| Parallel execution (10+ agents) | [N] ↔ amux (§10.3; **NOT #85** — #85 is `pre-commit`, amux has no row pre-census), CC background agent-view #100 |
 | Worktree isolation per task | [N] ↔ SSOT #65, our scripts/create-worktree.sh |
 | Agent monitoring + attention notifications | [S] #98 (Slack notify) partial |
 | Daemon session-persistence (survives crash/restart) | [N] — genuinely-new (we have none) |
@@ -177,6 +177,59 @@ EXTENDS [`2026-06-01-satellite-feature-harvest.md`](2026-06-01-satellite-feature
 
 ---
 
+## §10 Wave-2 — all-companion census (autonomous, agnostic lens)
+
+Maintainer-directed 2026-06-01: «автономно по всему пройтись по всем спутникам … знать свои инструменты и их преимущества чтобы работать эффективно». Parallel Mode-A research dispatch (4 Opus workers) → this synthesis. **Scope: Superset · Superpowers · AI Factory · amux · CC-native. OhMyOpencode + Cursor EXCLUDED per maintainer 2026-06-01.** Worker outputs are load-bearing-dual-channel per worker; **orchestrator spot-verified the #85 mis-citation (caught a propagated error, §10.3)**; remaining worker claims carry the workers' own single-channel flags. ADOPT-now items touching live code are surfaced as DECISION-NEEDED (T5 research-only; reviewer-discipline §2), not auto-applied.
+
+### §10.1 Superset (`superset-sh/superset`) — expanded funnel (population §2.1)
+Orchestrator-of-CLI-agents. **Standout advantages:** daemon session-persistence (survives crash/restart), MCP task+workspace suite (15+ tools), inline prompts (pause/approve/plan-review), multi-device `deviceId` routing.
+- **CC-native-redundant (own-stack-first):** parallel-execution + worktree-isolation → CC `isolation:worktree`/agent-view (#100, #65); Slack/notify → CC Slack+Channels (#100); remote → CC Remote Control (#100).
+- **Genuine residue (no CC/own equivalent):** daemon session-persistence (survives crash) — REFERENCE; MCP task/workspace-suite — KEEP-NARROW (↔ aif Kanban #67 + our runtime-bridge, three parallel impls); workspace-presets (env-setup automation) — REFERENCE (↔ install.sh). Inline-prompts ↔ our `questions.ts` (kept, #328 T-SFH-D). multi-device — DEFER (#99).
+- **Verdict:** shipped-axis REJECT-substrate (can't hard-depend on Superset Pro); operator-axis = use what maintainer already runs; no new own-build. Already SSOT #86/#98/#99 — no new row needed; census §2.1 is the population record.
+
+### §10.2 Superpowers (`obra/superpowers`) v5.1.0 — full skill enumeration
+**14 installed skills form a COMPLETE dev-loop** (brainstorm→plan→worktree→SDD/execute→TDD→review→verify→finish) — all already ADOPT (installed) or in SSOT (#64 SDD, #65 worktrees, #82 best-practices, #96 visual-companion). **9 extra skills** live in `obra/superpowers-skills` repo, NOT in local cache (worker single-channel `[DW-only]`).
+- **Gap (operator):** problem-solving skill set (`when-stuck` router + collision-zone/inversion/meta-pattern/scale-game/simplification-cascades) not locally cloned — verify `~/.config/superpowers/skills/` + clone if absent. Cheap. (`when-stuck`=#93 already.)
+- **Vocabulary (ADOPT-VOCABULARY, cheap):** `inversion-exercise`↔our T7 adversarial-counter-prompt; `meta-pattern-recognition`↔T16; `simplification-cascades`↔BFR REFERENCE-eliminates-subsystem — fold names into `ai-laziness-traps.md` T7/T16 rationale. `tracing-knowledge-lineages`/`preserving-productive-tensions` already #92/#94.
+- **No new row** — Superpowers fully covered by existing SSOT; gaps are operator-action + vocabulary, not capability rows.
+
+### §10.3 amux — **SSOT-correction finding**
+**amux has NO SSOT row.** «#85 (amux)» cited in #328 (row #100), #295 matrix, and census §2.1 is a **mis-citation** — verified: `#85 = pre-commit/pre-commit pre-push base-ref` (grep `prior-art-evaluations.md:153`). amux ≈ parallel-`claude`-session multiplexer (two prod repos: `mixpeek/amux` web-dashboard, `andyrewlee/amux` Go-TUI).
+- **CC-native-redundant (own-stack-first kills most):** phone-dashboard → CC Remote Control (#100); YOLO auto-approve → CC `--dangerously-skip-permissions`; per-session MCP → `.mcp.json`; git-conflict-detect → CC worktree-isolation (strictly stronger). All REJECT-as-build.
+- **Genuine residue (REFERENCE):** atomic task-claiming (`POST /board/:id/claim` — zero-race task distribution, a real gap at scale vs our manual dispatch); `.amux/workspaces.json` per-workspace setup-commands (gap vs bare `create-worktree.sh`); self-healing watchdog (confirms aif #45 ADAPT is the right path).
+- **Verdict + new row #104:** REJECT-most / REFERENCE-residue. Row corrects the propagated «#85=amux» error.
+
+### §10.4 AI Factory (`lee-to/ai-factory`) — genuine operator gaps
+Distinct from aif-handoff. **Standout advantage:** the **Reflex Loop** — `fix`→`.ai-factory/patches/TIMESTAMP.md`→`implement` reads patches→`evolve` proposes SKILL.md improvements. Closed cross-session learning loop, files-only, zero infra.
+- **G1 ADOPT (operator), new row #105:** patch-store convention (`.ai-factory/patches/`) + implement-reads-patches — our fixes don't feed forward; same mistakes recur.
+- **G2 ADOPT (operator), folded into #105:** `/evolve` self-improvement (patches→skill-gap→SKILL.md proposal). ADAPT to `.claude/skills/`.
+- **G3 ADOPT (operator):** `skill-generator` learn-mode (URL→SKILL.md) — add to our `/ai-docs`.
+- **Validates our agnostic shipped-axis (REFERENCE, new row #106):** AIF template-variable substitution (`{{skills_dir}}` etc.) ships one SKILL.md to 15+ agents — empirical proof of `dual-implementation-discipline §3` agnostic-core; AIF is the mature upstream example.
+
+### §10.5 CC-native — under-used own-stack features (THE «know your tools» payload)
+The biggest efficiency win: features our own harness ships that we under-use. Worker funneled ~50 slash + skill-frontmatter + hooks. **Top ADOPT-now (operator workflow / orchestrator mechanism):**
+
+| CC feature | Why it matters to us | Surface |
+|---|---|---|
+| **`/goal <condition>`** | session-level Stop-hook completion-evaluator (fresh Haiku) — replaces hand-rolled «keep going until CI passes»; survives resume; `-p`-compatible; composes with our Stop hook | autonomous-loop (new row #107) |
+| **SubagentStart / SubagentStop / TaskCreated / TaskCompleted hooks** | mechanize orchestrator: inject session-bootstrap digest into juniors at spawn ($0, no per-prompt boilerplate); exit-2 force-continue on missing REPORT sections; gate task-creation on worktree-isolation; completion-gate on REPORT schema — all deterministic, no LLM | orchestrator gates (new row #108) |
+| **PreCompact hook** | write running wave-state/goal to `.claude/session-state.md` BEFORE compaction wipes it — earlier than our UserPromptSubmit re-inject | session-state preservation (#108) |
+| **ConfigChange hook** | block unauthorized `settings.json` changes deterministically — codifies `feedback_settings_json_agent_uncommittable` as a hook | self-protection (#108) |
+| **`context: fork` + `agent: Explore` skills** | R-phase research skills run isolated, skip CLAUDE.md token cost — codify our kickoffs as forked skills | R-phase efficiency |
+| **skill frontmatter** `paths:`/`model:`/`effort:`/`allowed-tools:`/`hooks:` | per-skill path-scope + model/effort routing + tool pre-approval + lifecycle hooks | skill-layer (complements #101) |
+| **`/code-review --fix`** · **`/effort ultracode`** · **`/batch`** · **`/workflows`** · **`/diff`** · **`/context`** · **`/usage`** | review→apply in one step; auto-workflow per task; bulk parallel-PR waves; workflow-progress view; turn-granular diff; context-bloat debug; per-wave cost accountability | habit-adoptions |
+
+- **Honest cost-flags (no-paid-llm §2):** `/schedule` (Routines, #102) + `/autofix-pr` run on Anthropic cloud — confirm subscription-bundled (not pay-per-use) before load-bearing dependence. Workers flagged single-channel.
+- **Honest SKIP (named):** `/run`/`/verify` (wrong problem-class — no app to launch), `/team-onboarding` (single-maintainer), `/desktop`/`/sandbox`/UX-prefs, Bedrock/Vertex setup.
+
+### §10.6 SSOT rows this wave appends (#104–#108, append-only)
+#104 amux (REJECT-most/REFERENCE-residue + #85-miscitation correction) · #105 AIF patch-store+evolve Reflex Loop (ADOPT operator) · #106 AIF template-variable agnostic-skill (REFERENCE shipped) · #107 CC `/goal` completion-evaluator (ADOPT operator) · #108 CC orchestrator mechanical-gate hooks (ADOPT operator, DECISION-NEEDED — touches settings.json+hooks).
+
+### §10.7 DECISION-NEEDED surfaced (reviewer-discipline §2, not decided)
+1. **#328 correction:** its row #100 mis-cites «#85 (amux)» — fix before merge OR accept census #104 as the correction.
+2. **#108 orchestrator-hook gates** touch `.claude/settings.json` (self-protected) + hooks → own I-phase.
+3. **AIF Reflex Loop (#105)** — adopt patch-store now, or DEFER until a recurring-mistake instance is cited?
+
 ## 🟢 Простыми словами
 
 Ты был прав: survey/harvest покрыли малую долю каждого из трёх (Superset — 3 строки на ~30 фич; CC — знали 5 хуков из ~29; aif — 13 точечных из ~7 пакетов + ~20 env-vars). Корень — никто не перечислял **всю** популяцию, брали что нужно по месту.
@@ -186,3 +239,10 @@ EXTENDS [`2026-06-01-satellite-feature-harvest.md`](2026-06-01-satellite-feature
 2. **CC Routines умеют HTTP-диспетчер** (`/fire`) — а наш runtime-bridge dispatch сейчас сломан. Можно взять готовый `/fire` для operator-диспетча вместо достройки сломанного.
 
 Записал всё в этот патч (закрывает дыру «популяция не перечислена») + 3 новые SSOT-строки (#101-#103, #100 оставил за #328). Находки 1/2 трогают живой код — вынес как DECISION-NEEDED под отдельные R-phase, не решаю сам.
+
+**Wave-2 (§10) — прошёлся по всем спутникам автономно** (Superset · Superpowers · AI Factory · amux · CC-native; OhMyOpencode и Cursor — по твоему «не надо» выкинул). Главное «знать свои инструменты»:
+- **CC native** — мы недоиспользуем кучу своего: `/goal` (автономный цикл до условия), хуки `SubagentStart/Stop/TaskCompleted/PreCompact/ConfigChange` (можно механизировать орк-дисциплину + защиту settings.json детерминированно, $0), `/code-review --fix`, `/batch`, skill-frontmatter (`paths:`/`model:`/`effort:`). Это самый большой выигрыш по эффективности.
+- **Superpowers** — все 14 скиллов уже стоят и образуют полный dev-цикл; гэп только в problem-solving наборе (не склонирован локально).
+- **AI Factory** — Reflex Loop (fix→patch→implement→evolve) реально закрывает «наши фиксы не учатся вперёд»; ADOPT operator.
+- **amux** — почти всё перекрывает CC натив; **поймал ошибку: «#85=amux» в #328 неверно** (#85 = pre-commit), amux вообще не было в SSOT → строка #104 + коррекция.
++5 SSOT-строк #104-#108. CC-claims помечены worker-sourced (не все ре-верифицированы мной — bench-test до wiring живого кода).
