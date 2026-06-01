@@ -103,14 +103,43 @@ export function selectParked(tasks: AifTask[], projectId?: string): AifTask[] {
   });
 }
 
-/** The human-readable parked reason: blockedReason, else a reviewComments excerpt. */
+/**
+ * Extract the question a mid-flight park appended to the plan under
+ * OPEN_QUESTION_ANCHOR. park.ts writes `${ANCHOR} (awaiting operator)\n\n<question>`,
+ * so we return the text after the anchor LINE (the most recent anchor), or null when
+ * the plan has no anchor / no body. This recovers the question text for a mid-flight
+ * park whose ephemeral blockedReason was wiped by implementing→review (Finding E).
+ */
+export function extractOpenQuestion(plan: string | null | undefined): string | null {
+  if (typeof plan !== 'string') return null;
+  const idx = plan.lastIndexOf(OPEN_QUESTION_ANCHOR);
+  if (idx === -1) return null;
+  // Drop the remainder of the anchor line (e.g. " (awaiting operator)"), then trim.
+  const body = plan.slice(idx + OPEN_QUESTION_ANCHOR.length).replace(/^[^\n]*\n/, '').trim();
+  return body.length > 0 ? body : null;
+}
+
+const REASON_EXCERPT_CAP = 300;
+const excerpt = (s: string): string =>
+  s.length > REASON_EXCERPT_CAP ? `${s.slice(0, REASON_EXCERPT_CAP)}…` : s;
+
+/**
+ * The human-readable parked reason, in precedence order:
+ *   1. blockedReason (the original park reason — most precise),
+ *   2. the OPEN QUESTION text recovered from the plan (mid-flight park whose
+ *      blockedReason was wiped — Finding E; preferred over a review excerpt because
+ *      it IS the question, not a review byproduct),
+ *   3. a reviewComments excerpt,
+ *   4. "(no reason recorded)".
+ */
 export function parkedReason(task: AifTask): string {
   if (typeof task.blockedReason === 'string' && task.blockedReason.trim().length > 0) {
     return task.blockedReason.trim();
   }
+  const fromPlan = extractOpenQuestion(task.plan);
+  if (fromPlan) return excerpt(fromPlan);
   if (typeof task.reviewComments === 'string' && task.reviewComments.trim().length > 0) {
-    const trimmed = task.reviewComments.trim();
-    return trimmed.length > 300 ? `${trimmed.slice(0, 300)}…` : trimmed;
+    return excerpt(task.reviewComments.trim());
   }
   return '(no reason recorded)';
 }

@@ -18,6 +18,7 @@ import {
   selectParked,
   isParked,
   parkedReason,
+  extractOpenQuestion,
   formatHuman,
   parseQuestionsArgs,
 } from '../src/cli/questions.js';
@@ -87,6 +88,49 @@ describe('POSITIVE — a manualReviewRequired task is selected and printed', () 
     });
     expect(reason.length).toBeLessThanOrEqual(301); // 300 chars + ellipsis
     expect(reason.endsWith('…')).toBe(true);
+  });
+});
+
+// ── Finding E: mid-flight park whose blockedReason was wiped — recover the
+// question from the plan's OPEN QUESTION anchor instead of "(no reason recorded)". ──
+describe('extractOpenQuestion — recover the question text from the plan anchor', () => {
+  it('returns the text after the anchor line (dropping the " (awaiting operator)" suffix)', () => {
+    const plan = `# Plan\n\nsteps\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nOption A vs B — which default?\n`;
+    expect(extractOpenQuestion(plan)).toBe('Option A vs B — which default?');
+  });
+  it('returns the LAST anchor block when several are present (most recent park)', () => {
+    const plan = `${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nfirst\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nsecond\n`;
+    expect(extractOpenQuestion(plan)).toBe('second');
+  });
+  it('returns null when the plan has no anchor or no body', () => {
+    expect(extractOpenQuestion('# Plan\n\njust steps')).toBeNull();
+    expect(extractOpenQuestion(null)).toBeNull();
+  });
+});
+
+describe('parkedReason — Finding E: mid-flight park surfaces the question, not "(no reason recorded)"', () => {
+  it('recovers the question from the plan when blockedReason is empty', () => {
+    const reason = parkedReason({
+      id: 'm',
+      title: 'mid-flight',
+      status: 'review',
+      blockedReason: null,
+      plan: `# Plan\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nWait forever or auto-default?\n`,
+    });
+    expect(reason).toBe('Wait forever or auto-default?');
+  });
+
+  // Negative guard: green now; RED if the plan-fallback regresses and the mid-flight
+  // park falls through to the literal "(no reason recorded)" again (the Finding-E bug).
+  it('GUARD: a mid-flight park does NOT render "(no reason recorded)"', () => {
+    const reason = parkedReason({
+      id: 'm',
+      title: 'mid-flight',
+      status: 'review',
+      blockedReason: null,
+      plan: `# Plan\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nQ?\n`,
+    });
+    expect(reason).not.toBe('(no reason recorded)');
   });
 });
 
