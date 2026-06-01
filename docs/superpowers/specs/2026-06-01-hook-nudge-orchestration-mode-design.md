@@ -54,6 +54,18 @@ Add one numbered point to the existing pre-question reminder (the hook already n
 
 Always-on (design forks happen in normal mode too — this very session is the evidence). Stays a **prose nudge, not a gate** — the hook cannot mechanically tell design-fork from quick-fork, and gating a judgment call is `#gate-where-judgment-needed`. No new file (avoids `#two-prompts-drift`).
 
+### 3.4 Brainstorm nudge on the aif-pull channel (item 6, recursive-self-application gap)
+
+`ask-question-reminder.sh` only covers the path where *I* surface a question via `AskUserQuestion`. But aif-parked questions surface through a **different** channel — `questions.ts` `formatHuman` (`packages/runtime-bridge/src/cli/questions.ts:101-112`), the CC pull-channel I run to list parked aif forks. That output today carries no brainstorm cue, so an aif design-fork I read there and process without AUQ gets no "brainstorm-first" prompt.
+
+**Fix:** when `formatHuman` returns a non-empty list, append a footer line:
+
+> «⚠ Если среди этих есть развилка о дизайне/стратегии — открой `superpowers:brainstorming` ПЕРЕД ответом (исследуй → рекомендация с аргументами), не релей голой карточкой.»
+
+Deterministic, fires every time aif questions surface. Prose nudge, not a gate (judgment). The empty case (`'No parked questions.'`) is unchanged. This is the **same discipline as §3.3, one channel over** — `#two-prompts-drift` is avoided because the two strings live at genuinely different surfacing points (I-ask vs aif-parked) and the wording is channel-specific.
+
+> **Sequencing:** `formatHuman` is also touched by **item 4** (the mid-flight-park `isParked` fix). To keep `questions.ts` changes atomic-by-file and avoid a cross-PR conflict, this footer **ships inside item 4's PR**, not the hook-nudge branch. It is design-owned by this spec (item 6 family) but delivered with item 4's `questions.ts` reproduction. The hook-nudge umbrella (Tasks 1-3 in the plan) covers only `.claude/hooks/**`.
+
 ## §4 Test matrix (`packages/core/hooks/end-of-turn-reminder.test.ts`)
 
 Marker injected via `ORCHESTRATION_MODE_MARKER` env pointing at a temp file (present/fresh, present/stale, absent).
@@ -92,3 +104,4 @@ Marker injected via `ORCHESTRATION_MODE_MARKER` env pointing at a temp file (pre
 4. Stale marker → behaves as normal mode.
 5. `ask-question-reminder.sh` reminder text carries the brainstorm cue.
 6. `@dual-pair`/marker-path consistency verified (test or shared resolver).
+7. `formatHuman` (aif-pull channel) appends the brainstorm-nudge footer on a non-empty parked list; empty case unchanged. (Delivered in item 4's PR per §3.4; `aif-questions.test.ts` adds a footer-present assertion.)
