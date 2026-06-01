@@ -34,13 +34,12 @@ const KICKOFFS_DIR = resolve(REPO_ROOT, '.claude/orchestrator-prompts');
  * Exempt kickoff dirs (allowlist; must grow only with documented rationale):
  *  - 'aif-ssot-corrections' — pre-rule kickoff (created before 2026-05-12, when
  *    ai-laziness-traps.md was added); has inline T-refs but no explicit rule citation.
- *  - 'qloop-ux-probe' — a question-loop *test fixture* (2-question resume probe), not a
- *    work-delegating orchestration kickoff. It delegates no R-phase/build, so the trap
- *    enumeration the rule protects (ai-laziness-traps §3) does not apply. Gitignored, so
- *    this only ever fires at local pre-push (KICKOFFS_AVAILABLE is false in CI). Added
- *    2026-06-01 by qloop-ux-probe Finding F2.
+ *
+ * ('qloop-ux-probe' was exempted 2026-06-01 as a question-loop test fixture, then
+ *  removed 2026-06-02 once the fixture dir was gone — a stale exempt entry that the
+ *  §positive-guard test correctly flagged.)
  */
-const EXEMPT_LIST: readonly string[] = ['aif-ssot-corrections', 'qloop-ux-probe'];
+const EXEMPT_LIST: readonly string[] = ['aif-ssot-corrections'];
 
 // Compound citation check — returns true if ANY of (a)(b)(c)(d) is present.
 const RULE_CITATION_RE = /ai-laziness-traps/;
