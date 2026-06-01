@@ -104,7 +104,11 @@ function runHook(
   const r = spawnSync('bash', [HOOK], {
     input: JSON.stringify(stdin),
     encoding: 'utf8',
-    env: env ? { ...process.env, ...env } : process.env,
+    // Default to the Russian pack: the assertions below check Russian payload
+    // content and the transcripts embed the Russian recap marker. AIF_HOOK_LANG
+    // selects the lang pack (default en); these cases are the RU-pack contract.
+    // A test may override via env: { AIF_HOOK_LANG: 'en' } (see en-pack smoke).
+    env: { ...process.env, AIF_HOOK_LANG: 'ru', ...env },
   });
   return { status: r.status ?? -1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
 }
@@ -411,6 +415,29 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     ).not.toBe('');
     const payload = JSON.parse(r.stdout);
     expect(payload.decision).toBe('block');
+  });
+
+  // ---------------------------------------------------------------------------
+  // en-pack smoke — AIF_HOOK_LANG=en (canonical default). Confirms the language
+  // pack is wired and emits English payload + the English recap marker, with no
+  // Russian leakage. The RU-pack contract is covered by every other case above
+  // (suite default AIF_HOOK_LANG=ru). Spec: docs/superpowers/specs/
+  // 2026-06-01-hook-lang-i18n-design.md.
+  // ---------------------------------------------------------------------------
+  it('en pack: Branch C with AIF_HOOK_LANG=en → English reason + English recap marker', () => {
+    const tr = writeTranscript([
+      aiTitle('Session goal EN'),
+      userTurn('first task'),
+      assistantText(longMarkdownText() + '\n\nWhich approach do you prefer — X or Y?'),
+    ]);
+    const r = runHook({ transcript_path: tr, stop_hook_active: false }, { AIF_HOOK_LANG: 'en' });
+    expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+    expect(r.stdout, 'en pack must fire Branch C on long markdown + trailing question').not.toBe('');
+    const payload = JSON.parse(r.stdout);
+    expect(payload.decision).toBe('block');
+    expect(payload.reason).toContain('## 🟢 In plain words');
+    expect(payload.reason).toMatch(/long answer|fork-question/i);
+    expect(payload.reason, 'en pack must not leak Russian payload').not.toMatch(/Стоп|развилк/);
   });
 
   it('B2 fix: AskUserQuestion-only turn after prior "## 🟢" recap → must FIRE (not suppressed)', () => {

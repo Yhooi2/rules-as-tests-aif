@@ -75,11 +75,15 @@ interface RunResult {
   stderr: string;
 }
 
-function runHook(tool: string, sessionId: string, tmp: string): RunResult {
+function runHook(tool: string, sessionId: string, tmp: string, lang = 'ru'): RunResult {
   const r = spawnSync('bash', [HOOK], {
     input: JSON.stringify({ tool_name: tool, session_id: sessionId }),
     encoding: 'utf8',
-    env: { ...process.env, TMPDIR: tmp },
+    // Default to the Russian pack: the reason-content assertions below check
+    // Russian prose ('Стоп', 'дизайн/стратеги'). AIF_HOOK_LANG selects the lang
+    // pack (default en); these are the RU-pack contract. The en-pack smoke
+    // overrides lang='en'. Spec: docs/superpowers/specs/2026-06-01-hook-lang-i18n-design.md.
+    env: { ...process.env, TMPDIR: tmp, AIF_HOOK_LANG: lang },
   });
   return {
     status: r.status ?? -1,
@@ -114,6 +118,20 @@ describe.skipIf(!JQ)('ask-question-reminder.sh — PreToolUse:AskUserQuestion fo
     // The cue must name the brainstorming skill so a design-fork is not card-punted.
     expect(reason).toMatch(/brainstorming/i);
     expect(reason).toMatch(/дизайн|стратеги/i);
+  });
+
+  it('en pack: AIF_HOOK_LANG=en → English fork-challenge, no Russian leakage', () => {
+    // Confirms the language pack is wired for this hook too: en is the canonical
+    // default; reason must be English ('Stop'), still name the brainstorming cue,
+    // and not leak Russian. RU-pack contract covered by every other case (default
+    // lang='ru'). Spec: docs/superpowers/specs/2026-06-01-hook-lang-i18n-design.md.
+    const { tmp, session } = makeTmpEnv();
+    const r = runHook('AskUserQuestion', session, tmp, 'en');
+    expect(r.status).toBe(0);
+    const reason = JSON.parse(r.stdout).hookSpecificOutput.permissionDecisionReason as string;
+    expect(reason).toContain('Stop');
+    expect(reason).toMatch(/brainstorming/i);
+    expect(reason, 'en pack must not leak Russian payload').not.toContain('Стоп');
   });
 
   it('PAIRED-POSITIVE: AUQ within 45s loop-guard window (fresh flag) → exit 0 + empty stdout (allow)', () => {
