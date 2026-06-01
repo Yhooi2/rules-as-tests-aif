@@ -56,3 +56,36 @@ export async function getTask(baseUrl: string, taskId: string): Promise<AifTaskF
 export async function putTask(baseUrl: string, taskId: string, body: Record<string, unknown>): Promise<void> {
   await request('PUT', baseUrl, `/tasks/${taskId}`, body);
 }
+
+/**
+ * The subset of an aif-handoff project the ensure-parallel guard reads + round-trips.
+ * aif exposes NO `GET /projects/:id`; the list (`GET /projects`) returns these camelCase
+ * fields (drizzle ProjectRow). The four `*MaxBudgetUsd` fields are load-bearing for the
+ * round-trip: the PUT handler NULLs any omitted budget (`@aif/data updateProject: x ?? null`),
+ * so they must be read here and written back to avoid clobbering a UI-set budget.
+ */
+export interface AifProjectFull {
+  id: string;
+  name: string;
+  rootPath: string;
+  parallelEnabled?: boolean;
+  plannerMaxBudgetUsd?: number | null;
+  planCheckerMaxBudgetUsd?: number | null;
+  implementerMaxBudgetUsd?: number | null;
+  reviewSidecarMaxBudgetUsd?: number | null;
+  defaultTaskRuntimeProfileId?: string | null;
+  defaultPlanRuntimeProfileId?: string | null;
+  defaultReviewRuntimeProfileId?: string | null;
+  defaultChatRuntimeProfileId?: string | null;
+}
+
+/** GET /projects → all projects (aif has no GET /projects/:id; callers filter by id). */
+export async function getProjects(baseUrl: string): Promise<AifProjectFull[]> {
+  const res = await request('GET', baseUrl, '/projects');
+  return Array.isArray(res) ? (res as AifProjectFull[]) : [];
+}
+
+/** PUT /projects/:id with a full createProjectSchema body (the only parallelEnabled write path). */
+export async function putProject(baseUrl: string, projectId: string, body: Record<string, unknown>): Promise<void> {
+  await request('PUT', baseUrl, `/projects/${projectId}`, body);
+}

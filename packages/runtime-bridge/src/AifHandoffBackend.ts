@@ -32,6 +32,7 @@
  */
 import type { RuntimeBackend } from './backend.js';
 import { BackendError } from './backend.js';
+import { ensureParallelEnabled } from './cli/ensure-parallel.js';
 import type { KickoffSpec, TaskHandle, TaskStatus, TaskResult } from './types.js';
 import {
   awaitTaskDone,
@@ -133,6 +134,26 @@ export class AifHandoffBackend implements RuntimeBackend {
         'AifHandoffBackend requires projectId -- set RUNTIME_BRIDGE_AIF_PROJECT_ID env var',
         'dispatch_failed',
         'aif-handoff',
+      );
+    }
+
+    // -- Step 0: self-heal Finding A — ensure per-task worktree isolation is ON.
+    // aif creates a per-task worktree only when project.parallelEnabled=1 (gate 2 of 3,
+    // planner.ts); a freshly-provisioned instance has it 0 → tasks run in-place on the
+    // shared checkout → dirty_worktree 409 on the NEXT dispatch. Best-effort: a guard
+    // failure must NOT block dispatch (warn + proceed) — the dispatch itself still works,
+    // only the isolation is degraded. See research-patch 2026-06-01-aif-task-isolation.md §2.
+    try {
+      const ensured = await ensureParallelEnabled(this.baseUrl, this.projectId);
+      if (ensured.changed) {
+        process.stderr.write(
+          `[runtime-bridge] self-heal: enabled parallelEnabled on project ${this.projectId} (Finding A — per-task worktree isolation)\n`,
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(
+        `[runtime-bridge] WARN: could not ensure parallelEnabled (tasks may run in-place / risk dirty_worktree): ${msg}\n`,
       );
     }
 
