@@ -10,9 +10,19 @@
 #   - aif tasks whose title matches the TEST allowlist (UXPROBE / smoke / probe)
 #   - /tmp/runtime-bridge-*.md  (ManualBackend kickoffs) older than KEEP_DAYS
 #   - /tmp/runtime-bridge-dedup.jsonl.bak-*  (manual backups)
+#   - container git junk ALREADY MERGED into origin/staging: retained per-task
+#     worktrees + their feature/* branches (§4). Enabling per-task worktrees
+#     (parallel_enabled, research-patch 2026-06-01-aif-task-isolation.md §2.1)
+#     makes aif RETAIN worktrees post-terminal — this section is the standing
+#     sweep so they self-clean, completing the #359 "no manual/AI sweep" principle.
 #
-# It does NOT touch: the live dedup store, any container git state (a container
-# stash is REPORTED, never dropped — that is the operator's git), real tasks.
+# It does NOT touch: the live dedup store, UNMERGED container git state (unmerged
+# branches/worktrees are PRESERVED — real in-flight work; a container stash is
+# REPORTED, never dropped — that is the operator's git), real tasks. §4 removes
+# ONLY branches/worktrees merged into origin/staging (their work is in the trunk),
+# double-guarded by `git branch --merged` filtering + `git branch -d` (which itself
+# refuses to delete an unmerged branch). This is operator/co-located tooling
+# (docker exec); a portable fix is upstream auto-removal of retained worktrees.
 #
 # Usage: bash bridge-cleanup.sh [--dry-run]
 set -uo pipefail
@@ -67,6 +77,45 @@ if [[ -n "$agent" ]]; then
     printf '%s\n' "$st" | sed 's/^/    /'
     note "→ drop yourself if superseded: docker exec $agent sh -c 'cd /home/www/rules-as-tests-aif && git stash drop'"
   else note "none"; fi
+else note "no agent container"; fi
+
+# ── 4. Prune MERGED container git junk (retained worktrees + feature branches) ─
+# SAFE BY CONSTRUCTION: only branches/worktrees merged into origin/staging are
+# removed (their work is in the trunk). Unmerged is NEVER touched — `git branch
+# --merged` filters to merged only, and `git branch -d` itself refuses to delete
+# an unmerged branch (belt + braces). Enabling per-task worktrees makes aif retain
+# them post-terminal (research-patch 2026-06-01-aif-task-isolation.md §2.1); this
+# is the standing sweep that keeps them from piling up.
+printf '\n-- container git: prune MERGED worktrees + feature branches (unmerged preserved) --\n'
+if [[ -n "$agent" ]]; then
+  # -i forwards the heredoc on stdin to `sh -s` (without it docker exec discards stdin).
+  docker exec -i -e DRY="$DRY" "$agent" sh -s <<'CONTAINER_SWEEP'
+set -u
+cd /home/www/rules-as-tests-aif 2>/dev/null || { echo "  (checkout not found)"; exit 0; }
+git fetch origin staging -q 2>/dev/null || true
+git worktree prune
+cur=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+main_wt=$(git rev-parse --show-toplevel 2>/dev/null)
+# 1) retained non-main worktrees whose branch is merged → remove (unmerged kept)
+git worktree list --porcelain 2>/dev/null \
+  | awk '/^worktree /{p=$2} /^branch /{print p"\t"$2}' \
+  | while IFS="$(printf '\t')" read -r wpath wref; do
+      [ "$wpath" = "$main_wt" ] && continue
+      br=${wref#refs/heads/}
+      if [ -n "$(git branch --merged origin/staging --list "$br" 2>/dev/null)" ]; then
+        if [ "$DRY" = 1 ]; then echo "  [dry-run] would remove worktree $wpath ($br merged)"
+        else git worktree remove "$wpath" 2>/dev/null && echo "  removed worktree $wpath ($br)"; fi
+      else echo "  keep worktree $wpath ($br — unmerged)"; fi
+    done
+# 2) merged feature/* branches → delete (-d refuses unmerged; skip the checked-out one)
+git branch --merged origin/staging --format='%(refname:short)' 2>/dev/null \
+  | grep '^feature/' \
+  | while read -r b; do
+      [ "$b" = "$cur" ] && { echo "  skip current $b"; continue; }
+      if [ "$DRY" = 1 ]; then echo "  [dry-run] would delete merged branch $b"
+      else git branch -d "$b" >/dev/null 2>&1 && echo "  deleted merged branch $b"; fi
+    done
+CONTAINER_SWEEP
 else note "no agent container"; fi
 
 printf '\n=== done ===\n'
