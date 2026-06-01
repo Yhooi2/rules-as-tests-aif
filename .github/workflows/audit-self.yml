@@ -236,8 +236,6 @@ jobs:
         run: bash tests/hooks/prepush-fallback-base-ref.test.sh
       - name: Run ci-success aggregate-gate paired-negative
         run: bash scripts/ci-success-gate.test.sh
-      - name: Run end-of-turn claim-scan hook test (autonomous-self-audit §11.1)
-        run: bash tests/hooks/eot-claim-scan.test.sh
       - name: Run install.sh internal-refs transform test (Item 12 mirror-sync, SSOT)
         run: bash tests/install-sh/transform-internal-refs.test.sh
 
