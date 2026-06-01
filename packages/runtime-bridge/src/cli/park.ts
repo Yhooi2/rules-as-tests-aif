@@ -15,7 +15,10 @@
  * Soft/advisory questions do NOT use this — they already flow non-blocking to chat.
  * This is ONLY for a hard fork that blocks continuing the implementation.
  *
- * Config: RUNTIME_BRIDGE_AIF_URL (default http://localhost:3009).
+ * Config: base URL precedence RUNTIME_BRIDGE_AIF_URL ?? API_BASE_URL ?? http://localhost:3009.
+ *   park.ts is the ONLY CLI run from INSIDE the aif agent container, which exposes the
+ *   service as API_BASE_URL=http://api:3009 (localhost is unreachable there). The host
+ *   orchestrator sets neither and gets the localhost default. (qloop-ux-probe Finding C.)
  * Exit codes: 0 parked; 1 bad args or REST error (message on stderr).
  *
  * @cc-only-rationale: pure TS over plain HTTP — also callable from a smoke-test
@@ -26,6 +29,17 @@ import { getTask, putTask } from './aifHttp.js';
 import { OPEN_QUESTION_ANCHOR } from './openQuestion.js';
 
 const DEFAULT_AIF_URL = 'http://localhost:3009';
+
+/**
+ * Resolve the aif-handoff base URL with container-awareness.
+ * Precedence: RUNTIME_BRIDGE_AIF_URL (explicit override) → API_BASE_URL (set inside the
+ * aif agent container, e.g. http://api:3009) → http://localhost:3009 (host orchestrator).
+ * Without the API_BASE_URL fallback, park() is unreachable from inside the container
+ * (localhost:3009 → connection refused), so the agent cannot park itself — Finding C.
+ */
+export function resolveAifBaseUrl(env: NodeJS.ProcessEnv): string {
+  return env.RUNTIME_BRIDGE_AIF_URL || env.API_BASE_URL || DEFAULT_AIF_URL;
+}
 
 export interface ParkArgs {
   taskId?: string;
@@ -84,7 +98,7 @@ export function formatParkResult(result: ParkResult): string {
 }
 
 async function main(): Promise<void> {
-  const baseUrl = process.env.RUNTIME_BRIDGE_AIF_URL || DEFAULT_AIF_URL;
+  const baseUrl = resolveAifBaseUrl(process.env);
   const args = parseParkArgs(process.argv.slice(2), process.env);
 
   const argError = validateParkArgs(args);
