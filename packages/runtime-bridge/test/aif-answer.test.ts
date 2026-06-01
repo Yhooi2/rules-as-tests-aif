@@ -26,6 +26,7 @@ import {
   pushAnswer,
   formatResult,
   VALID_DECISIONS,
+  appendAnswerToPlan,
 } from '../src/cli/answer.js';
 
 function okResponse(body: unknown = {}, status = 200): Response {
@@ -134,8 +135,8 @@ describe('NEGATIVE — invalid args are rejected by validateAnswerArgs', () => {
     expect(validateAnswerArgs(args)).toBeNull();
   });
 
-  it('VALID_DECISIONS lists exactly the three supported decisions', () => {
-    expect([...VALID_DECISIONS]).toEqual(['request_changes', 'approve', 'retry']);
+  it('VALID_DECISIONS lists exactly the four supported decisions', () => {
+    expect([...VALID_DECISIONS]).toEqual(['request_changes', 'approve', 'retry', 'resume']);
   });
 });
 
@@ -172,5 +173,20 @@ describe('REST error mapping (mirrors AifHandoffBackend._rest)', () => {
       BackendError,
     );
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('resume decision — pure parts', () => {
+  it('VALID_DECISIONS includes resume', () => {
+    expect([...VALID_DECISIONS]).toEqual(['request_changes', 'approve', 'retry', 'resume']);
+  });
+  it('resume requires --answer', () => {
+    const err = validateAnswerArgs({ taskId: 't-1', answer: undefined, decision: 'resume', json: false });
+    expect(err).toMatch(/requires --answer/);
+  });
+  it('appendAnswerToPlan appends a marked OPERATOR ANSWER block', () => {
+    const out = appendAnswerToPlan('# Plan\n## ⏸ OPEN QUESTION\nq', 'use Option A');
+    expect(out).toContain('## ✅ OPERATOR ANSWER (resumed)');
+    expect(out).toContain('use Option A');
   });
 });

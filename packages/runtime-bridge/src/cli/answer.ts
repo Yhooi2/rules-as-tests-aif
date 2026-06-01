@@ -53,14 +53,22 @@
  */
 import { fileURLToPath } from 'node:url';
 import { BackendError } from '../backend.js';
+import { getTask, putTask } from './aifHttp.js';
 
 const DEFAULT_AIF_URL = 'http://localhost:3009';
 
-/** The three human resolution decisions accepted by the CLI. */
-export type AnswerDecision = 'request_changes' | 'approve' | 'retry';
+/** The four human resolution decisions accepted by the CLI. */
+export type AnswerDecision = 'request_changes' | 'approve' | 'retry' | 'resume';
 
 /** The valid decisions, in CLI-help order (request_changes is the default). */
-export const VALID_DECISIONS: readonly AnswerDecision[] = ['request_changes', 'approve', 'retry'];
+export const VALID_DECISIONS: readonly AnswerDecision[] = ['request_changes', 'approve', 'retry', 'resume'];
+
+/** Append a marked OPERATOR ANSWER block to the plan (read by the implementer on the next tick). */
+export function appendAnswerToPlan(existingPlan: string | null | undefined, answer: string): string {
+  const base = (existingPlan ?? '').trimEnd();
+  const block = `\n\n## ✅ OPERATOR ANSWER (resumed)\n\n${answer.trim()}\n`;
+  return base + block;
+}
 
 /** A decision resolved to its aif-handoff state-machine event + whether the answer rides as a comment. */
 export interface ResolveStep {
@@ -122,8 +130,8 @@ export function validateAnswerArgs(args: AnswerArgs): string | null {
   if (!(VALID_DECISIONS as readonly string[]).includes(args.decision)) {
     return `invalid --decision "${args.decision}" (expected: ${VALID_DECISIONS.join(' | ')})`;
   }
-  if (args.decision === 'request_changes' && !args.answer?.trim()) {
-    return 'decision "request_changes" requires --answer <text> (the resolution to push back)';
+  if ((args.decision === 'request_changes' || args.decision === 'resume') && !args.answer?.trim()) {
+    return `decision "${args.decision}" requires --answer <text> (the resolution to push back)`;
   }
   return null;
 }
