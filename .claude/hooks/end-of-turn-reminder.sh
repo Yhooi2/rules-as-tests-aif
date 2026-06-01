@@ -54,50 +54,17 @@ if [ -n "$text" ] && printf '%s' "$text" | grep -qF '## 🟢 Простыми с
   exit 0
 fi
 
-# --- Factual-claim scan (deterministic; no LLM, no external call — no-paid-llm-in-ci).
-# spec: docs/meta-factory/research-patches/2026-05-21-autonomous-self-audit-triggering.md §11.1
-# Targets the at-write-time factual class the recap nudge alone does NOT force a
-# re-verify on: numeric counts (incident #1 "4+ files"), file:line citations
-# (incident #5 ":30"), and negative-existence claims (incident #2). These can ride a
-# SHORT turn that the long_text gate skips — so the scan fires on claim-PRESENCE
-# regardless of length, and enumerates the exact hits so the re-verify ask is
-# item-specific (Agent Verifier `[P]`-tier idea), not a generic "be careful".
-# Honest limit: this raises salience, it does not structurally force compliance.
+# Trigger ONLY on (a) a substantial structured answer ("много текста") or
+# (b) a question. Tool calls alone do NOT trigger — a short "готово, поправил X"
+# turn with no question needs no recap.
 #
-# Recall + precision fix (instruction-compliance-empirical R-phase §6.4/§9 Q-E4,
-# maintainer decision 2026-05-21): the v1 numeric regex required the count-noun
-# adjacent to the number, missing the majority of natural phrasings ("6 discipline
-# rules", "11 distinct principles" — §6.4 measured recall ~0.43). The numeric scan
-# now allows ≤2 intervening tokens. And precision: the v1 scan ran over raw text,
-# over-firing on numbers/paths inside fenced code (drafted prompts), blockquotes
-# (quoted material), and markdown link targets (§6.2 measured precision ~0.20-0.25,
-# cry-wolf). The scan now runs over a cleaned copy with those three classes stripped.
-# Inline `code` is KEPT so genuine `file:line` citations in prose still fire.
-# NOTE: this scan's regexes + cleaning are kept identical to the eval scorer
-# (tests/eval/claim-groundedness-scorer.py) so the eval measures the same surface.
-claim_hits=""
-if [ -n "$text" ]; then
-  scan_text=$(printf '%s\n' "$text" \
-    | awk 'BEGIN{f=0} /^[[:space:]]*```/{f=!f; next} f{next} {print}' \
-    | grep -vE '^[[:space:]]*>' \
-    | sed -E 's/\]\([^)]*\)/]/g')
-  while IFS= read -r h; do [ -n "$h" ] && claim_hits+="  • число «${h}» — переrun команду подсчёта, процитируй вывод (не по памяти)"$'\n'; done \
-    < <(echo "$scan_text" | grep -oiE '[0-9]+\+?( +[^[:space:]]+){0,2} +(files?|tests?|cases?|entries|entry|rules?|principles?|layers?|incidents?|candidates?|commits?|hooks?|lines?)' | head -5)
-  while IFS= read -r h; do [ -n "$h" ] && claim_hits+="  • цитата «${h}» — переоткрой file:line, подтверди содержимое строки"$'\n'; done \
-    < <(echo "$scan_text" | grep -oiE '[a-zA-Z0-9_./-]+\.(ts|tsx|js|jsx|md|sh|json|ya?ml):[0-9]+' | head -5)
-  while IFS= read -r h; do [ -n "$h" ] && claim_hits+="  • negative-existence «${h}…» — назови, какие из 6 пунктов search-coverage прогнал"$'\n'; done \
-    < <(echo "$scan_text" | grep -oiE 'no (production|existing|prod|known)[^.]{0,60}(exist|found|analog|implement)' | head -3)
-fi
-has_claims=false
-[ -n "$claim_hits" ] && has_claims=true
-claim_count=0
-[ -n "$claim_hits" ] && claim_count=$(printf '%s' "$claim_hits" | grep -c '^  ' || true)
-
-
-# Trigger ONLY on (a) a substantial structured answer ("много текста"),
-# (b) a question, or (c) factual claims detected by the scan above.
-# Tool calls alone do NOT trigger — a short "готово, поправил X" turn with no
-# claim and no question needs no recap.
+# NOTE: the v1 factual-claim scan (numeric / file:line / negative-existence) was
+# REMOVED 2026-06-01 (maintainer decision). Measured recall ≈0.43 + precision
+# ≈0.20-0.25 (cry-wolf) made it a net-negative sentry — the same class as the
+# recommendation-laziness narrow-B stop-scan dropped at FP 84% (#210). Rationale +
+# evidence: docs/meta-factory/research-patches/2026-06-01-remove-claim-detector.md.
+# The recap (Branch A/C) + question-check (Branch B) survive; the always-on H1
+# reminder in inject-session-bootstrap.sh remains the cheap salience layer.
 long_text=false
 if [ "$text_length" -gt 500 ]; then
   if echo "$text" | grep -qE '^#|^- |^\* |\*\*|```|\[[^]]+\]\([^)]+\)'; then
@@ -120,12 +87,10 @@ fi
 
 
 # -- MAJOR-1 idle-suppression guard -------------------------------------------
-# Suppress Branch B (asked=true, long_text=false, has_claims=false) ONLY when
-# ALL three hold:
+# Suppress Branch B (asked=true, long_text=false) ONLY when BOTH hold:
 #   (a) Previous assistant turn already produced a "## 🟢" recap block.
 #   (b) Current turn text is NOT new -- its first 120 chars appear verbatim in
 #       the previous turn text (same question repeated/re-ping after recap).
-#   (c) has_claims=false -- a claim-bearing short turn always fires Branch D.
 # A genuinely new question will NOT match (b) because it contains content the
 # previous turn never had. Only idle re-pings are suppressed.
 # Guard never fires if only one assistant turn exists in the transcript.
@@ -133,7 +98,7 @@ fi
 # has_askuserquestion=true or current_short is empty — a tool-only turn asking a
 # NEW question must always fire. Short-circuit BEFORE the grep -qF call.
 idle_suppress=false
-if [ "$asked" = "true" ] && [ "$long_text" = "false" ] && [ "$has_claims" = "false" ]; then
+if [ "$asked" = "true" ] && [ "$long_text" = "false" ]; then
   # B2: if text is empty or it's an AskUserQuestion-only turn, never suppress
   if [ -z "$text" ] || [ "$has_askuserquestion" = "true" ]; then
     idle_suppress=false
@@ -157,14 +122,9 @@ if [ "$idle_suppress" = "true" ]; then
 fi
 
 # -- P-user glance-line (systemMessage field) ---------------------------------
-# Shown to the USER in CC UI (not to the model). Format:
-# 🎯 <anchor truncated to 60 chars> [* N fact(s) to re-verify when N>0]
+# Shown to the USER in CC UI (not to the model). Format: 🎯 <anchor ≤60 chars>
 anchor_short=$(echo "${anchor}" | head -c 60 | tr '\n' ' ')
-if [ "${claim_count}" -gt 0 ]; then
-  glance_line="🎯 ${anchor_short} · ${claim_count} факт(ов) на перепроверку"
-else
-  glance_line="🎯 ${anchor_short}"
-fi
+glance_line="🎯 ${anchor_short}"
 
 # Three branches:
 #   Branch C — long answer AND a trailing fork-question: needs BOTH the work
@@ -175,9 +135,8 @@ fi
 #     maintainer may switch to A by extending the recap to Branch A.
 #   Branch A — long substantive answer, no question: lighter per-turn work recap.
 #   Branch B — a question with no long answer body: fork-challenge + recommend-first.
-#   Branch D — claims present on a short, question-less turn: claim-only re-verify.
-#   Neither (short chatter, bare tool call, no claim) — stay silent (no reminder).
-if [ "$long_text" = "false" ] && [ "$asked" = "false" ] && [ "$has_claims" = "false" ]; then
+#   Neither (short chatter, bare tool call) — stay silent (no reminder).
+if [ "$long_text" = "false" ] && [ "$asked" = "false" ]; then
   exit 0
 fi
 
@@ -242,18 +201,6 @@ elif [ "$asked" = "true" ]; then
 Суть выбора не объясняется просто → сам вопрос сформулирован неточно: скажи об этом.
 EOF
 )
-else
-  # Branch D — claims present, but short turn with no question and no long body.
-  reminder=$(cat <<EOF
-Короткий ход — но в нём есть фактические утверждения. Прежде чем «готово», перепроверь их сам, для себя, по источнику, а не по памяти.
-EOF
-)
-fi
-
-# Append the enumerated factual-claim re-verify block to whatever reminder fired
-# (Branch A/B/C/D) — the item-specific salience upgrade over the generic nudge.
-if [ "$has_claims" = "true" ]; then
-  reminder+=$'\n\n'"Фактические утверждения в этом ходе — перепроверь КАЖДОЕ перед «готово» (проверка источника, не пересказ):"$'\n'"${claim_hits}"
 fi
 
 # `reason` is the field delivered to the MODEL when decision=block on a Stop hook

@@ -188,23 +188,20 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     expect(payload.systemMessage).toMatch(/^🎯 /);
   });
 
-  it('Branch D (short text with file:line claim) → emits JSON; systemMessage counts the fact', () => {
-    // Claim regex at hook:78: [a-zA-Z0-9_./-]+\.(ts|tsx|js|jsx|md|sh|json|ya?ml):[0-9]+
+  // NOTE: the former "Branch D" (short turn with a factual claim → claim-only
+  // re-verify) was REMOVED 2026-06-01 with the claim-scan detector itself
+  // (recall ≈0.43 / precision ≈0.20-0.25, cry-wolf). A short factual-report turn
+  // with no question now stays silent — see the "short turn … → exit 0 silent"
+  // case below. Rationale: research-patches/2026-06-01-remove-claim-detector.md.
+  it('short turn with a file:line citation but no question → exit 0 silent (claim-scan removed)', () => {
     const tr = writeTranscript([
       aiTitle('Цель сессии D'),
       userTurn('первое задание'),
       assistantText('Готово. Поправил packages/core/hooks/foo.ts:42 как просил.'),
     ]);
     const r = runHook({ transcript_path: tr, stop_hook_active: false });
-    expect(r.status).toBe(0);
-    expect(r.stdout, 'short turn with file:line claim must fire Branch D').not.toBe('');
-    const payload = JSON.parse(r.stdout);
-    expect(payload.decision).toBe('block');
-    // Branch D reminder is the claim-only re-verify variant (hook:236-240).
-    expect(payload.reason).toMatch(/перепроверь|источник/i);
-    expect(payload.reason).toContain('packages/core/hooks/foo.ts:42');
-    // systemMessage glance-line includes the claim count (hook:154-158).
-    expect(payload.systemMessage).toMatch(/^🎯 .* · 1 факт/);
+    expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+    expect(r.stdout, 'short claim-bearing turn with no question must now stay silent').toBe('');
   });
 
   it('Branch B via AskUserQuestion tool_use (no text) → emits JSON; has_askuserquestion path', () => {
@@ -266,27 +263,6 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     const r = runHook({ transcript_path: tr, stop_hook_active: false });
     expect(r.status).toBe(0);
     expect(r.stdout, 'short factual report with no fork should not fire a recap').toBe('');
-  });
-
-  // ---------------------------------------------------------------------------
-  // BOUNDARY — precision guards: scenarios that LOOK like triggers but must
-  // NOT fire (false-positive suppression).
-  // ---------------------------------------------------------------------------
-
-  it('file:line citation INSIDE a fenced code block → does NOT count as claim → exit 0 silent (hook:71-74 precision fix)', () => {
-    // hook:71-74 strips fenced ```...``` blocks before claim-scan to avoid
-    // false-firing on drafted code/prompts. A short turn whose only file:line
-    // lives inside a fence must therefore NOT trigger Branch D.
-    const tr = writeTranscript([
-      aiTitle('cel'),
-      userTurn('первое задание'),
-      assistantText(
-        'Привожу черновик команды:\n```\npackages/core/hooks/foo.ts:42 something\n```\nКак закончу — пришлю.',
-      ),
-    ]);
-    const r = runHook({ transcript_path: tr, stop_hook_active: false });
-    expect(r.status).toBe(0);
-    expect(r.stdout, 'claim inside code fence is a false-positive guard, must not fire').toBe('');
   });
 
   // ---------------------------------------------------------------------------
