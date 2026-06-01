@@ -32,7 +32,7 @@ rsync -a --ignore-existing "$SUPERSET_ROOT_PATH/.claude/orchestrator-prompts/" "
 
 ### Two facts that shrink scope
 
-- **Atomicity (Q3) already satisfied.** `update-cache.sh:99,110`, `update-delta.sh:78,82`, `delta-write-from-state.sh:96,103` all write via `mktemp`+`mv`. Scope = confirm a paired-negative test guards it, add if absent. No atomicity build.
+- **Atomicity (Q3) — partial: atomic but NOT symlink-preserving (correction, found in planning 2026-06-01).** `update-cache.sh:99,110`, `update-delta.sh:78,82`, `delta-write-from-state.sh:96,103` write via `mktemp`+`mv` — atomic for *real* files. **But Part-2 shares these files as symlinks, and `mv tmp <symlink>` REPLACES the symlink with a real file** (verified empirically: after the first cache write the worktree file stops being a symlink → cross-worktree share lost). So SW-B is a real fix, not just "confirm a test": the helpers must become **symlink-aware** — when the target is a symlink, write the temp file beside the *resolved canonical target* and `mv` onto the resolved path, preserving the worktree symlink. See §2.4.
 - **Channel B already covers the Superset *runtime*.** CC reads the repo's `.claude/settings.json`, so a CC `SessionStart` hook fires inside a Superset worktree too. Superset is distinct only at the *worktree-create* moment (the `setup` array) — not at session start.
 
 ### Dedup (CLEAR)
@@ -80,9 +80,19 @@ Maintainer requirement: *agnostic, but uses CC's advantages when present, AND ha
 
 Migrating an already-diverged worktree (e.g. this one) is a **separate one-time manual invocation** where the maintainer picks `canon`/`worktree` per case — a data-authority call made at migration time, never baked into the auto-callers (which always use `skip`).
 
-### §2.4 Q3 — atomicity (confirm, don't build)
+### §2.4 Q3 — atomicity + symlink-preservation (real fix)
 
-Verify each of `update-cache.sh` / `update-delta.sh` / `delta-write-from-state.sh` has a paired-negative test asserting the temp-then-`mv` write survives a mid-write interruption without corrupting the shared symlink target. Tests live at `packages/core/hooks/*.test.ts` (existing: `update-delta.test.ts`, `delta-write-from-state.test.ts`). Add the atomicity assertion where missing.
+The temp-then-`mv` writes are atomic for real files but **break the symlink** when the target is a shared symlink (verified: `mv tmp <symlink>` → real file, share lost). All three helpers (`update-cache.sh`, `update-delta.sh`, `delta-write-from-state.sh`) must become **symlink-aware**:
+
+```sh
+# resolve the real target: if FILE is a symlink, follow it; else FILE itself.
+target="$FILE"; [ -L "$FILE" ] && target="$(cd "$(dirname "$(readlink "$FILE")")" && pwd)/$(basename "$(readlink "$FILE")")"
+tmp="$(mktemp "$(dirname "$target")/$(basename "$FILE").tmpXXXXXX")"
+# ...write tmp...
+mv "$tmp" "$target"        # writes through to $CANON; worktree symlink preserved
+```
+
+This keeps atomicity (still temp-then-`mv`, same dir as target → same filesystem → rename is atomic) AND preserves the cross-worktree symlink. Tests live at `packages/core/hooks/*.test.ts` (existing: `update-cache.test.ts`, `update-delta.test.ts`, `delta-write-from-state.test.ts`). New paired-negative per helper: target is a symlink into `$CANON` → after run, target is **still a symlink** AND `$CANON` content updated AND a second linked worktree sees it. Stripped (non-symlink-aware) variant → target becomes a real file → test fails.
 
 ### §2.4a Open verification (T16 — confirm in implementation, do not infer)
 
@@ -108,7 +118,7 @@ Add a loop over the two known root files (`_plan-cache.md`, `_master-backlog-del
 | SW | Surface | Type | Parallel | Delivery |
 |---|---|---|---|---|
 | **A** | `link-coordination.sh`: root-file loop (§2.6) + `--on-conflict` flag (§2.3) + bash tests | I-phase-small | with B | committed |
-| **B** | confirm/add atomicity paired-negative tests (§2.4) | I-phase-small | with A | committed |
+| **B** | make 3 cache/delta helpers symlink-aware (write-through resolved target) + paired-negative tests (§2.4) | I-phase-small | with A | committed |
 | **C** | wiring (4 channels): **G** `.husky/post-checkout` (agnostic floor) + **B** CC `SessionStart` in settings.json + **A** skill §0 self-heal + **C** Superset `setup`-array runbook; all call the extended linker | wiring | after SW-A | mixed commit/runbook |
 
 SW-A ⟂ SW-B (file-disjoint: linker+its tests vs helper tests). SW-C depends on SW-A (every channel calls the *extended* linker). Within SW-C, the git hook (G) + settings.json (B) + skill §0 (A) are committed (maintainer-applied for `.husky/` and `settings.json`); the Superset `setup` edit (C) is a per-machine runbook.
@@ -124,7 +134,7 @@ SW-A ⟂ SW-B (file-disjoint: linker+its tests vs helper tests). SW-C depends on
 ## §5 Testing
 
 - SW-A: bash tests for the root-file loop (adopt + link + idempotent re-run) and each `--on-conflict` mode (canon discards local, worktree adopts local, skip exits 1). Paired-negative: a conflict under `skip` must exit 1 and leave both files intact.
-- SW-B: paired-negative atomicity test — simulate interrupted write, assert target is either old-complete or new-complete, never truncated.
+- SW-B: per-helper paired-negative — target is a symlink into `$CANON`; after the helper runs assert (1) target is **still a symlink**, (2) `$CANON` content updated, (3) a second linked worktree sees it. Stripped non-symlink-aware variant → target becomes real file → test fails.
 - SW-C liveness (manual, session-bound — no CI, `no-paid-llm-in-ci.md`):
   - **G**: `git worktree add` a throwaway worktree (plain git, no CC/Superset) → assert `find .claude/orchestrator-prompts -type l` > 0 (the agnostic floor fires).
   - **C**: fresh Superset worktree with the `setup` edit → symlinks not copies; resolves the §2.4a open question (does Superset fire G?).
