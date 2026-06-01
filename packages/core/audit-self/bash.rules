@@ -1,0 +1,49 @@
+# bash.rules — universalmutator regexp operators for .claude/hooks/*.sh
+#
+# The ONLY project-authored artefact of the bash-mutation capability (Stage 2 B.2,
+# mutation-discipline-umbrella). The engine + analyze_mutants harness are ADOPTed
+# verbatim from agroce/universalmutator (B.1 verdict ADAPT, SSOT #91); this file is
+# the bash-language operator set universalmutator does not ship.
+#
+# Format: each non-comment line is `LHS ==> RHS`, where LHS is a Python regexp
+# applied per source line and RHS is its substitution (\1, \2 = capture groups).
+# universalmutator's default (non-comby) regexp engine is line-oriented — every
+# operator below is a single-line transform, which is exactly the shape of the
+# load-bearing mutation points in our hooks (B.1 §B.1.3: condition + exit lines).
+#
+# Run via:  packages/core/audit-self/run-bash-mutation.sh <hook> "<paired-negative-test-cmd>"
+# @dual-pair: mutation-discipline-bash-b2
+#
+# Regexp caveats (load-bearing — do not "simplify" without re-smoke-testing):
+#   - `|` is regexp-special → the `||`→`&&` operator escapes it as `\|\|`.
+#   - if-negation uses `[^]]+` (chars up to the first `]`) so a compound
+#     `if [[ a ]] || [[ b ]]` negates its FIRST test cleanly instead of producing
+#     an unbalanced-bracket garbage mutant from a greedy `.+` capture.
+
+# --- skip pure-comment lines + shebang (else `exit 0` etc. inside a comment yields a
+#     guaranteed-equivalent mutant that always survives and falsely depresses the kill
+#     rate — universalmutator's built-in comment heuristic doesn't know `#` under --only).
+#     Inline comments after real code are unaffected (the code token still mutates). ---
+^\s*# ==> DO_NOT_MUTATE
+
+# --- negate `if [[ ... ]]` condition (single-test scope, no garbage on compounds) ---
+if \[\[ ([^]]+) \]\] ==> if [[ ! ( \1 ) ]]
+
+# --- swap `&&` / `||` (both directions) ---
+ && ==>  ||
+ \|\| ==>  &&
+
+# --- flip exit codes 0 <-> 1 ---
+exit 0 ==> exit 1
+exit 1 ==> exit 0
+
+# --- flip string comparators inside `[[ ]]` test context ---
+#     `[^]]+` (not greedy `.+`) scopes each flip to a SINGLE `[[ … ]]`, so a
+#     compound `[[ a == b ]] || [[ c == d ]]` yields one mutant per bracket
+#     (first AND second), instead of greedily flipping only the last comparator.
+\[\[ ([^]]+) == ([^]]+) \]\] ==> [[ \1 != \2 ]]
+\[\[ ([^]]+) != ([^]]+) \]\] ==> [[ \1 == \2 ]]
+\[\[ ([^]]+) = ([^]]+) \]\] ==> [[ \1 != \2 ]]
+
+# --- disable errexit (`set -e` → `set +e`, matches inside `set -euo pipefail`) ---
+set -e ==> set +e
