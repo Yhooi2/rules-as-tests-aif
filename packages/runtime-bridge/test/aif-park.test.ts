@@ -155,4 +155,34 @@ describe('parkTask — GET current plan then PUT the park fields', () => {
     const putBody = JSON.parse((spy.mock.calls[1][1] as RequestInit).body as string);
     expect(putBody.paused).toBe(true);
   });
+
+  // ── Finding F guard (qloop-ux-probe 2026-06-01). A park AFTER the implement→review
+  // transition leaves status=review, paused=true; on resume the review pipeline runs to
+  // `done` and the injected answer is NEVER re-implemented — the next chain question never
+  // parks (live: task ba3b4bf6 answered c1 → done, c2 silently lost). aif's state machine
+  // has zero human re-entry from `review` (HUMAN_ACTIONS_BY_STATUS.review = []), so park
+  // MUST refuse at status=review, turning the silent loss into a loud, actionable error. ──
+  it('GUARD: refuses to park when the task is already in review (Finding F) — issues NO PUT', async () => {
+    const task = { id: 't-9', title: 'x', status: 'review', plan: '# Plan', paused: false, blockedReason: null };
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation((url) =>
+      Promise.resolve(String(url).endsWith('/tasks/t-9') ? okResponse(task) : okResponse({})),
+    );
+    await expect(parkTask('http://localhost:3009', 't-9', 'q')).rejects.toThrow(/review/i);
+    // only the GET happened; the park PUT must NOT fire (else paused=true → resume→done loss)
+    expect(spy.mock.calls).toHaveLength(1);
+    expect((spy.mock.calls[0][1] as RequestInit).method).toBe('GET');
+  });
+
+  // Negative control paired with the guard: at a pre-review status the park DOES proceed
+  // and PUTs paused:true — proving the guard blocks ONLY review, not every status (RED if
+  // the guard ever over-reaches and starts rejecting legitimate pre-review parks).
+  it('CONTROL: still parks normally at a pre-review status (plan_ready)', async () => {
+    const task = { id: 't-9', title: 'x', status: 'plan_ready', plan: '# Plan', paused: false, blockedReason: null };
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation((url) =>
+      Promise.resolve(String(url).endsWith('/tasks/t-9') ? okResponse(task) : okResponse({})),
+    );
+    await parkTask('http://localhost:3009', 't-9', 'q');
+    expect(spy.mock.calls).toHaveLength(2);
+    expect((spy.mock.calls[1][1] as RequestInit).method).toBe('PUT');
+  });
 });
