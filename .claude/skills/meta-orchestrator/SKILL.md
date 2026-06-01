@@ -101,10 +101,10 @@ Compare the `wave-sequencing-plan.md` claims against the live `gh pr list` outpu
 
 > **§7.3 binding.** Runs only in no-argument mode after §1 confirms plan is current (or after drift items are accepted). Skip to §3 if `<umbrella>` was provided.
 
-**Step 1 — inject candidate list:**
+**Step 1 — inject candidate list** — *read-rule (completion barrier):* parse a background helper's output ONLY after its `=== <helper>: END rc=<n> ===` trailer (appended by `run-helper.sh`) or its task-notification; a header-only / trailer-absent read = "still running", NOT "zero results" — never conflate one task's notification with another's. *(Origin: incident 2026-06-01, `priority-score.sh` read at header-only state → false "zero candidates".)* This rule applies to every background-helper `!`-fence below.
 
 ```!
-bash "${CLAUDE_SKILL_DIR}/helpers/priority-score.sh" 2>/dev/null
+bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/priority-score.sh" 2>/dev/null
 ```
 
 **Step 2 — score each candidate (multi-criteria, judgment):**
@@ -175,7 +175,7 @@ fi
 **Step 2 — L3 dup-detect + in-flight ledger** (dup-detect catches *merged* dupes; inflight-check catches *live* work — open PR / un-merged branch carrying the slug, e.g. a parallel session dispatching the same sub-wave before it merges):
 
 ```!
-bash "${CLAUDE_SKILL_DIR}/helpers/dup-detect.sh" "${umbrella:-}" 2>/dev/null; bash "${CLAUDE_SKILL_DIR}/helpers/inflight-check.sh" "${umbrella:-}" 2>/dev/null
+bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/dup-detect.sh" "${umbrella:-}" 2>/dev/null; bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/inflight-check.sh" "${umbrella:-}" 2>/dev/null
 ```
 
 `POTENTIAL_DUPE:`/`MISSING:` (dup-detect) → surface per [reviewer-discipline.md §2](../../rules/reviewer-discipline.md). `INFLIGHT:` → **confirmation-needed before dispatch** (possible parallel-session collision); `CLEAR:` → proceed.
