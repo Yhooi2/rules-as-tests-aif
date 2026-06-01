@@ -11,6 +11,11 @@
  * API, push that already-made commit out of aif's container to origin, open a PR
  * against the trunk, and arm GitHub native auto-merge (which merges it on green CI).
  *
+ * Rework exception: aif only commits on its approve_done && commitOnApprove path;
+ * the request_changes→implementing→done rework path leaves the work uncommitted
+ * (dirty tree, branch == base HEAD). Harvest detects the dirty tree and commits it
+ * deterministically (git add -A + a templated message, ZERO LLM) before pushing.
+ *
  * ZERO LLM by construction — plain git + gh. (aif's own commit flow spends a paid
  * `claude -p` query to run git; harvest does not.) Complies with no-paid-llm-in-ci.md.
  *
@@ -62,9 +67,32 @@ function parseArgs(argv: string[]): ParsedArgs {
   };
 }
 
+/** Run a git command inside the aif container's checkout; returns trimmed stdout. */
+function dockerGit(container: string, args: string[]): string {
+  return execFileSync('docker', ['exec', container, 'git', '-C', AIF_REPO_PATH, ...args], {
+    encoding: 'utf8',
+  }).trim();
+}
+
 /** Wire the real git/gh/docker side-effects. Each throws on non-zero exit. */
 function realDeps(container: string): HarvestDeps {
   return {
+    hasUncommittedChanges: async (_branch) => {
+      // The container's checkout is the one aif left dirty on the rework path.
+      // `git status --porcelain` is empty iff the tree is clean.
+      return dockerGit(container, ['status', '--porcelain']).length > 0;
+    },
+    commitAll: async (branch, message) => {
+      // Safety: only commit when the checkout is actually on the task's branch —
+      // never bake stray changes into the wrong branch. Throw (→ graceful
+      // degradation prints the manual fallback) on a mismatch.
+      const head = dockerGit(container, ['rev-parse', '--abbrev-ref', 'HEAD']);
+      if (head !== branch) {
+        throw new Error(`harvest: container checkout is on '${head}', not the task branch '${branch}' — refusing to commit`);
+      }
+      dockerGit(container, ['add', '-A']);
+      dockerGit(container, ['commit', '-m', message]);
+    },
     pushBranch: async (branch) => {
       // Push from INSIDE the container (it holds the commit + working push creds).
       execFileSync('docker', ['exec', container, 'git', '-C', AIF_REPO_PATH, 'push', 'origin', branch], {
@@ -112,7 +140,13 @@ async function main(): Promise<void> {
       realDeps(args.container),
     );
     process.stdout.write(
-      JSON.stringify({ ok: true, prUrl: res.prUrl, branch: res.branch, autoMerge: res.autoMerge }) + '\n',
+      JSON.stringify({
+        ok: true,
+        prUrl: res.prUrl,
+        branch: res.branch,
+        autoMerge: res.autoMerge,
+        committed: res.committed,
+      }) + '\n',
     );
     process.exit(0);
   } catch (err) {
