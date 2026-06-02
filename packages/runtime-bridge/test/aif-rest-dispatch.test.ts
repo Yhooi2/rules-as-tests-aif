@@ -30,19 +30,26 @@ afterEach(() => {
 });
 
 describe('AifHandoffBackend.dispatch() — REST 4-step sequence', () => {
-  it('issues POST /tasks → PUT plan → POST events → PUT paused, in order, and returns the task id', async () => {
-    const calls: Array<{ url: string; method: string; body: unknown }> = [];
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+  it('creates the task with the kickoff as DESCRIPTION (planner input), then unpauses — NO accept_existing_plan, NO plan push', async () => {
+    const calls: Array<{ url: string; method: string; body: Record<string, unknown> | undefined }> =
+      [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
       (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
         const method = init?.method ?? 'GET';
-        const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+        const body = init?.body
+          ? (JSON.parse(String(init.body)) as Record<string, unknown>)
+          : undefined;
         calls.push({ url, method, body });
+        // Step 0: ensureParallelEnabled GETs /projects — return the project
+        // already parallel-enabled so the guard is a no-op (no PUT).
+        if (method === 'GET' && url.endsWith('/projects')) {
+          return Promise.resolve(jsonResponse([{ id: 'proj-uuid', parallelEnabled: true }], 200));
+        }
         // Step 1 (POST /tasks) returns the created task with an id.
         if (method === 'POST' && url.endsWith('/tasks')) {
           return Promise.resolve(jsonResponse({ id: 'task-123', status: 'backlog' }, 201));
         }
-        // Steps 2-4 return empty 200.
         return Promise.resolve(new Response('', { status: 200 }));
       },
     );
@@ -55,19 +62,28 @@ describe('AifHandoffBackend.dispatch() — REST 4-step sequence', () => {
 
     expect(handle.backend).toBe('aif-handoff');
     expect(handle.taskId).toBe('task-123');
-    expect(fetchSpy).toHaveBeenCalledTimes(4);
 
-    expect(calls[0]).toMatchObject({ url: 'http://localhost:3009/tasks', method: 'POST' });
-    expect(calls[0].body).toMatchObject({ projectId: 'proj-uuid', paused: true, plannerMode: 'fast' });
-    expect(calls[1]).toMatchObject({ url: 'http://localhost:3009/tasks/task-123', method: 'PUT' });
-    expect(calls[1].body).toMatchObject({ plan: KICKOFF.content });
-    expect(calls[2]).toMatchObject({
-      url: 'http://localhost:3009/tasks/task-123/events',
-      method: 'POST',
+    // POST /tasks carries the kickoff in `description` (the planner's input spec),
+    // paused + autoMode so the auto-queue advances it through `planning`.
+    const post = calls.find((c) => c.method === 'POST' && c.url.endsWith('/tasks'));
+    expect(post?.body).toMatchObject({
+      projectId: 'proj-uuid',
+      description: KICKOFF.content,
+      paused: true,
+      autoMode: true,
+      plannerMode: 'fast',
     });
-    expect(calls[2].body).toMatchObject({ event: 'accept_existing_plan' });
-    expect(calls[3]).toMatchObject({ url: 'http://localhost:3009/tasks/task-123', method: 'PUT' });
-    expect(calls[3].body).toMatchObject({ paused: false });
+
+    // The task is unpaused so the coordinator picks it up at `backlog`.
+    const putPaused = calls.find(
+      (c) => c.method === 'PUT' && c.url.endsWith('/tasks/task-123') && c.body?.paused === false,
+    );
+    expect(putPaused).toBeDefined();
+
+    // The whole fix: the planner-skip event is GONE (else no worktree, forced serial).
+    expect(calls.some((c) => (c.body as { event?: string } | undefined)?.event === 'accept_existing_plan')).toBe(false);
+    // The kickoff does NOT go to the `plan` output slot (the planner overwrites it).
+    expect(calls.some((c) => c.body !== undefined && 'plan' in c.body)).toBe(false);
   });
 
   it('throws dispatch_failed (no fetch) when projectId is unset', async () => {
@@ -91,7 +107,7 @@ describe('AifHandoffBackend.dispatch() — REST 4-step sequence', () => {
     expect(err).toMatchObject({ code: 'dispatch_failed', backend: 'aif-handoff' });
   });
 
-  it('maps the dirty-worktree 4xx guard to dispatch_failed AND rolls back (DELETE) the half-created task', async () => {
+  it('maps a 4xx on the unpause step to dispatch_failed AND rolls back (DELETE) the half-created task', async () => {
     const calls: Array<{ url: string; method: string }> = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       (input: RequestInfo | URL, init?: RequestInit) => {
@@ -101,7 +117,9 @@ describe('AifHandoffBackend.dispatch() — REST 4-step sequence', () => {
         if (method === 'POST' && url.endsWith('/tasks')) {
           return Promise.resolve(jsonResponse({ id: 'task-9', status: 'backlog' }, 201));
         }
-        if (url.endsWith('/events')) {
+        // Step 2 (PUT paused:false) fails — the only wrapped step now that the
+        // accept_existing_plan event is gone. dispatch() must roll back.
+        if (method === 'PUT' && url.endsWith('/tasks/task-9')) {
           return Promise.resolve(
             new Response('Branch isolation failure (dirty_worktree): uncommitted changes', {
               status: 409,
