@@ -23,7 +23,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,8 @@ import crypto from 'node:crypto';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 const HOOK = resolve(REPO_ROOT, '.claude/hooks/deps-hash-check.sh');
+/** The shipped SOURCE copy (install.sh:261). HOOK above is the dogfood copy. */
+const HOOK_SOURCE = resolve(REPO_ROOT, 'packages/core/hooks/deps-hash-check.sh');
 
 /** Compute the same sha256 the hook computes for a given deps JSON string. */
 function computeHash(depsJson: string): string {
@@ -222,5 +224,18 @@ describe('deps-hash-check.sh — UserPromptSubmit deps-drift context injector', 
     // Should parse the hash correctly and NOT emit a warning (they match).
     expect(status).toBe(0);
     expect(stdout).toBe('');
+  });
+});
+
+describe('deps-hash-check.sh — source/dogfood byte-identity (@dual-pair: deps-hash-check-dogfood)', () => {
+  // Drift-check from #382 §6: the shipped SOURCE (packages/core/hooks/) and this repo's
+  // DOGFOOD copy (.claude/hooks/) must stay byte-identical. This test fails the moment
+  // one copy is edited without the other — the mechanical guard that closes the silent-
+  // drift hole the D.6 R-phase confirmed (the functional tests above run only the dogfood
+  // copy via HOOK, so they would stay green even if the source diverged).
+  it('packages/ source copy and .claude/ dogfood copy are byte-identical', () => {
+    const source = readFileSync(HOOK_SOURCE, 'utf8');
+    const dogfood = readFileSync(HOOK, 'utf8');
+    expect(dogfood).toBe(source);
   });
 });
