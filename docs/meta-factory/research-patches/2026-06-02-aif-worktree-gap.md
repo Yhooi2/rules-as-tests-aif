@@ -40,6 +40,29 @@ id: f99ef209  title: coordination-persistence-fix          planner_mode: full  b
 id: 70c5eca6  title: coordination-persistence-fix          planner_mode: full  branch_name: SET  worktree_path: null
 ```
 
+### §0.1 This is DOCUMENTED, intended aif behaviour — not a bug or undocumented trap
+
+Verified via DeepWiki on `lee-to/aif-handoff` (3 phrasings, converged) before drafting any upstream report:
+
+- **`docs/configuration.md` («Parallel Execution (Experimental)»):** *"With `AIF_TASK_WORKTREES_ENABLED=true`,
+  full-mode planning for parallel branch-isolated projects creates a sibling git worktree for each task…
+  and runs all downstream stages from that path."* → worktree creation is **by design tied to the
+  full-mode `planning` stage**.
+- **`docs/architecture.md`:** *"Legacy branch-bound tasks without `worktreePath` still force serial
+  execution until they leave the pipeline."* → the serial-forcing is documented too.
+
+So a planner-skip dispatch (`accept_existing_plan`) forgoing the worktree is a **direct, documented
+consequence** of aif's design, not a defect. **No upstream issue is warranted.** The only un-spelled-out
+nuance is the *specific* `accept_existing_plan → no worktree` interaction (the general rule «worktree =
+full-mode planning» IS documented) — too marginal to file.
+
+**Honest search-coverage lesson (this patch's §9 self-reflection):** the 2026-06-01 Finding A verdict
+(«flip `parallel_enabled` → worktrees created») was avoidable — `docs/configuration.md` already stated
+worktree creation requires full-mode planning. The miss was not consulting the upstream's own
+configuration docs before closing the verdict (`phase-research-coverage.md §1` own-stack/source-of-truth
+sweep). The corrected fix path (§5) — run the planner via the normal `start_ai` flow — is precisely the
+**documented** way to obtain worktree isolation + parallelism.
+
 ---
 
 ## §1 WG1 (the crux) — `accept_existing_plan` bypasses `runPlanner` entirely
