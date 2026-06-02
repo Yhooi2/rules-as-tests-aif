@@ -266,6 +266,11 @@ describe.skipIf(!HAS_UM)(
         expect(out).toMatch(/kill rate: \d+%/);
         expect(r.status).toBe(0); // ≥ 60% floor — content-level assertion on exit code
       },
+      // The bash mutator spawns `npx vitest` once per mutant — inherently slow
+      // (~9.5s observed on a loaded host). The default 5000ms vitest timeout
+      // false-fails this local/on-demand gate (HAS_UM only). Mirrors the Stryker
+      // precedent (principle 11 testTimeout 5s→30s); 60s margin covers host load.
+      60_000,
     );
   },
 );
