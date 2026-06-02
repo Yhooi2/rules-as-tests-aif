@@ -158,10 +158,13 @@ describe('Principle 12 — every kickoff.md cites ai-laziness-traps rule', () =>
     'population sentinel — catches accidental empty-out or explosion of kickoff dirs',
     () => {
       const all = getKickoffEntries();
-      // Loose bounds: at least 10 kickoffs, at most 100.
-      // If count drops to 0, the main test would pass vacuously — sentinel prevents it.
-      expect(all.length).toBeGreaterThanOrEqual(10);
-      expect(all.length).toBeLessThanOrEqual(100);
+      // Bounds: ≥100 / ≤300. Raised 2026-06-02 (maintainer-directed) — the project
+      // legitimately accumulated >100 umbrellas of history, mirrored locally by the
+      // coordination-persistence channel (G), so the old ≤100 was a stale guess that
+      // tripped every push. ≥100 doubles as a "mirror is present" guard; ≤300 still
+      // catches a runaway glob. (If count drops to 0, the main test passes vacuously.)
+      expect(all.length).toBeGreaterThanOrEqual(100);
+      expect(all.length).toBeLessThanOrEqual(300);
     },
   );
 });
