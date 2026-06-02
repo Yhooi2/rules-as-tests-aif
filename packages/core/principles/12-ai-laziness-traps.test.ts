@@ -106,6 +106,16 @@ function getNonExemptEntries(): KickoffEntry[] {
 // Tests that require actual kickoff files skip in CI; pure-logic tests always run.
 const KICKOFFS_AVAILABLE = existsSync(KICKOFFS_DIR) && getKickoffEntries().length > 0;
 
+// After the coordination symlink migration (#346 + post-checkout link-coordination.sh),
+// every local kickoff.md can be a SYMLINK into $CANON (a coordination mirror), which
+// getNonExemptEntries() deliberately excludes (see isCoordinationMirror). When ALL
+// kickoffs are mirrors, getNonExemptEntries() is empty — there is no REAL kickoff to
+// mutate. The anti-tautology mutation test below requires ≥1 real compliant kickoff;
+// the #376 mirror-exclusion fix updated the main check + sentinel but missed this guard.
+// Detector correctness is independently covered by the pure-logic anti-tautology tests
+// (blank file / each pattern), which need no real files — so skipping here loses nothing.
+const HAS_REAL_NONEXEMPT_KICKOFF = KICKOFFS_AVAILABLE && getNonExemptEntries().length > 0;
+
 describe('Principle 12 — every kickoff.md cites ai-laziness-traps rule', () => {
   it.skipIf(!KICKOFFS_AVAILABLE)(
     'all non-exempt kickoffs satisfy the compound citation check',
@@ -140,7 +150,7 @@ describe('Principle 12 — every kickoff.md cites ai-laziness-traps rule', () =>
     },
   );
 
-  it.skipIf(!KICKOFFS_AVAILABLE)(
+  it.skipIf(!HAS_REAL_NONEXEMPT_KICKOFF)(
     'anti-tautology: compliant kickoff stripped of citations fails the check',
     () => {
       // Pick the first compliant kickoff and strip all citation markers.
