@@ -15,6 +15,7 @@
 | **F6 — `gh` CLI unavailable** | any `gh` invocation returns network/auth error | Emit `DIAGNOSTIC: gh CLI unavailable. Manual verification required.` Ask maintainer; do NOT assume the gate is clear. |
 | **F7 — launch-table-generator returns MISSING kickoff** | `helpers/launch-table-generator.sh` exits with `MISSING kickoff: <path>` | Emit `MISSING kickoff. Halting — create kickoff first.` Do NOT generate launch-table from memory. |
 | **F8 — classify-work MISSING file (path-shape absent)** | `helpers/classify-work.sh` exits 3 with `MISSING-FILE: <path>` on stderr (path-shape input — contains `/` AND code/doc extension — but file absent on disk; J1 fix from Stage 5 dogfood) | Emit `MISSING kickoff path: <INPUT>. Halting — verify kickoff path exists or pass description-string instead.` Do NOT silently treat as `TYPE=fix` (that was the pre-J1 silent failure mode). |
+| **F9 — Helper stall / timeout** | `helpers/run-helper.sh` exits with rc=124 (timeout fired) because a helper ran longer than `MO_HELPER_TIMEOUT` (default 120 s) without completing | Emit `STALL: <helper-name> timed out after ${MO_HELPER_TIMEOUT:-120}s (rc=124).` Treat as a diagnostic halt — do NOT assume the helper completed successfully or that its output is complete. Ask maintainer to re-run with a higher `MO_HELPER_TIMEOUT` value or investigate why the helper stalled. |
 
 ## Anti-pattern shared across F-codes
 
