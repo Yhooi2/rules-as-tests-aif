@@ -10,9 +10,9 @@
 # Not a gate; surfaces a confirmation-needed signal BEFORE dispatch.
 #
 # Outputs (one or more lines):
-#   INFLIGHT: <umbrella> — open PR #<n> <branch> (возможно диспатчат в другой сессии)
-#   INFLIGHT: <umbrella> — live branch <name> (не merged)
-#   INFLIGHT: <umbrella> — live worktree <path> (не merged)
+#   INFLIGHT: <umbrella> — open PR #<n> <branch> (possibly dispatched in another session)
+#   INFLIGHT: <umbrella> — live branch <name> (not merged)
+#   INFLIGHT: <umbrella> — live worktree <path> (not merged)
 #   CLEAR: <umbrella> no in-flight work
 #
 # Two signals combined deterministically (no LLM):
@@ -35,6 +35,13 @@ MO_GIT_BIN="${MO_GIT_BIN:-git}"
 MO_BASE_REF="${MO_BASE_REF:-origin/staging}"
 MO_INFLIGHT_MIN_TOKENS="${MO_INFLIGHT_MIN_TOKENS:-2}"
 STOP="${MO_STOP_BASE}|meta|orch"
+
+# Localized emitted strings (EN default; AIF_HOOK_LANG=ru → Russian). See lang/.
+_lang_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lang" && pwd)"
+_lang_file="${_lang_dir}/${AIF_HOOK_LANG:-en}.sh"
+[ -f "$_lang_file" ] || _lang_file="${_lang_dir}/en.sh"
+# shellcheck source=/dev/null
+. "$_lang_file"
 
 NAME="${1:-}"
 if [[ -z "${NAME}" ]]; then echo "usage: inflight-check.sh <umbrella-name>"; exit 0; fi
@@ -87,7 +94,7 @@ if [[ -n "${PR_JSON}" ]]; then
     title="$(printf '%s' "${entry}" | sed 's/.*"title":"\([^"]*\)".*/\1/')"
     branch="$(printf '%s' "${entry}" | sed 's/.*"headRefName":"\([^"]*\)".*/\1/')"
     if matches_slug "${title} ${branch}"; then
-      echo "INFLIGHT: ${NAME} — open PR #${num} ${branch} (возможно диспатчат в другой сессии)"
+      echo "INFLIGHT: ${NAME} — open PR #${num} ${branch} ${AIF_PIPELINE_INFLIGHT_PR_NOTE}"
       found=1
     fi
   done < <(printf '%s\n' "${PR_JSON}" | grep -oE '\{[^}]+\}' 2>/dev/null || true)
@@ -102,7 +109,7 @@ if [[ -n "${BRANCHES}" ]]; then
     case "${b}" in *'->'*) continue ;; esac   # skip "HEAD -> ..." pointers
     short="${b#remotes/origin/}"
     if matches_slug "${short}"; then
-      echo "INFLIGHT: ${NAME} — live branch ${short} (не merged)"
+      echo "INFLIGHT: ${NAME} — live branch ${short} ${AIF_PIPELINE_INFLIGHT_UNMERGED}"
       found=1
     fi
   done <<< "${BRANCHES}"
@@ -115,7 +122,7 @@ if [[ -n "${WT}" ]]; then
     [[ -z "${line}" ]] && continue
     if matches_slug "${line}"; then
       wt_path="$(printf '%s' "${line}" | awk '{print $1}')"
-      echo "INFLIGHT: ${NAME} — live worktree ${wt_path} (не merged)"
+      echo "INFLIGHT: ${NAME} — live worktree ${wt_path} ${AIF_PIPELINE_INFLIGHT_UNMERGED}"
       found=1
     fi
   done <<< "${WT}"
