@@ -72,7 +72,7 @@ Poll `GET /tasks/:id` until status changes. Status branches:
 - `implementing` / `planning` → still running, continue polling
 - `done` / `verified` → terminal → go to §2.4 (harvest)
 - Any parked signal (see §3 taxonomy) → go to §2.3 (Q&A)
-- Timeout after operator-configured ceiling → surface as **ATTN: task stalled** to operator
+- Timeout after operator-configured ceiling → surface as **ATTN: task stalled** to operator. A stall is an *environment* symptom, not a loop bug — **run [`/aif-doctor`](../aif-doctor/SKILL.md)** to triage it (distinguishes a runtime crash-loop / capacity saturation / proxy block from a slow-stale task the upstream watchdog will recover on its own). Do not re-dispatch blindly.
 
 **§2.3 — Q&A (three types — see §3)**
 
@@ -157,6 +157,8 @@ If the brainstorming companion is unreachable (Cursor / Aider / Codex / no Super
 **ATTN: container on wrong branch.** `harvest.ts` throws (does NOT self-heal) when the aif container's git state is on a different branch than the task's `branchName`. When this occurs, `/dispatcher` surfaces `ATTN: harvest threw — container may be on wrong branch. Manual check required: docker exec aif-handoff-agent-1 git branch` and does NOT silently retry. The operator must resolve the container state before re-running harvest.
 
 **Harvest idempotency:** `gh pr create` fails if the PR already exists; re-run with `--no-auto-merge` to skip the merge step and recover gracefully.
+
+**ATTN: environment-level failure (not a loop bug).** When dispatch/monitor/harvest misbehaves for a reason outside this loop's logic — task crash-loops in `planning` with `tokenTotal:0` (broken claude runtime), new task stuck `backlog` (capacity cap saturated), in-container `npm`/network failures (proxy block) — that is an aif *environment* fault. **Hand off to [`/aif-doctor`](../aif-doctor/SKILL.md)** for read-only triage + the mapped fix (each mutation gated on operator GO). `/dispatcher` owns the loop; `/aif-doctor` owns the environment the loop runs in.
 
 ---
 
