@@ -35,23 +35,29 @@ allowed-tools:
 
 **Slash command:** `/meta-orchestrator [<umbrella-name> | <N>]`
 
+> **Provenance / binding spec (§7.1–§7.14):** §0–§11 implement the 14-section binding spec at `.claude/orchestrator-prompts/meta-orchestrator-prior-art/kickoff.md §7` (gitignored origin-trace; the SKILL.md sections below are the authoritative spec). Section↔spec map: §0=§7.1 · §1=§7.2 · §2=§7.3 · §2.5=Stage-2C routing · §3=§7.4 · §4=§7.5 · §5=§7.6 · §5.5=bundle (B1/B2/B3a) · §6=§7.7 · §7=§7.8 · §8=§7.9 + §7.10 install-coupling · §9=§7.11 · §10=§7.12 · §11=§7.13. **§7.14** = the four original orchestrator gaps, closed across §1 (plan-actuality) · §2 (cross-umbrella priority) · §3 (auto-launch-table) · §6 (stage-gate-vs-flat-queue). Per-section `> **§7.N binding.**` labels were consolidated here 2026-06-03 (Stage 4 slim); each section's substantive enforcement prose is retained in place.
+
 **`disable-model-invocation: true`** — fires ONLY on explicit `/meta-orchestrator` invocation. The flag suppresses CC's default auto-load into subagent contexts when description matches a subagent's task — it is **not** a recursive-invocation guard (no such risk exists: subagent depth is hard-capped at 2 by CC's harness, per [sub-agents.md](https://code.claude.com/docs/en/sub-agents.md)).
 
-**Arg routing (V1 binding per [research-patch §3](../../../docs/meta-factory/research-patches/2026-05-29-meta-orch-no-arg-overview-s0-remainder.md)):** regex check at invocation start — empty → V3 overview; `^[0-9]+$` → V4 top-N (N=0 routes to V3); else → named-umbrella dispatch (existing §1→§3→§4→§5). **Pre-invocation guard (V1 mandatory):** assert no umbrella basename is `^[0-9]+$` (otherwise `/meta-orchestrator 1` is ambiguous):
+**Arg routing (V1 binding per [research-patch §3](../../../docs/meta-factory/research-patches/2026-05-29-meta-orch-no-arg-overview-s0-remainder.md)):** regex check at invocation start — empty → V3 overview; `^[0-9]+$` → V4 top-N (N=0 routes to V3); else → named-umbrella dispatch (existing §1→§3→§4→§5). **Pre-invocation guard (V1 mandatory):** assert no umbrella basename is `^[0-9]+$` (otherwise `/meta-orchestrator 1` is ambiguous): <!-- @dual-pair: meta-orchestrator-integer-name-guard -->
 
 ```!
 bash "${CLAUDE_SKILL_DIR}/helpers/integer-name-guard.sh" .claude/orchestrator-prompts
 ```
 
-**Permissions model:** `allowed-tools` list above constrains the skill to read/git/gh/write — no arbitrary Bash. If a check requires a command outside the list, escalate to maintainer. **Caveat — Issue [#14956](https://github.com/anthropics/claude-code/issues/14956) (open as of 2026-05-28):** specific `Bash(<pattern>)` patterns in skill-scoped `allowed-tools` do not auto-approve matching commands in current CC versions. The load-bearing fallback is a `~/.claude/settings.json` `permissions.allow` entry `Bash(bash *helpers/*.sh *)` shipped in this repo's `.claude/settings.json` (per DN-1 Option C verdict, PR #262 §3). The frontmatter glob above remains for forward-compatibility when #14956 closes — remove the settings.json fallback line at that point.
+**Mode-override flags (optional):** parse `--mode-bundle` / `--mode-pair` / `--mode-solo` / … + `--reason=<text>` from the umbrella arg up-front — `OVERRIDE_MODE` / `OVERRIDE_REASON` output feeds §2.5 Step 5 predicates (`bundle_opt_in` / `review_required`); exit 1 = no flag (normal — routing tree proceeds). Spec: [`references/mode-overrides.md`](references/mode-overrides.md). <!-- @dual-pair: meta-orchestrator-mode-overrides -->
 
-**§7.14 gap closed by this section:** none (trigger mechanism; CC primitive verbatim-ADOPT per R-phase patch §3).
+```!
+bash "${CLAUDE_SKILL_DIR}/helpers/parse-override-flags.sh" "${umbrella:-}" 2>/dev/null || true
+```
+
+**Permissions model:** `allowed-tools` list above constrains the skill to read/git/gh/write — no arbitrary Bash. If a check requires a command outside the list, escalate to maintainer. **Caveat — Issue [#14956](https://github.com/anthropics/claude-code/issues/14956) (open as of 2026-05-28):** specific `Bash(<pattern>)` patterns in skill-scoped `allowed-tools` do not auto-approve matching commands in current CC versions. The load-bearing fallback is a `~/.claude/settings.json` `permissions.allow` entry `Bash(bash *helpers/*.sh *)` shipped in this repo's `.claude/settings.json` (per DN-1 Option C verdict, PR #262 §3). The frontmatter glob above remains for forward-compatibility when #14956 closes — remove the settings.json fallback line at that point.
 
 ---
 
 ## §1 Plan-currency check
 
-> **§7.2 binding.** Runs before ANY other action. Skipping this section = T4 anti-pattern (premature closure without plan verification).
+> Runs before ANY other action. Skipping this section = T4 anti-pattern (premature closure without plan verification).
 
 **Step 1 — inject live state:**
 
@@ -93,15 +99,13 @@ Compare the `wave-sequencing-plan.md` claims against the live `gh pr list` outpu
 
 **If `wave-sequencing-plan.md` is MISSING entirely:** skill writes a stub from `README.md` + `EXECUTION-PLAN.md` + `ls .claude/orchestrator-prompts/` listing, presents to maintainer for OK, then halts until confirmed.
 
-**§7.14 gap closed:** plan-actuality verification (gap 1).
-
 ---
 
 ## §2 Priority
 
-> **§7.3 binding.** Runs only in no-argument mode after §1 confirms plan is current (or after drift items are accepted). Skip to §3 if `<umbrella>` was provided.
+> Runs only in no-argument mode after §1 confirms plan is current (or after drift items are accepted). Skip to §3 if `<umbrella>` was provided.
 
-**Step 1 — inject candidate list** — *read-rule (completion barrier):* parse a background helper's output ONLY after its `=== <helper>: END rc=<n> ===` trailer (appended by `run-helper.sh`) or its task-notification; a header-only / trailer-absent read = "still running", NOT "zero results" — never conflate one task's notification with another's. *(Origin: incident 2026-06-01, `priority-score.sh` read at header-only state → false "zero candidates".)* This rule applies to every background-helper `!`-fence below.
+**Step 1 — inject candidate list** — *read-rule (completion barrier):* parse a background helper's output ONLY after its `=== <helper>: END rc=<n> ===` trailer (appended by `run-helper.sh`) or its task-notification; a header-only / trailer-absent read = "still running", NOT "zero results" — never conflate one task's notification with another's. *(Origin: incident 2026-06-01, `priority-score.sh` read at header-only state → false "zero candidates".)* This rule applies to every background-helper `!`-fence below. <!-- @dual-pair: bg-helper-completion-barrier -->
 
 ```!
 bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/priority-score.sh" 2>/dev/null
@@ -132,29 +136,10 @@ Priority ranking (as of <date> <git-HEAD-short>):
 - If winner score ≥ 1.5× runner-up AND no explicit maintainer override → commit: «Recommend **<umbrella-A>**, proceeding to §3 launch-table + state.md update; Stage 1 dispatch awaits maintainer confirmation per §0.» (per phase-research-coverage.md §1.12: lead with reasoned recommendation). The «confirmation gate» from §0 sits between «launch-table + state.md ready» and «actually dispatch Stage 1 worker» — not between «recommendation» and «launch-table». Updating state.md before maintainer GO is on-path; dispatching a Worker session before maintainer GO is the §8 anti-scope violation.
 - If genuine tie OR strategy fork (e.g. «should we do N8 or C-1?») → ask maintainer. Do NOT pick strategy. Surface as: «DECISION-NEEDED: <A> and <B> are tied on all axes — which is the project priority?» (reviewer-discipline.md §2 pattern).
 
-**Step 4.1 — what counts as «maintainer answered DECISION-NEEDED» (anti-rationalization clause):**
-
-A genuine answer is a **content-based tiebreaker** from the maintainer — they name a reason rooted in project priority («pick n7 because the trial output unblocks n8's R3» / «pick n8, deadline is real» / «pick n7, n8 needs an SSOT entry first»). The reason has to be about the umbrellas, not about the maintainer.
-
-The following are **NOT** answers — they are *deferred* DECISION-NEEDED (the maintainer declined to decide, not decided):
-
-- «выбирай сам / you pick / I trust you» — delegation, not decision
-- «оба норм / both fine / either works» — confirmation that the tie is real, not a tiebreaker
-- «я устал / I'm busy / решай быстро» — availability constraint, not a priority signal
-- «не стратегия, технические детали / it's not strategy» — framing, not content (the meta-orchestrator's role is exactly to refuse this framing when scores are equal — if it really were «just technical details», the scores would have separated)
-
-When the maintainer's reply is in this list, the correct response is **re-surface DECISION-NEEDED with sharper framing**, not pick. Example re-surface:
-
-> «Понял что не хочешь решать, но я тоже не могу — scores равны, contentful tiebreaker'а нет. Один встречный вопрос: **есть ли downstream wave, которую один из них unblock'ает сильнее?** Если нет — кинь монетку при мне, я фиксирую результат в state.md как «coin-flip per maintainer 2026-XX-XX». Или скажи «pick n7 because <X>» / «pick n8 because <Y>» — одной строкой.»
-
-This re-surface bounds the maintainer's effort (one question or one coin-flip, not a re-analysis) while preserving the discipline that the meta-orchestrator does not unilaterally pick strategy.
-
-**Rationalization to refuse explicitly:** «maintainer said pick → §2 step 4 is satisfied, I pick» is the `#strategy-decided-by-reviewer` anti-pattern in disguise (see reviewer-discipline.md §3). Naming §2 step 4 while violating its spirit does not make the violation OK.
+**Step 4.1 — DECISION-NEEDED anti-rationalization:** a genuine maintainer answer is a *content-based tiebreaker about the umbrellas* («pick n7 because it unblocks n8's R3»). «выбирай сам / оба норм / я устал / it's technical not strategy» = *deferred*, NOT answered → re-surface with sharper framing or propose a coin-flip; do NOT silently pick («maintainer said pick → I pick» is `#strategy-decided-by-reviewer` in disguise, reviewer-discipline.md §3). Full not-an-answer list + re-surface script: [`references/anti-rationalization.md`](references/anti-rationalization.md).
 
 **Step 5 — emit per arg shape (V3/V4 binding per [research-patch §3](../../../docs/meta-factory/research-patches/2026-05-29-meta-orch-no-arg-overview-s0-remainder.md)):** fires only on no-arg/integer-arg (string-arg skips §2); Step 4 BYPASSED on V3, preserved on V4 N=1. Completion-filter = [`priority-score.sh`](helpers/priority-score.sh) tri-layer C1/C2/C3 (branch/jaccard/done.md, [#274](https://github.com/Yhooi2/rules-as-tests-aif/pull/274)) drops DONE BEFORE filter, never after.
 **V3** (no-arg / N=0) emits overview per [output-format.md §1A](references/output-format.md) in Wave-style grouping (ADAPT SSOT #68 OhMyOpencode `Wave N`) with `PARALLEL-OK ↔` / `↓` markers from kickoff §2 `Parallel-with`; STOP. **V4** (N ≥ 1) emits top-N after completion-filter — each = 3-line block per [output-format.md §4.1](references/output-format.md) + 1-liner, markers from kickoff §2 `Parallel-with`; `N=1` = old winner-recommend; `N > K` emits K + warning `Only K candidates available; you requested N.`
-
-**§7.14 gap closed:** cross-umbrella priority resolution (gap 2).
 
 ---
 
@@ -180,7 +165,7 @@ bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/du
 
 `POTENTIAL_DUPE:`/`MISSING:` (dup-detect) → surface per [reviewer-discipline.md §2](../../rules/reviewer-discipline.md). `INFLIGHT:` → **confirmation-needed before dispatch** (possible parallel-session collision); `CLEAR:` → proceed.
 
-**Step 3 — L4 classify each surviving candidate from Step 2:**
+**Step 3 — L4 classify each surviving candidate from Step 2:** <!-- @dual-pair: meta-orchestrator-classify-each-candidate -->
 
 ```!
 bash "${CLAUDE_SKILL_DIR}/helpers/classify-each-candidate.sh" 2>/dev/null
@@ -188,13 +173,13 @@ bash "${CLAUDE_SKILL_DIR}/helpers/classify-each-candidate.sh" 2>/dev/null
 
 Helper iterates `priority-score.sh` candidate set; per candidate routes to classify-work.sh (file-mode for `kickoff=exists`, string-mode for `kickoff=synthetic`, skip for `kickoff=missing`). DN-3 preserved — classify-work.sh UNCHANGED. Per-candidate stdout: `--- candidate: <name> ---` + TYPE/DISPATCH/LOC/SURFACES/RATIONALE. **stderr NOT suppressed** (J1 from Stage 5): if a candidate exits 3 with `MISSING-FILE:` that is **F8 for that candidate** — recorded inline, iteration continues; collect all F8s for the §10 report per [`references/failures.md`](references/failures.md). Steps 5–9 below require N classifications (`sibling_count`, multi-Stage rendering, multi-id delta-diff); single-shot would break them.
 
-**Step 4 — L5 assign-skill:**
+**Step 4 — L5 assign-skill (OPTIONAL advisory — NOT consumed by Step 5):** emits a human-facing skill/agent hint only; the Step 5 routing tree decides Mode from the 6 predicates, **not** from this output (verified dead-output 2026-06-03, DN-8 — simplify-not-delete). Skipping has zero effect on routing.
 
 ```bash
 bash "${CLAUDE_SKILL_DIR}/helpers/assign-skill.sh" "<TYPE-from-Step-3>" "<one-line description from kickoff title>" 2>/dev/null
 ```
 
-Advisory: `recommended_skill: <slug>` / `recommended_agent: <path>` / `recommended: none`.
+Advisory output: `recommended_skill: <slug>` / `recommended_agent: <path>` / `recommended: none`.
 **Step 5 — routing decision tree (judgment on injected data):**
 
 6 predicates: `load_bearing` (paths ∩ principle-09 REQUIRED_HEADER_DOCS), `sibling_count` (same-TYPE disjoint candidates), `scope_decided` (kickoff §binding non-empty OR non-DEFER research-patch; else FALSE → RESEARCH), `parallel_safe` (explicit decl OR disjoint scopes; default=FALSE → PAIR), `bundle_opt_in` (`--mode-bundle` OR silent TRUE for fix), `review_required` (`--mode-pair` OR kickoff hint OR `load_bearing`).
@@ -231,13 +216,11 @@ elif TYPE == "I-phase-large":
 **Step 8 — delta diff:** invoke `bash ${CLAUDE_SKILL_DIR}/helpers/delta-diff.sh .claude/orchestrator-prompts/_master-backlog-delta.json "<id-1>" "<id-2>" "<...>"` (post-dedup ids from Steps 2-3 as positional args) → emits `NEW-SINCE-LAST: <id>` (current ∖ seen) + `RESOLVED-SINCE-LAST: <id>` (seen ∖ current), sorted; missing delta → all current = NEW; lines feed §10; maintainer manually updates `wave-sequencing-plan.md §0` (Direction A REJECTED per R-phase β-2); semantics + contract: [`references/master-backlog-delta.md`](references/master-backlog-delta.md) + [`packages/core/hooks/delta-diff.test.ts`](../../../packages/core/hooks/delta-diff.test.ts). <!-- @dual-pair: meta-orchestrator-delta-diff -->
 **Step 9 — write-back to `_master-backlog-delta.json`:** `untracked_seen` ← current candidate set (overwrite-shape; `first_seen` = current ts). `closed_since_last` ← prior ids that no longer surface. Concrete `jq` shape in §10 step 5 — do NOT re-specify here.
 
-**§7.14 gap closed:** routing-tree alias-mapping consistency (Stage 2C gap).
-
 ---
 
 ## §3 Launch-table
 
-> **§7.4 binding.** Produces the per-sub-wave Mode decision table for the selected umbrella.
+> Produces the per-sub-wave Mode decision table for the selected umbrella.
 
 **Step 1 — inject umbrella kickoff + dispatch state:**
 
@@ -277,13 +260,11 @@ Launch table — <umbrella> (as of <git-HEAD-short>):
 
 **Blocking rule:** if either helper (`launch-table-generator.sh` or `dispatch-from-state.sh`) emits «MISSING kickoff» → halt and report. Do NOT produce a launch-table without reading the actual kickoff. The two helpers are complementary: `launch-table-generator.sh` emits the auto-detected sub-wave skeleton; `dispatch-from-state.sh` emits state-file context (`winner_id`, `sub_wave_state`) plus the head-120 kickoff body for the AI to read in Step 2 when filling judgment columns. The §3 inline `cat .../kickoff.md` block that previously injected the kickoff body was removed 2026-05-28 (DN-3 A verdict, PR #261); its function is now owned by `dispatch-from-state.sh` (F.3 helper-collapse — single source for §3 dispatch context). <!-- @dual-pair: meta-orchestrator-dispatch-from-state -->
 
-**§7.14 gap closed:** auto-generated launch-table (gap 3, partial — §4 completes it with meta-kickoff).
-
 ---
 
 ## §4 Meta-kickoff write
 
-> **§7.5 binding.** Writes `.claude/orchestrator-prompts/<umbrella>-meta-launch/kickoff.md` using the template.
+> Writes `.claude/orchestrator-prompts/<umbrella>-meta-launch/kickoff.md` using the template.
 
 **Step 1 — read template:**
 
@@ -316,7 +297,7 @@ Use `${CLAUDE_SKILL_DIR}/templates/state.md.template` as the skeleton; fill §1 
 
 ## §5 Dispatch tree
 
-> **§7.6 binding.** Mutually exclusive routing per sub-wave type. Pick exactly ONE row that matches the sub-wave's nature.
+> Mutually exclusive routing per sub-wave type. Pick exactly ONE row that matches the sub-wave's nature.
 
 **Decision table (rows are mutually exclusive):**
 
@@ -348,7 +329,7 @@ Use SP `subagent-driven-development` SSOT #64 vocabulary for role names (ADOPT-V
 - «SDD» = `subagent-driven-development` SSOT #64, verified T16 match: upstream problem class = «single complex feature implemented iteratively with spec+code+quality reviewers»; ours = same, used at sub-wave level.
 - «Queue mode» = orchestrator skill queue-mode.md vocabulary.
 
-**Antipatterns (§7.6 binding):**
+**Antipatterns:**
 - `#worker-dispatch-via-subagent` — Worker dispatch via Agent tool from the meta-orchestrator session. Agent tool is ONLY for Phase -1 read-only reviewer (`reviewer-discipline.md §2`) + read-only research subagents (text return). Write-task Worker dispatch belongs in a fresh CC session opened by the maintainer pasting a §10 1-liner block. Channel matters — maintainer-paste = external loop-close; Agent-tool = subagent = wrong channel for writes. **Empirical backstop:** [bug #39886](https://github.com/anthropics/claude-code/issues/39886) confirms Agent tool + `isolation:"worktree"` for WRITE tasks silently fails (closed-as-duplicate; status uncertain in CC 2.1.143) — independent evidence the channel boundary holds for writes; read-only Agent dispatch remains OK. **Falsifier:** the channel boundary holds even when prompt shapes converge — the test is «who invokes», not «what the prompt looks like».
 - `#commit-on-behalf-of-worker` — the meta-orchestrator running `git commit` / `gh pr create` for work it dispatched. Worker commits its own work under its own audit trail. **Falsifier:** Worker session crashed mid-task with the diff fully authored there → surface to maintainer, never silently absorb.
 - `#autonomous-dispatch-without-park` — dispatching a kickoff to aif-handoff (autonomous row above) without its §4c park-don't-guess contract → aif guesses every fork, closes wrong silently (design §1, `coordinator.ts:398-476`). **Falsifier:** grep the kickoff for «park» + «AGENT_MAX_REVIEW_ITERATIONS» before dispatch; absent → STOP, add §4c or use paste-tabs. **Sibling `#tabs-by-default-when-bridge-up`:** emitting only paste-tabs while the bridge is up wastes #312/#313 — probe (`[ -n "$RUNTIME_BRIDGE_MODE" ] && curl -s -m2 "${RUNTIME_BRIDGE_AIF_URL:-http://localhost:3009}/" -o /dev/null -w '%{http_code}\n'`) + offer alongside tabs.
@@ -358,7 +339,7 @@ Use SP `subagent-driven-development` SSOT #64 vocabulary for role names (ADOPT-V
 ---
 ## §6 Stage gates
 
-> **§7.7 binding.** Between stages: REAL git merge check, not in-memory FIFO.
+> Between stages: REAL git merge check, not in-memory FIFO.
 
 **Step 1 — inject merge state before each stage transition:**
 
@@ -391,13 +372,11 @@ This section is **prose enforcement** — the `!shell` injection surfaces the PR
 
 **T-MOB-B anti-pattern (search gotcha):** `gh pr list --search 'is:merged head:<branch>'` returns ALL merged PRs ever with that head. The `base:staging` filter above prevents false-positives from recycled branch names that landed on a different base. If a branch name has been reused across umbrellas and a date scope is genuinely needed, pass `created:>=<YYYY-MM-DD>` derived from the umbrella's kickoff timestamp — never a hardcoded literal.
 
-**§7.14 gap closed:** stage-gate vs flat-queue distinction (gap 4).
-
 ---
 
 ## §7 Reviewer dispatch
 
-> **§7.8 binding.** Phase -1 cold-review between stages. Required before Stage N+1 admission.
+> Phase -1 cold-review between stages. Required before Stage N+1 admission.
 
 **Trigger:** after each stage completes (all sub-wave PRs merged, §6 gate confirmed green).
 
@@ -437,7 +416,7 @@ SP `requesting-code-review` upstream problem class = «dispatch a reviewer subag
 
 ## §8 Anti-scope
 
-> **§7.9 binding.** What this skill MUST NOT do.
+> What this skill MUST NOT do.
 
 - **Does NOT write sub-wave code.** Writing implementation code is the Worker's job. If invoked on an execution-build sub-wave, meta-orchestrator generates the kickoff and dispatch instructions — it does NOT implement.
 - **Does NOT finalize project strategy.** Meta-orchestrator can recommend a priority winner (§2) and say «proceeding»; it asks the maintainer on genuine strategy forks (§7.3 item 5).
@@ -446,55 +425,19 @@ SP `requesting-code-review` upstream problem class = «dispatch a reviewer subag
 - **Does NOT add npm deps.** Substrate stays bash + markdown + CC primitives + existing `gh` CLI.
 - **Does NOT re-litigate R-phase verdicts.** If a missed candidate is noticed, write `docs/meta-factory/research-patches/2026-<date>-meta-orchestrator-followup-<gap>.md` and surface to maintainer.
 
-**§7.10 one-button-install coupling (load-bearing):** this skill lives at `.claude/skills/meta-orchestrator/` (project-scope, committed). It is templatable for N6b `npx` scaffold via `install.sh` payload. All cross-references use `${CLAUDE_SKILL_DIR}` or repo-relative paths — no absolute paths inside skill body. Ships directly from `.claude/skills/meta-orchestrator/` via `install.sh` (single source of truth; no repo-root mirror — Item 12 closure 2026-05-25). Install pattern at `install.sh:236-255`.
+**One-button-install coupling (load-bearing):** this skill lives at `.claude/skills/meta-orchestrator/` (project-scope, committed). It is templatable for N6b `npx` scaffold via `install.sh` payload. All cross-references use `${CLAUDE_SKILL_DIR}` or repo-relative paths — no absolute paths inside skill body. Ships directly from `.claude/skills/meta-orchestrator/` via `install.sh` (single source of truth; no repo-root mirror — Item 12 closure 2026-05-25). Install pattern at `install.sh:236-255`.
 
 ---
 
 ## §9 Dogfood test
 
-> **§7.11 binding.** The FIRST live invocation of this skill MUST run on the BUILD umbrella that produced the skill itself. This is the recursive-self-application gate (T15 from ai-laziness-traps.md §2 — cannot be skipped).
-
-**How to invoke the dogfood test:**
-
-1. Open a fresh worktree session via `claude -w meta-orchestrator-iphase` (CC native `--worktree`; portable `bash scripts/create-worktree.sh <name>` or manual `git worktree add` fallback when outside CC). In the new session, run:
-
-   ```bash
-   bash .claude/skills/meta-orchestrator/helpers/plan-currency-check.sh meta-orchestrator-iphase
-   bash .claude/skills/meta-orchestrator/helpers/priority-score.sh
-   bash .claude/skills/meta-orchestrator/helpers/launch-table-generator.sh meta-orchestrator-iphase
-   gh pr list --search "is:merged head:feat/meta-orchestrator-build base:staging" \
-     --json number,title,mergedAt,headRefName --limit 10
-   ```
-
-2. Capture all output to `.claude/orchestrator-prompts/meta-orchestrator-iphase/dogfood-run-output.md` with sections:
-   - `## Step 1 — plan-currency-check` (command + output)
-   - `## Step 2 — priority-score` (command + output)
-   - `## Step 3 — launch-table-generator` (command + output)
-   - `## Step 4 — stage-gate gh pr list` (command + output)
-   - `## Coherence call` — judgment paragraph: is the launch-table coherent for this umbrella?
-
-**Expected output shape for meta-orchestrator-iphase:**
-
-The launch-table-generator will detect sub-waves from the kickoff (A, B, C, D). The expected coherent launch-table:
-
-```text
-| Sub-wave | Type | Mode | SDD? | Stage | Parallel sibling | Volume |
-|---|---|---|---|---|---|---|
-| A | I-phase build | Mode A | No | 1 | — | M |
-| B | I-phase build | Mode A | No | 1 | — | S |
-| C | I-phase build | Mode A | No | 1 | — | S |
-| D | I-phase build | Mode A | No | 1 | — | M |
-```
-
-**HARD GATE:** if the helpers produce no sub-waves (empty table), STOP and report «Dogfood gate: HARD FAIL — launch-table-generator found no sub-waves in kickoff.md». Do NOT commit. Surface failure trace to orchestrator.
-
-**Note on dogfood coherence for this BUILD:** sub-waves A+B+C were dispatched as a single Mode A session (reasonable for a single worker covering skeleton + helpers + templates). Sub-wave D is this session. The launch-table helper detects sub-wave rows from kickoff §2/§3 tables — it may or may not find them depending on kickoff structure. If it finds rows: coherent. If it finds no rows but the kickoff is real: partial tool limitation (not a HARD FAIL — document as «tool limitation: kickoff table format not auto-parseable; manual launch-table produced above»).
+The FIRST live invocation MUST run on the BUILD umbrella that produced the skill — the recursive-self-application gate (T15 from `ai-laziness-traps.md §2`, cannot be skipped). **HARD GATE:** if the helpers produce no sub-waves (empty table), STOP and report «Dogfood gate: HARD FAIL — launch-table-generator found no sub-waves in kickoff.md»; do NOT commit; surface the trace. Full invocation steps + expected launch-table shape + coherence note: [`references/dogfood.md`](references/dogfood.md).
 
 ---
 
 ## §10 Output artifacts
 
-> **§7.12 binding.** Specifies exactly what files this skill writes per invocation — paths, format, and cleanup policy.
+> Specifies exactly what files this skill writes per invocation — paths, format, and cleanup policy.
 
 **Per invocation, this skill writes:**
 
@@ -538,34 +481,13 @@ The launch-table-generator will detect sub-waves from the kickoff (A, B, C, D). 
 
 ## §11 Failures
 
-> **§7.13 binding.** Class C prose enforcement — `!shell` data is surfaced so AI has no excuse for ignorance; per-code trigger + required-response table lives at [`references/failures.md`](references/failures.md). Read once before invoking; halt + surface (never assume) on any F-code. Re-promotion trigger: ≥2 stage-gate-ignored incidents within 6 months → add pre-push hook verifying stage dependency merged before sub-wave commit.
+> Class C prose enforcement — `!shell` data is surfaced so AI has no excuse for ignorance; per-code trigger + required-response table lives at [`references/failures.md`](references/failures.md). Read once before invoking; halt + surface (never assume) on any F-code. Re-promotion trigger: ≥2 stage-gate-ignored incidents within 6 months → add pre-push hook verifying stage dependency merged before sub-wave commit.
 
 ---
 
 ## Red flags / Common mistakes
 
-When operating under this skill, the following rationalizations mean STOP and re-read the relevant section:
-
-| Rationalization | Reality | Counter (section) |
-|---|---|---|
-| «Plan looked current last session, skip §1» | Plan-currency is per-invocation, not per-session — PRs merge between invocations | §1 (T4 anti-pattern) |
-| «Launch-table can be from memory, kickoff hasn't changed» | Kickoff edits between invocations are invisible without re-read | §3 (T3 anti-pattern) |
-| «Stage 1 was 'about to land' so dispatch Stage 2 now» | Stage gate is real `gh pr list --search "is:merged"` — never «about to» | §6 (Class C honesty) |
-| «Both candidates feel similar — I'll pick A» | True ties go to maintainer as DECISION-NEEDED, not the meta-orchestrator | §2 step 4 + reviewer-discipline §2 |
-| «Maintainer said 'выбирай сам' so DECISION-NEEDED is satisfied, I'll pick» | **NO** — «pick for me» / «оба норм» / «я устал» = *deferred* DECISION-NEEDED, not answered. Genuine answer is a content tiebreaker («pick X because Y about the umbrellas»). Re-surface with sharper framing or propose a coin-flip; do NOT silently pick. | §2 step 4.1 (anti-rationalization clause) |
-| «Phase -1 reviewer between stages is optional when stage was small» | Mandatory regardless of stage size (CI ≠ design review, T19) | §6 step 3 + §7 |
-| «I'll quickly implement this trivial sub-wave inline» | Anti-scope: meta-orchestrator dispatches kickoffs; never implements | §8 anti-scope |
-| «Modify `~/.claude/skills/orchestrator/` to align with this skill» | That file is agent-uncommittable; wrap, never fork or edit | §8 anti-scope |
-| «`!shell` injection failed — proceed anyway with assumed values» | F6: emit DIAGNOSTIC and halt; do NOT assume gate is clear | §11 F6 |
-| «Reviewer returned REVISE 3× — try once more» | F5: after 3 REVISE cycles, escalate to maintainer | §11 F5 |
-| «`see ai-laziness-traps.md` is enough in the meta-kickoff §5» | Blanket reference is itself T7 — explicit T-enumeration mandatory | §4 step 3 + §5 + ai-laziness-traps.md §3 |
-
-**Red flag phrases — STOP and re-verify:**
-
-- «обновлю план потом / I'll fix the plan-sequencing entry after» → fix BEFORE dispatch; §1 stale plan blocks §2
-- «достаточно одного reviewer'а / one reviewer's enough» → meta-orchestrator's Phase -1 is mandatory between every stage
-- «merged значит runtime-verified / merged means runtime-verified» → stage-gate verifies merge, not runtime behaviour; verify-trace dispatch is separate
-- «гипотетический stage 3 / hypothetical Stage 3» → if Stage 3 isn't in the kickoff, do NOT invent it; surface to maintainer
+Rationalizations that mean STOP and re-read the relevant section (e.g. «plan looked current last session, skip §1» → §1 T4; «Stage 1 was about to land so dispatch Stage 2» → §6 stage-gate is real `gh pr list`; «maintainer said выбирай сам so I'll pick» → §2 Step 4.1; «Phase -1 optional when stage was small» → §6/§7 mandatory) + the full red-flag phrase list: [`references/red-flags.md`](references/red-flags.md).
 
 ## With this skill
 
