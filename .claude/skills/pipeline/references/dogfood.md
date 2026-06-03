@@ -1,6 +1,6 @@
 # §9 Dogfood test (recursive-self-application gate)
 
-> **Authoritative for:** the `/meta-orchestrator` dogfood test — the recursive-self-application gate (T15 from `ai-laziness-traps.md §2`) that the FIRST live invocation MUST run on the BUILD umbrella that produced the skill. Invocation steps, expected launch-table shape, HARD-GATE failure semantics. Body of `../SKILL.md §9` points here.
+> **Authoritative for:** the `/pipeline` dogfood test — the recursive-self-application gate (T15 from `ai-laziness-traps.md §2`) that the FIRST live invocation MUST run on the BUILD umbrella that produced the skill. Invocation steps, expected launch-table shape, HARD-GATE failure semantics. Body of `../SKILL.md §9` points here.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../../README.md#why-this-exists). Output-format grammar — see [output-format.md](output-format.md).
 
 The FIRST live invocation of this skill MUST run on the BUILD umbrella that produced the skill itself. This is the recursive-self-application gate (T15 from [ai-laziness-traps.md §2](../../../rules/ai-laziness-traps.md) — cannot be skipped).
@@ -10,9 +10,9 @@ The FIRST live invocation of this skill MUST run on the BUILD umbrella that prod
 1. Open a fresh worktree session via `claude -w meta-orchestrator-iphase` (CC native `--worktree`; portable `bash scripts/create-worktree.sh <name>` or manual `git worktree add` fallback when outside CC — if using raw `git worktree add`: run `git remote set-head origin --auto` first and base off `origin/HEAD`, not a hardcoded branch name, per Bug 1 rule in [parallel-subwave-isolation.md §1](../../../rules/parallel-subwave-isolation.md)). In the new session, run:
 
    ```bash
-   bash .claude/skills/meta-orchestrator/helpers/plan-currency-check.sh meta-orchestrator-iphase
-   bash .claude/skills/meta-orchestrator/helpers/priority-score.sh
-   bash .claude/skills/meta-orchestrator/helpers/launch-table-generator.sh meta-orchestrator-iphase
+   bash .claude/skills/pipeline/helpers/plan-currency-check.sh meta-orchestrator-iphase
+   bash .claude/skills/pipeline/helpers/priority-score.sh
+   bash .claude/skills/pipeline/helpers/launch-table-generator.sh meta-orchestrator-iphase
    gh pr list --search "is:merged head:feat/meta-orchestrator-build base:staging" \
      --json number,title,mergedAt,headRefName --limit 10
    ```

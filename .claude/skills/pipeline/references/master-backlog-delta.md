@@ -1,9 +1,9 @@
-# /meta-orchestrator master-backlog-delta — discipline detail
+# /pipeline master-backlog-delta — discipline detail
 
 > **Authoritative for:** master-backlog-delta (`_master-backlog-delta.json`) discipline detail referenced by SKILL.md §2.5 Step 1 + Step 8 + §10 item 5. Delta-reconciliation rule, delta-as-supplementary framing, T-mem-A counter extension to delta, helper-scope contracts for both writer (`update-delta.sh`) and read-side differ (`delta-diff.sh`).
 > **NOT authoritative for:** SKILL.md §2.5 `!shell` injection blocks themselves (those live in SKILL.md by necessity — CC executes them from there). NOT authoritative for project goal — see [README.md#why-this-exists](../../../../README.md#why-this-exists). NOT authoritative for the delta JSON schema — that is single-SSOT'd in [update-delta.sh §1](../helpers/update-delta.sh) (`write_initial_template` heredoc).
 
-> **Origin:** /meta-orchestrator Stage 3 of mode-triage umbrella, 2026-05-26. Companion to SKILL.md §2.5 + §10 master-backlog-delta surfaces (read side ships Stage 3; writer + arrays-in-body ship Stage 2B/2C). Mirrors [plan-cache.md](plan-cache.md) §1-§4 structure for the parallel delta artefact.
+> **Origin:** /pipeline Stage 3 of mode-triage umbrella, 2026-05-26. Companion to SKILL.md §2.5 + §10 master-backlog-delta surfaces (read side ships Stage 3; writer + arrays-in-body ship Stage 2B/2C). Mirrors [plan-cache.md](plan-cache.md) §1-§4 structure for the parallel delta artefact.
 
 <!-- @dual-pair: meta-orchestrator-master-backlog-delta -->
 <!-- spec: ../helpers/update-delta.sh (metadata write side) ↔ ../helpers/delta-diff.sh (read side set-diff) ↔ SKILL.md §2.5 Step 1 + Step 8 + §10 item 5b -->
@@ -51,7 +51,7 @@ At end of invocation, the two writes happen in this order (per SKILL.md §10 ite
 
 **Helper-scope contract** (mirrors [plan-cache.md §3](plan-cache.md) round-3 reduction of `update-cache.sh`): the metadata writer (`update-delta.sh`) is deterministic on TWO fields only; the two arrays are populated by `delta-write-from-state.sh` after the metadata writer runs (F.3 helper-collapse PR #261 2026-05-28 — the inline `!shell` `jq` block was removed). This split keeps the metadata writer's idempotency contract tight (covered by `update-delta.test.ts`), while the array content flows through the sibling helper (no underspecified `$3..$N` interface).
 
-**Single SSOT:** both helpers live at `.claude/skills/meta-orchestrator/helpers/` only — no consumer mirror under `skills/meta-orchestrator/` per [install.sh:233-235](../../../../install.sh) authority. `delta-diff.sh` (read side) is genuinely new this stage; `update-delta.sh` (metadata writer) shipped Stage 2B and is UNCHANGED in this stage.
+**Single SSOT:** both helpers live at `.claude/skills/pipeline/helpers/` only — no consumer mirror under `skills/pipeline/` per [install.sh:233-235](../../../../install.sh) authority. `delta-diff.sh` (read side) is genuinely new this stage; `update-delta.sh` (metadata writer) shipped Stage 2B and is UNCHANGED in this stage.
 
 ---
 

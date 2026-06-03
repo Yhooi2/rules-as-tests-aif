@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# parse-override-flags.sh — /meta-orchestrator CLI override flag parser.
+# parse-override-flags.sh — /pipeline CLI override flag parser.
 #
 # > Class: C — prose-only; companion paired-negative test at
 # >          packages/core/hooks/parse-override-flags.test.ts.
@@ -28,7 +28,7 @@
 #   exit 2 — error (multi-flag, missing/short reason, wrong arg count); stderr msg
 #
 # @dual-pair: meta-orchestrator-mode-overrides
-# spec: .claude/skills/meta-orchestrator/references/mode-overrides.md
+# spec: .claude/skills/pipeline/references/mode-overrides.md
 # @cc-only-rationale: invoked from SKILL.md §0 preamble as
 #   ${CLAUDE_SKILL_DIR}/helpers/parse-override-flags.sh "${umbrella:-}"
 #   (CC-session only; no portable hook fires at slash-command-parse moment;

@@ -1,9 +1,9 @@
-# /meta-orchestrator plan-cache — discipline detail
+# /pipeline plan-cache — discipline detail
 
 > **Authoritative for:** plan-cache (`_plan-cache.md`) discipline detail referenced by SKILL.md §1 Step 2 item 6 + §10 item 5. Cache-reconciliation rule, cache-as-supplementary framing, T-mem-A counter, helper-scope contract.
 > **NOT authoritative for:** SKILL.md §1 Step 1 `!shell` injection itself (the read-side block is in SKILL.md by necessity — CC executes it from there). NOT authoritative for project goal — see [README.md#why-this-exists](../../../../README.md#why-this-exists).
 
-> **Origin:** /meta-orchestrator skill-memory umbrella, 2026-05-25. Companion to SKILL.md §1 + §10 plan-cache surfaces.
+> **Origin:** /pipeline skill-memory umbrella, 2026-05-25. Companion to SKILL.md §1 + §10 plan-cache surfaces.
 
 <!-- @dual-pair: meta-orchestrator-plan-cache -->
 <!-- spec: ../helpers/update-cache.sh (write side) ↔ SKILL.md §1 Step 1 first !shell block (read side) -->
@@ -46,7 +46,7 @@ Updates `.claude/orchestrator-prompts/_plan-cache.md` (gitignored, per-machine) 
 
 **Helper-scope contract** (round-3 scope reduction per umbrella §1.3 item 4): the helper writes ONLY the `## Last invocation` section deterministically (`$1` umbrella name, `$2` outcome one-liner, env-injectable `MO_TIMESTAMP` / `MO_GIT_HEAD` seams for tests). All other sections — `## Last priority ranking`, `## DRIFT items surfaced last time`, `## DECISION-NEEDED pending maintainer`, `## Deferred follow-ups` — are populated by direct `Edit` on the cache file BEFORE invoking the helper. This split keeps the helper deterministic with a tight idempotency contract (covered by `packages/core/hooks/update-cache.test.ts`), while the richer session content flows through standard `Edit` (no underspecified `$3..$N` interface).
 
-**Single SSOT:** the helper lives at `.claude/skills/meta-orchestrator/helpers/update-cache.sh` only — no consumer mirror under `skills/meta-orchestrator/` per [install.sh:233-235](../../../../install.sh) authority.
+**Single SSOT:** the helper lives at `.claude/skills/pipeline/helpers/update-cache.sh` only — no consumer mirror under `skills/pipeline/` per [install.sh:233-235](../../../../install.sh) authority.
 
 ---
 
