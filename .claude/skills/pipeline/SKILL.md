@@ -108,7 +108,7 @@ Compare the `wave-sequencing-plan.md` claims against the live `gh pr list` outpu
 **Step 1 — inject candidate list** — *read-rule (completion barrier):* parse a background helper's output ONLY after its `=== <helper>: END rc=<n> ===` trailer (appended by `run-helper.sh`) or its task-notification; a header-only / trailer-absent read = "still running", NOT "zero results" — never conflate one task's notification with another's. *(Origin: incident 2026-06-01, `priority-score.sh` read at header-only state → false "zero candidates".)* This rule applies to every background-helper `!`-fence below. <!-- @dual-pair: bg-helper-completion-barrier -->
 
 ```!
-bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/priority-score.sh" 2>/dev/null
+bash "${CLAUDE_SKILL_DIR}/helpers/run-helper.sh" "${CLAUDE_SKILL_DIR}/helpers/priority-score.sh" "${umbrella:-}" 2>/dev/null
 ```
 
 **Step 2 — score each candidate (multi-criteria, judgment):**
