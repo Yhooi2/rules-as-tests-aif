@@ -5,7 +5,7 @@
 
 ## Why this exists (NS1 ≡ WS5 closure)
 
-The `meta-orchestrator-refactor` audit ([`verified-audit.md`](../../../orchestrator-prompts/meta-orchestrator-refactor/verified-audit.md), MIN-13 / behavioral angle 9) flagged that the skill had **never been behaviorally tested** — every gate was prose (Class C) or structural (principle 12/18/19), none observed the skill *acting*. Stage 6 closes that gap and answers the binding question: **did Stage 4 slim (600→524 LOC, content pushed into references) + Stage 5 rename + i18n break any discipline?**
+The `meta-orchestrator-refactor` audit (`orchestrator-prompts/meta-orchestrator-refactor/verified-audit.md` — gitignored CANON; MIN-13 / behavioral angle 9) flagged that the skill had **never been behaviorally tested** — every gate was prose (Class C) or structural (principle 12/18/19), none observed the skill *acting*. Stage 6 closes that gap and answers the binding question: **did Stage 4 slim (600→524 LOC, content pushed into references) + Stage 5 rename + i18n break any discipline?**
 
 ## Method (session-bound; zero paid LLM)
 
