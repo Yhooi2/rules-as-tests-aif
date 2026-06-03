@@ -68,9 +68,11 @@ gh pr list --state all --search "${slug}" --json number,state # Signal 2: broad 
 test -f ".claude/orchestrator-prompts/${slug}/done.md"        # Signal 3: done.md (Layer-C3)
 ```
 Verdict — **≥2 of 3 signals required** to mark ALREADY-DONE (T-DUX-A: lone slug-substring PR hit is insufficient):
-- **ALREADY-DONE**: skip dispatch → write `done.md` per CLAUDE.md umbrella-closure schema + CANON sync
+- **ALREADY-DONE**: skip dispatch → auto-write `done.md` + CANON sync + report (CLEAR action — **never surface as question**, T15 / P4); see §2.8 for schema
 - **IN-FLIGHT**: open PR or live branch, no done.md → surface + let operator decide
 - **FRESH** (0–1 signals): proceed to §2.1
+
+**Base normalization (P3):** before §2.1, run `git remote set-head origin --auto` to refresh trunk ref. If kickoff's stated base diverges from live trunk, warn and use live trunk for harvest `--base` in §2.4.
 
 **§2.1 — Dispatch**
 ```bash
@@ -78,6 +80,8 @@ tsx packages/runtime-bridge/src/cli/dispatch.ts \
   .claude/orchestrator-prompts/<umbrella>/kickoff.md
 ```
 `AifHandoffBackend.dispatch()` → `POST /tasks (paused:true)` → `PUT /tasks/:id (unpause)` → aif coordinator picks up: `backlog → planning` (per-task worktree created) → `implementing`. The `exit 0` contract holds at every call-site — a ManualBackend fallback (written to `/tmp/runtime-bridge-<taskId>.md`) means aif was unreachable; retry once the blocker clears.
+
+Emit watch-link immediately after dispatch (P6): `http://${AIF_WEB_HOST:-localhost}:${AIF_WEB_PORT:-5180}/tasks/<taskId>`. Web port (`AIF_WEB_PORT`, default `5180`) is separate from API port (`AIF_PORT`, default `3009`). If the web container is absent, emit the REST task URL instead.
 
 **§2.2 — Monitor (single-poll-per-turn)**
 Classify one poll using `monitor-classify.sh` (proven by `packages/core/skills/dispatcher/monitor.test.ts`):
@@ -112,7 +116,15 @@ gh pr list --search "is:merged head:<branch> base:staging" --json number,mergedA
 Empty → HALT (PR not yet merged; wait for CI). Non-empty → CLEAR, proceed to §2.7.
 
 **§2.7 — Advance**
-Dispatch next stage kickoff → back to §2.1. If no remaining stages → emit "umbrella complete".
+Dispatch next stage kickoff → back to §2.1. If no remaining stages → §2.8.
+
+**§2.8 — Closure marker (P2)**
+Write `done.md` schema (`# <umbrella> — DONE` / `- Final PR: #<num>` / `- Closed: <YYYY-MM-DD>` / `- Summary: <one-line>`) and CANON sync:
+```bash
+cp .claude/orchestrator-prompts/<umbrella>/done.md \
+   ~/.claude-coordination/<repo-slug>/<umbrella>/done.md
+```
+Also write retroactively when §2.0 detects ALREADY-DONE but `done.md` is absent.
 
 ---
 
@@ -197,3 +209,5 @@ The operator manually tracked task IDs, polled `GET /tasks/:id` in a shell loop,
 ## §6 §1.7 self-reflexive note
 
 **Stage 1 (dispatcher-ux):** `monitor-classify.sh` REUSES `priority-score.sh` Layer-C3 completion-detection pattern (BFR verdict REUSE, `build-first-reuse-default.md:3`; same problem class confirmed — task-status classification vs umbrella-completion classification). Tests at `packages/core/skills/dispatcher/monitor.test.ts:1`. Original BUILD-verdict forward/backward checks at `docs/meta-factory/dispatcher-skill-rphase.md`.
+
+**Stage 2 (dispatcher-ux-s2):** P2 (`§2.8` closure-marker schema + CANON sync, `CLAUDE.md:umbrella-closure`), P3 (base-normalization note in `§2.0`, `parallel-subwave-isolation.md:1`), P4 (self-application — ALREADY-DONE writes done.md without surfacing question, `recommendation-laziness-discipline.md:3`), P6 (watch-link `§2.1`, `packages/core/skills/dispatcher/dispatch.test.ts:1`). No new CLI primitives, no npm deps.
