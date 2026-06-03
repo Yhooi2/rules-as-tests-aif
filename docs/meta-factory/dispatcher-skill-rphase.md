@@ -304,15 +304,20 @@ Search surfaced `bassimeledath/dispatch` as the closest CC-skill match, describe
 
 These are RECOMMENDATIONS to surface — maintainer confirms per [reviewer-discipline.md §2](../../.claude/rules/reviewer-discipline.md). Stage 0 does not finalize strategy.
 
-### DN-A: CC-skill vs portable markdown
+### DN-A: CC-skill vs portable markdown — RESOLVED (maintainer 2026-06-03): hybrid
 
-DECISION-NEEDED: should `/dispatcher` ship as a CC-skill only, or include a portable markdown fallback?
+**Decision: hybrid = CC-native primary + portable markdown fallback that degrades gracefully.** This corrects this R-phase's initial Option-A lean, which mis-classified `/dispatcher` as operator-internal tooling.
 
-**Option A → CC-skill only.** Evidence: `build-first-reuse-default.md §1.1` (operator axis: "use companions maximally; don't reinvent"). The loop uses `superpowers:brainstorming` directly (CC-native Superpowers skill) — not meaningful outside CC. Stage-gate dispatch uses CC Agent tool calls. A portable markdown fallback would lose brainstorm invocation entirely. `dual-implementation-discipline.md §3` permits CC-only when "capability is not semantically meaningful outside CC." `@cc-only-rationale` annotation required in the skill header per `dual-implementation-discipline.md §6`.
+**Why the Option-A lean was wrong (verified 2026-06-03):** skills ARE a consumer-shipping path — `install.sh:11` ("Copies skills/ + `.claude/skills/pipeline/` → `.claude/skills/`") and `install.sh:207` ("▶ Skills → `.claude/skills/`") copy skills into consumer projects; `/dispatcher` is a sibling of the already-shipped `/pipeline`. So `/dispatcher` is **consumer-facing**, not operator-internal. Two disciplines then point the same way:
+- `dual-implementation-discipline.md §3` — consumer-facing default = **dual (CC-native primary + portable fallback)**; explicit skill precedent `.claude/skills/rules-as-tests/`.
+- `build-first-reuse-default.md §1.1` shipped-axis — "AI-/OS-/license-agnostic core that integrates with companions and degrades gracefully when they are absent. Integrate, never *hard-depend* … making a companion **mandatory** for consumers is a goal change ([README.md#why-this-exists])." CC-only would hard-depend on `superpowers:brainstorming`, which is exactly the prohibited goal change. README is agnostic by thesis (`README.md:8` — "Deploys into Claude Code / Cursor / Codex").
 
-**Option B → CC-skill primary + portable markdown fallback.** Consequence: portable version omits `superpowers:brainstorming` (hardcodes "always surface to operator" for technical forks); the two channels would differ on Q&A Type 1 handling. Requires `@dual-pair: dispatcher-skill` annotation and drift-check per `dual-implementation-discipline.md §5`.
+**Hybrid shape (the project's agnosticism applied):**
+- **CC present** → technical forks resolved via `superpowers:brainstorming` (autonomous); full loop.
+- **CC absent** (Cursor / Aider / Codex / no Superpowers) → portable markdown fallback that detects the missing companion via a **capability-check, not a brand-name string** (`dual-implementation-discipline.md §4`) and degrades: technical forks are **surfaced to the operator** via `questions.ts` instead of auto-brainstormed. No paid LLM, no hard dependency.
+- Both channels carry the same `@dual-pair: dispatcher-skill` anchor + drift-check (`dual-implementation-discipline.md §5`). `@cc-only-rationale` is NOT used — this is dual, not CC-only.
 
-**Recommendation: Option A.** The brainstorm integration is the core value-add of autonomous technical-fork resolution; stripping it for portability produces a degraded version that is not meaningfully better than running `questions.ts` manually. `build-first-reuse-default.md §1.1` operator-axis default favors using CC companions fully. **Wrong if:** maintainer determines non-CC consumers are a current or imminent use-case for this skill.
+**Stage 1 implementation constraint:** `/dispatcher` MUST ship both channels; the CC-absent path must be a real degradation, not a stub.
 
 ### DN-B: technical-fork autonomy boundary
 
@@ -325,6 +330,8 @@ DECISION-NEEDED: when aif parks a task with a question, how should `/dispatcher`
 **Option C → always brainstorm first, then surface recommendation to operator.** Consequence: `/dispatcher` always invokes `superpowers:brainstorming` but surfaces the recommendation to operator rather than auto-applying. Operator approves with one keystroke. Hybrid: adds a round-trip but preserves operator control on all forks.
 
 **Recommendation: Option A.** The kickoff §0 and maintainer framing 2026-06-03 explicitly state "technical→brainstorm self, strategic→park". `recommendation-laziness-discipline.md §3` fork-surfacing companion: "autonomous by default — the human-gate fires ONLY on a genuine ambiguous fork; a clear call (one option better on the merits) is decided and *reported*." The technical/HOW fork is the clear case (aif's implementation detail, not project direction). **Wrong if:** maintainer decides the discrimination overhead is not worth the complexity and prefers Option B's simplicity, or Option C's always-surface-recommendation posture.
+
+**STILL OPEN — maintainer confirms.** Interaction with the DN-A hybrid resolution: Option A's "technical→brainstorm-self" applies **only on the CC channel**. On the CC-absent portable channel there is no `superpowers:brainstorming`, so technical forks degrade to "surface to operator" regardless — i.e. the portable channel behaves like Option B by necessity. So DN-B effectively decides the **CC-present** behaviour only; the CC-absent behaviour is fixed by the agnostic-degradation requirement.
 
 ---
 
@@ -345,7 +352,7 @@ The loop design in section (b) is a prose specification — it has no executable
 ## §1.7 Forward-check
 
 - `build-first-reuse-default.md §3` — BFR mechanism executed (all 5 layers): SSOT consult (layer 5: rows #27/#28/#64/#65/#67/#88/#83/#109 reviewed — no existing row covers the loop-wiring capability); DeepWiki ≥3 phrasings (layers 3); WebSearch ≥3 phrasings (layer 4). Verdict: BUILD. `build-first-reuse-default.md:3`
-- `dual-implementation-discipline.md §3` — DN-A recommendation = CC-skill (Option A) with `@cc-only-rationale` annotation required; `superpowers:brainstorming` not meaningful outside CC. `dual-implementation-discipline.md:3`
+- `dual-implementation-discipline.md §3` — DN-A resolved = **hybrid (dual)**: `/dispatcher` is consumer-facing (ships via `install.sh:207`), so the consumer-facing default (dual) applies; CC-native primary + portable fallback that degrades (technical forks → surface when no companion present). `dual-implementation-discipline.md:3`
 - `no-paid-llm-in-ci.md §1` — all dispatch is session-bound; harvest is ZERO LLM (`harvest.ts:18-19`); questions is READ-ONLY HTTP; answer is REST-only. No API-billed calls in CI. `no-paid-llm-in-ci.md:1`
 - `ai-laziness-traps.md §2 T16` — explicit problem-class X-vs-Y written for all 3 upstream candidates (section c). `ai-laziness-traps.md:2`
 - `recommendation-laziness-discipline.md §3` — all recommendations (DN-A, DN-B) preceded by evidence-bearing tool calls and include falsifiers. `recommendation-laziness-discipline.md:3`
