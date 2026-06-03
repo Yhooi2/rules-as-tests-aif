@@ -68,7 +68,7 @@ gh pr list --search "is:open" --json number,title,state,headRefName,baseRefName 
 ```
 
 ```!
-head -200 docs/meta-factory/wave-sequencing-plan.md 2>/dev/null || echo "MISSING: wave-sequencing-plan.md"
+head -400 docs/meta-factory/wave-sequencing-plan.md 2>/dev/null || echo "MISSING: wave-sequencing-plan.md"
 ```
 
 ```!
@@ -446,7 +446,7 @@ SP `requesting-code-review` upstream problem class = «dispatch a reviewer subag
 - **Does NOT add npm deps.** Substrate stays bash + markdown + CC primitives + existing `gh` CLI.
 - **Does NOT re-litigate R-phase verdicts.** If a missed candidate is noticed, write `docs/meta-factory/research-patches/2026-<date>-meta-orchestrator-followup-<gap>.md` and surface to maintainer.
 
-**§7.10 one-button-install coupling (load-bearing):** this skill lives at `.claude/skills/meta-orchestrator/` (project-scope, committed). It is templatable for N6b `npx` scaffold via `install.sh` payload. All cross-references use `${CLAUDE_SKILL_DIR}` or repo-relative paths — no absolute paths inside skill body. Mirrors at repo-root `skills/meta-orchestrator/` for `install.sh` consumption (per `install.sh:168-198` pattern verified against `tool-bootstrapping` precedent). Sub-wave D wired this.
+**§7.10 one-button-install coupling (load-bearing):** this skill lives at `.claude/skills/meta-orchestrator/` (project-scope, committed). It is templatable for N6b `npx` scaffold via `install.sh` payload. All cross-references use `${CLAUDE_SKILL_DIR}` or repo-relative paths — no absolute paths inside skill body. Ships directly from `.claude/skills/meta-orchestrator/` via `install.sh` (single source of truth; no repo-root mirror — Item 12 closure 2026-05-25). Install pattern at `install.sh:236-255`.
 
 ---
 
@@ -505,7 +505,7 @@ The launch-table-generator will detect sub-waves from the kickoff (A, B, C, D). 
 
 2. **State companion:** `.claude/orchestrator-prompts/<umbrella>-meta-launch/state.md`
    - Template: `${CLAUDE_SKILL_DIR}/templates/state.md.template`
-   - Filled sections: §1 Inputs (from plan-currency-check output) · §2 Launch-table (from §3) · §3 Dispatch log (updated per stage).
+   - Filled sections: §1 Inputs (from plan-currency-check output) · §2 Decisions · §3 Phase -1 verdict (updated per stage).
    - Lifecycle: updated in-place via **Edit (section-by-section), NOT Write (full-rewrite)**. Section history preserved unless explicitly stale — replacing the whole file loses §1.1 / §1.2 prior-snapshot context that downstream sessions read. «Not append-only» means «can mutate in place», which is Edit semantics, not Write-clobber semantics. Falsifier: if the next invocation must rebuild §1 Inputs from scratch because the previous snapshot was wiped → §10 was violated.
 
 3. **Inline session report** (not a file — written to the conversation) — emitted as a **3-layer structure**: `## Dependency graph` (Argo-style `├── / └──` ASCII tree, prospective; inter-stage edge `↓`), `## Action queue` (5-column markdown table: `Paste в новый CC tab` / `Когда` / `Ждёшь` / `Можно параллельно с`), and one `### Stage N` heading per stage carrying the 1-liner `/orchestrator <umbrella> §<section> — <NL: Mode/role/autonomous?>, остальное в kickoff`. Full grammar + 4 worked examples (Mode A / SDD / Mode B × N / Queue mode) + ASCII templates live in [`references/output-format.md`](references/output-format.md); principle 18 (`packages/core/principles/18-meta-orchestrator-output-format.test.ts`) enforces those substrings literally in `references/output-format.md`, with SKILL.md §10 required to point at it. **Autonomous-offer (the `autonomous?` slot in the 1-liner grammar):** when the runtime-bridge is configured + aif reachable (probe per `#tabs-by-default-when-bridge-up`), each Stage block MUST present autonomous dispatch (`tsx packages/runtime-bridge/src/cli/dispatch.ts <kickoff>`, contingent on the kickoff's §4c park-don't-guess block) alongside — not instead of — the maintainer-paste tab 1-liner, so the human chooses. Omitting it while the bridge is up = `#tabs-by-default-when-bridge-up`.
@@ -518,11 +518,11 @@ The launch-table-generator will detect sub-waves from the kickoff (A, B, C, D). 
 
    a. **Cache (existing):** `bash ${CLAUDE_SKILL_DIR}/helpers/update-cache.sh "<umbrella-or-no-arg>" "<outcome-one-liner>"` — helper writes `## Last invocation` only; non-«Last invocation» sections populated by direct `Edit` before invocation. Detail + helper-scope contract + anti-patterns: [`references/plan-cache.md §3`](references/plan-cache.md). <!-- @dual-pair: meta-orchestrator-plan-cache -->
 
-   b. **Delta arrays (sibling-helper pattern, DN-2 B verdict 2026-05-27):** invoke `delta-write-from-state.sh` to write the two arrays, THEN invoke `update-delta.sh` for metadata. Concrete shape (`<current_ids_json_array>` and `<resolved_ids_json_array>` are angle-bracket placeholders that the rendering AI substitutes with real JSON-array literals derived from §2.5 Step 8/9; the syntax is correct only after substitution):
+   b. **Delta arrays (sibling-helper pattern, DN-2 B verdict 2026-05-27):** invoke `update-delta.sh` first (bootstraps schema on first run), THEN invoke `delta-write-from-state.sh` for the arrays-only rewrite. Concrete shape (`<current_ids_json_array>` and `<resolved_ids_json_array>` are angle-bracket placeholders that the rendering AI substitutes with real JSON-array literals derived from §2.5 Step 8/9; the syntax is correct only after substitution):
 
       ```bash
-      bash ${CLAUDE_SKILL_DIR}/helpers/delta-write-from-state.sh "${umbrella:-no-arg}" '<current_ids_json_array>' '<resolved_ids_json_array>'
       bash ${CLAUDE_SKILL_DIR}/helpers/update-delta.sh "${umbrella:-no-arg}" "<outcome-one-liner>"
+      bash ${CLAUDE_SKILL_DIR}/helpers/delta-write-from-state.sh "${umbrella:-no-arg}" '<current_ids_json_array>' '<resolved_ids_json_array>'
       ```
 
       The TWO sibling helpers are deliberately split: `update-delta.sh` owns metadata + fresh-template bootstrap (idempotent paired-negative test at `packages/core/hooks/update-delta.test.ts`, UNCHANGED post-F.3); `delta-write-from-state.sh` owns arrays-only rewrite (paired-negative test at `packages/core/hooks/delta-write-from-state.test.ts`, F.3 helper-collapse 2026-05-28 — sibling pattern preserves the existing update-delta.sh test contract per DN-2 B verdict). The inline `!shell` `jq` block that previously did the arrays rewrite was removed 2026-05-28 (F.3 PR #261); its function is now owned by `delta-write-from-state.sh`. **`first_seen` semantics are «most recent sighting», NOT «first-ever sighting»** — the overwrite-shape inside the helper is the bound choice (matches §2.5 Step 9 prose; simpler atomic write; trades historical-first-seen for shape simplicity). DO NOT introduce a preserve-shape variant. <!-- @dual-pair: meta-orchestrator-master-backlog-delta -->
