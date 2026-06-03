@@ -23,7 +23,9 @@ set -uo pipefail   # deliberately NOT `set -e`: we MUST reach the trailer even o
 name="$(basename "${1:-helper}")"
 
 # Capture the child's stdout + exit status BEFORE anything else can clobber $?.
-out="$("$@")"; rc=$?
+# MO_HELPER_TIMEOUT (default 120s) guards against a never-arriving END trailer.
+# timeout(1) exits with rc=124 on expiry; run-helper still appends the END trailer.
+out="$(timeout "${MO_HELPER_TIMEOUT:-120}" "$@")"; rc=$?
 
 # Count forwarded stdout lines. `grep -c ''` counts lines without miscounting a
 # trailing newline; `|| true` keeps the count step from tripping pipefail on
