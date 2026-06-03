@@ -24,8 +24,8 @@
  *   (1) '## Dependency graph'
  *   (2) '↓'                       — inter-stage edge symbol
  *   (3) '## Action queue'
- *   (4) 'Paste в новый CC tab'   — action-queue column header
- *   (5) 'Можно параллельно с'   — action-queue column header
+ *   (4) 'Paste into a new CC tab' — action-queue column header
+ *   (5) 'Can parallel with'       — action-queue column header
  *   (6) '### Stage'              — 1-liner heading prefix
  *
  * Slot 18 rationale: slots 01-17 occupied as of 2026-05-24 (`ls packages/core/principles/`).
@@ -47,8 +47,8 @@ const REQUIRED_SUBSTRINGS = [
   '## Dependency graph',
   '↓',
   '## Action queue',
-  'Paste в новый CC tab',
-  'Можно параллельно с',
+  'Paste into a new CC tab',
+  'Can parallel with',
   '### Stage',
 ] as const;
 
@@ -149,7 +149,7 @@ describe('Principle 18 — meta-orchestrator output-format structural check', ()
       'Some prose without dependency graph heading.',
       'But it does mention ↓ arrow.',
       '## Action queue',
-      '| Paste в новый CC tab | Когда | Ждёшь | Можно параллельно с |',
+      '| Paste into a new CC tab | When | Waiting on | Can parallel with |',
       '### Stage 1',
       '',
       '## §11 Failures',
@@ -168,13 +168,20 @@ describe('Principle 18 — meta-orchestrator output-format structural check', ()
       '## Dependency graph',
       'Stage 1: ├── A   └── B   ↓',
       '## Action queue',
-      '| # | Action | Когда | Ждёшь | Можно параллельно с |',
+      '| # | Action | When | Waiting on | Can parallel with |',
       '### Stage 1',
     ].join('\n');
     const missing: string[] = [];
     for (const sub of REQUIRED_SUBSTRINGS) {
       if (!fakeSectionTen.includes(sub)) missing.push(sub);
     }
-    expect(missing).toContain('Paste в новый CC tab');
+    expect(missing).toContain('Paste into a new CC tab');
+  });
+
+  it('RU lang pack carries the Russian emitted tokens (operator contract)', () => {
+    const ru = readFileSync(resolve(REPO_ROOT, '.claude/skills/pipeline/lang/ru.sh'), 'utf8');
+    expect(ru).toContain('Paste в новый CC tab');
+    expect(ru).toContain('Можно параллельно с');
+    expect(ru).toContain('## 🟢 Простыми словами');
   });
 });
