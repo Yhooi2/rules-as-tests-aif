@@ -2,6 +2,7 @@
 
 > **Authoritative for:** литературный пересказ истории проекта — v2 / вторая версия; художественная форма без технических ссылок. Не источник истины, а нарратив.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists); техническая хроника с источниками — см. [project-history-book.md](project-history-book.md).
+> **NOT authoritative for:** current narrative — superseded by [project-history-book-v3.md](project-history-book-v3.md).
 > **Жанр:** книга-хроника. Чистый литературный пересказ без технических деталей, ссылок и названий — только суть.
 > **Статус:** живой артефакт, пишется дальше по мере новых волн. Это не источник истины, а рассказ; при расхождении верь первоисточникам.
 
