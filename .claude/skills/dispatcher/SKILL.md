@@ -29,6 +29,8 @@ allowed-tools:
 
 **Substrate:** CC slash-command + 4 existing CLI primitives (zero new npm deps, zero new code). All dispatch is session-bound (`no-paid-llm-in-ci.md §1`).
 
+> **⚡ aif environment rule:** `/dispatcher` is the ONLY skill that works with aif. On ANY aif environment symptom — task stuck, push rejected, capacity full, missing tool in container, blocked_external, proxy error — **first action = invoke `/aif-doctor`**. Do NOT manually `docker exec` fix-by-fix. The doctor classifies the mode in one sweep and maps the right fix. Incident 2026-06-04: harvest-push fell on missing `actionlint`→`zizmor` (uninstallable); manual grinding took many turns; `/aif-doctor` would have immediately classified «container is a runtime, not a push env → land from host with full toolchain».
+
 ---
 
 ## §0 Invocation
@@ -91,7 +93,7 @@ classification=$(TASK_JSON="$TASK_JSON" bash .claude/skills/dispatcher/helpers/m
 ```
 Branch on output prefix: `RUNNING:*` → re-invoke `/dispatcher <umbrella>` next turn. `DONE:*` → §2.4. `PARKED:*` → §2.3. `ERROR:*` → ATTN operator.
 **DO NOT** use foreground `sleep <N>` — harness-blocked. **DO NOT** chain commands with `;` compound sequences — harness-blocked.
-Timeout: track invocation count; after operator-configured ceiling → surface **ATTN: task stalled**.
+Timeout: track invocation count; after operator-configured ceiling → surface **ATTN: task stalled**. A stall is an *environment* symptom, not a loop bug — **run [`/aif-doctor`](../aif-doctor/SKILL.md)** to triage it (distinguishes a runtime crash-loop / capacity saturation / proxy block from a slow-stale task the upstream watchdog will recover on its own). Do not re-dispatch blindly.
 
 **§2.3 — Q&A (three types — see §3)**
 
@@ -184,6 +186,8 @@ If the brainstorming companion is unreachable (Cursor / Aider / Codex / no Super
 **ATTN: container on wrong branch.** `harvest.ts` throws (does NOT self-heal) when the aif container's git state is on a different branch than the task's `branchName`. When this occurs, `/dispatcher` surfaces `ATTN: harvest threw — container may be on wrong branch. Manual check required: docker exec aif-handoff-agent-1 git branch` and does NOT silently retry. The operator must resolve the container state before re-running harvest.
 
 **Harvest idempotency:** `gh pr create` fails if the PR already exists; re-run with `--no-auto-merge` to skip the merge step and recover gracefully.
+
+**ATTN: environment-level failure (not a loop bug).** When dispatch/monitor/harvest misbehaves for a reason outside this loop's logic — task crash-loops in `planning` with `tokenTotal:0` (broken claude runtime), new task stuck `backlog` (capacity cap saturated), in-container `npm`/network failures (proxy block) — that is an aif *environment* fault. **Hand off to [`/aif-doctor`](../aif-doctor/SKILL.md)** for read-only triage + the mapped fix (each mutation gated on operator GO). `/dispatcher` owns the loop; `/aif-doctor` owns the environment the loop runs in.
 
 ---
 
