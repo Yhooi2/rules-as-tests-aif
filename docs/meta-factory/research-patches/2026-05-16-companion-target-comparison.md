@@ -2,7 +2,7 @@
 # Research-patch — Companion-target comparison R-phase (Track 4b, condensed)
 
 > **Date:** 2026-05-16
-> **Session type:** Post-1A coordination Track 4b — CONDENSED alt-target comparison per [.claude/orchestrator-prompts/companion-target-comparison/kickoff.md](../../.claude/orchestrator-prompts/companion-target-comparison/kickoff.md). Original 3-4h R-phase scope was first dispatched to a Sonnet sub-agent in isolated worktree; sub-agent errored mid-run (API socket closed at ~15min mark, after 34 tool uses, no file writes before failure). Re-executed condensed scope in orchestrator session.
+> **Session type:** Post-1A coordination Track 4b — CONDENSED alt-target comparison per [.claude/orchestrator-prompts/companion-target-comparison/kickoff.md](../../../.claude/orchestrator-prompts/companion-target-comparison/kickoff.md). Original 3-4h R-phase scope was first dispatched to a Sonnet sub-agent in isolated worktree; sub-agent errored mid-run (API socket closed at ~15min mark, after 34 tool uses, no file writes before failure). Re-executed condensed scope in orchestrator session.
 > **Predecessor:** [2026-05-16-goal-clarity-dialogue.md §4.2 v2 + §4.4](2026-05-16-goal-clarity-dialogue.md), [2026-05-16-bfr-default-upstream-verification.md](2026-05-16-bfr-default-upstream-verification.md) (Track 2 already covered 2 of 7 candidates)
 > **T7 template:** Problem → Root Cause → Solution → Prevention → Tags
 > **Outcome:** **1 STRONG companion candidate (Superpowers) recommended for Commit 7 widening.** OhMyOpencode + microsoft/agent-framework REFERENCE (Track 2). Cline + Codex + Cursor + Aider classified as **«framework consumers» (different problem class)**, not companions. §4.4 5-item mapping verdicts CONFIRMED with multi-source citations.
@@ -16,7 +16,7 @@ Goal-clarity-dialogue 1A §4.2 v2 deferred per-candidate verdicts for 7 alternat
 
 1A landed «COMPANION + two-horizon framing» (§4.2 v2) — AIF + aif-handoff named TODAY; 7 alt-targets pending. Track 2 [2026-05-16-bfr-default-upstream-verification.md](2026-05-16-bfr-default-upstream-verification.md) already covered 2 of the 7 (oh-my-opencode + microsoft/agent-framework) at the BFR-discipline level — this patch extends with capability-overlap analysis vs our 5 §4.4 items.
 
-Sub-agent dispatch attempt 2026-05-16: orchestrator dispatched Track 4b in isolated worktree per [parallel-subwave-isolation rule](../../.claude/rules/parallel-subwave-isolation.md). After 34 tool uses + ~15 min runtime, sub-agent received `API Error: The socket connection was closed unexpectedly`. Worktree auto-cleaned. **This patch is the re-execution.**
+Sub-agent dispatch attempt 2026-05-16: orchestrator dispatched Track 4b in isolated worktree per [parallel-subwave-isolation rule](../../../.claude/rules/parallel-subwave-isolation.md). After 34 tool uses + ~15 min runtime, sub-agent received `API Error: The socket connection was closed unexpectedly`. Worktree auto-cleaned. **This patch is the re-execution.**
 
 ## §3 Per-candidate research (condensed evidence-based)
 
@@ -43,7 +43,7 @@ Sub-agent dispatch attempt 2026-05-16: orchestrator dispatched Track 4b in isola
 
 **Distinctive Superpowers features we should consider ADAPTING:**
 
-- **«1% Rule»**: mandate skill invocation if there's even a slight chance of applicability. Could ADAPT to our trigger-keyword discipline in [`.claude/skills/*/SKILL.md`](../../.claude/skills/) frontmatter.
+- **«1% Rule»**: mandate skill invocation if there's even a slight chance of applicability. Could ADAPT to our trigger-keyword discipline in [`.claude/skills/*/SKILL.md`](../../../.claude/skills/) frontmatter.
 - **TDD-for-Skills / RED-GREEN-REFACTOR for documentation**: aligns with our paired-negative-test principle (`packages/core/principles/02-paired-negative-test.test.ts`); could broaden to our SKILL.md files.
 - **«Pressure scenarios»** for skill testing: ADAPT-candidate for our principle tests' adversarial probe pattern.
 
@@ -327,12 +327,12 @@ Done in §6. Self-application self-check passes with Aider coverage caveat.
 
 ## §11 See also
 
-- [.claude/orchestrator-prompts/companion-target-comparison/kickoff.md](../../.claude/orchestrator-prompts/companion-target-comparison/kickoff.md) — kickoff (still ARMED for deeper run if maintainer chooses)
+- [.claude/orchestrator-prompts/companion-target-comparison/kickoff.md](../../../.claude/orchestrator-prompts/companion-target-comparison/kickoff.md) — kickoff (still ARMED for deeper run if maintainer chooses)
 - [docs/meta-factory/research-patches/2026-05-16-goal-clarity-dialogue.md §4.2 v2 + §4.4](2026-05-16-goal-clarity-dialogue.md) — 1A origin
 - [docs/meta-factory/research-patches/2026-05-16-bfr-default-upstream-verification.md](2026-05-16-bfr-default-upstream-verification.md) — Track 2 BFR survey (reused evidence)
-- [.claude/rules/build-first-reuse-default.md §1](../../.claude/rules/build-first-reuse-default.md) — verdict typology
-- [.claude/rules/ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md) — pattern-matching-on-name protocol
-- [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md Commit 7](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md) — downstream Commit 7
+- [.claude/rules/build-first-reuse-default.md §1](../../../.claude/rules/build-first-reuse-default.md) — verdict typology
+- [.claude/rules/ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md) — pattern-matching-on-name protocol
+- [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md Commit 7](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md) — downstream Commit 7
 - DeepWiki URLs (consulted 2026-05-16):
   - <https://deepwiki.com/search/what-problem-does-superpowers_ae94c31c-fe3e-464b-8821-2b4837b89ec9>
   - <https://deepwiki.com/search/what-problem-does-cline-solve_4c2aef19-8e81-4e02-878c-78ed7f4af2d5>

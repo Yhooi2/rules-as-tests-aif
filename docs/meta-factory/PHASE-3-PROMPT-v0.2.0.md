@@ -4,6 +4,9 @@
 > **Версия:** 0.2.0 — 2026-05-08
 > **Status:** **counterfactual archive.** Phase 3 + 3.1 уже merged 2026-05-08 (commits `a46a8bf`/`962d557`/`3ad531f` via PR #2). Этот документ показывает, как Step 0 gate сформировал бы prompt, если бы был доступен на этапе планирования. **No execution required** — retroactive Step 0 ([phase-3-research.md §5](phase-3-research.md)) подтвердил все decisions ex-post.
 > **Delta from [PHASE-3-PROMPT.md](PHASE-3-PROMPT.md) v0.1.0:** §0 Step 0 prelude (NEW), §SCOPE additions (Nx/Turbo/Lerna/pnpm-catalog/Changesets explicit OUT), §FORWARD section (NEW). Body Blocks 2-6 от v0.1 — без изменений; reference original document for execution mechanics.
+>
+> **Authoritative for:** PHASE-3 counterfactual-archive prompt (v0.2.0 snapshot).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
 
 ---
 

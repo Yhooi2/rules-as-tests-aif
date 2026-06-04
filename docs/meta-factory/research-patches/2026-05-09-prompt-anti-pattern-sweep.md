@@ -29,7 +29,7 @@ The reviewer pass on PR #16 surfaced the gap as MINOR finding, exercising rule �
 Per-file historical disclaimer block at top of each affected prompt, mirroring [`self-application.md:8`](../self-application.md) precedent for handling pre-2026-05-09 framing:
 
 ```markdown
-> **Historical artifact (YYYY-MM-DD).** Do not use as project goal source. Project goal is owned by [README.md#why-this-exists](../../README.md#why-this-exists); the «<offending phrase>» framing in §«<section>» below predates the 2026-05-09 goal-hierarchy fix. Read as design context only — anti-pattern `#operational-doc-redefines-goal` per [.claude/rules/doc-authority-hierarchy.md §4](../../.claude/rules/doc-authority-hierarchy.md). Filename-exempt from §2 header rule (`*-PROMPT.md` convention); explicit disclaimer per same rule's escape hatch.
+> **Historical artifact (YYYY-MM-DD).** Do not use as project goal source. Project goal is owned by [README.md#why-this-exists](../../../README.md#why-this-exists); the «<offending phrase>» framing in §«<section>» below predates the 2026-05-09 goal-hierarchy fix. Read as design context only — anti-pattern `#operational-doc-redefines-goal` per [.claude/rules/doc-authority-hierarchy.md §4](../../../.claude/rules/doc-authority-hierarchy.md). Filename-exempt from §2 header rule (`*-PROMPT.md` convention); explicit disclaimer per same rule's escape hatch.
 ```
 
 Other 7 prompt files (PHASE-2/3/3-RETROFIT/4/5/6/9/9-ENTRY-PROMPT.md) verified clean by `grep -nE "(north star|central thesis|main goal|Главная цель)" docs/meta-factory/*-PROMPT.md docs/meta-factory/PHASE-*-PROMPT.md` — no further violations.

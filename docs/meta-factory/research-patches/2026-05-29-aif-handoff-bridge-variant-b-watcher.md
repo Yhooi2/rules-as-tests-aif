@@ -201,7 +201,7 @@ This verdict is more decisive than the §8 stop condition implies: the three DEC
 
 > **Additive note (2026-05-29, Sub-wave B):** Variant B (filesystem-watcher daemon mode) evaluated separately. Verdict: REJECT — no dir-watch task-ingestion capability in aif-handoff; upstream feature would require ~400-800 LOC new subsystem; DECISION=C zero-infra hard constraint violated. Falsifier: if aif-handoff ships `packages/agent/src/dirWatcher.ts` (or equivalent) → re-evaluate as ADAPT for Variant B specifically.
 
-**No new SSOT row proposed.** Per [prior-art-evaluations.md §3](../../docs/meta-factory/prior-art-evaluations.md): «REJECTed candidates without future-revisit value are recorded in the research patch audit trail rather than the SSOT.» The falsifier above captures the re-visit condition; the additive note to #67 is sufficient. Sub-wave D synthesis may propose a consolidated row for all three variants if the synthesis warrants it.
+**No new SSOT row proposed.** Per [prior-art-evaluations.md §3](../../../docs/meta-factory/prior-art-evaluations.md): «REJECTed candidates without future-revisit value are recorded in the research patch audit trail rather than the SSOT.» The falsifier above captures the re-visit condition; the additive note to #67 is sufficient. Sub-wave D synthesis may propose a consolidated row for all three variants if the synthesis warrants it.
 
 ---
 
@@ -230,15 +230,15 @@ This verdict is more decisive than the §8 stop condition implies: the three DEC
 
 ## §9 See also
 
-- [`.claude/orchestrator-prompts/aif-handoff-as-runtime-bridge/kickoff.md`](../../.claude/orchestrator-prompts/aif-handoff-as-runtime-bridge/kickoff.md) — parent kickoff; §6 Sub-wave B scope; §8 stop condition; §11 output spec.
+- [`.claude/orchestrator-prompts/aif-handoff-as-runtime-bridge/kickoff.md`](../../../.claude/orchestrator-prompts/aif-handoff-as-runtime-bridge/kickoff.md) — parent kickoff; §6 Sub-wave B scope; §8 stop condition; §11 output spec.
 - [`docs/meta-factory/research-patches/2026-05-23-meta-orchestrator-prior-art.md`](2026-05-23-meta-orchestrator-prior-art.md) — meta-orchestrator BUILD verdict + SSOT #66-#70 origin; §3 leapfrog table disambiguates SP `requesting-code-review` (REFERENCE label + ADOPT dispatch template = compatible verdicts).
 - [`docs/meta-factory/research-patches/2026-05-26-companion-reuse-aif-handoff-autoqueue.md`](2026-05-26-companion-reuse-aif-handoff-autoqueue.md) — predecessor Sub-wave evaluation (autoQueueMode); precedent for evaluating aif-handoff capabilities separately from full-runtime REJECT.
 - [`docs/meta-factory/prior-art-evaluations.md`](../prior-art-evaluations.md) — SSOT rows #27, #28, #29, #30, #43, #44, #46, #67, #80 (aif-handoff entries reviewed).
-- [`.claude/rules/build-first-reuse-default.md`](../../.claude/rules/build-first-reuse-default.md) — verdict ladder applied in §5.
-- [`.claude/rules/ai-laziness-traps.md`](../../.claude/rules/ai-laziness-traps.md) — T-AIF-BRIDGE-B trap confirmed active; T1/T3/T7/T11/T12/T13/T15/T16/T17/T19/T20 all verified in §7.
-- [`.claude/rules/doc-authority-hierarchy.md`](../../.claude/rules/doc-authority-hierarchy.md) — §3 header format spec followed.
-- [`.claude/rules/rule-enforcement-channel-selection.md`](../../.claude/rules/rule-enforcement-channel-selection.md) — no new enforcement channel needed (REJECT verdict).
-- [`.claude/skills/meta-orchestrator/SKILL.md`](../../.claude/skills/meta-orchestrator/SKILL.md) — surface this umbrella reasons against; lines 335/404/429 cited in §4 criterion 5.
+- [`.claude/rules/build-first-reuse-default.md`](../../../.claude/rules/build-first-reuse-default.md) — verdict ladder applied in §5.
+- [`.claude/rules/ai-laziness-traps.md`](../../../.claude/rules/ai-laziness-traps.md) — T-AIF-BRIDGE-B trap confirmed active; T1/T3/T7/T11/T12/T13/T15/T16/T17/T19/T20 all verified in §7.
+- [`.claude/rules/doc-authority-hierarchy.md`](../../../.claude/rules/doc-authority-hierarchy.md) — §3 header format spec followed.
+- [`.claude/rules/rule-enforcement-channel-selection.md`](../../../.claude/rules/rule-enforcement-channel-selection.md) — no new enforcement channel needed (REJECT verdict).
+- [`.claude/skills/meta-orchestrator/SKILL.md`](../../../.claude/skills/meta-orchestrator/SKILL.md) — surface this umbrella reasons against; lines 335/404/429 cited in §4 criterion 5.
 - DeepWiki search links: [probe 1](https://deepwiki.com/search/does-aifhandoff-support-a-file_dca4e299-2fff-413f-aaaa-6765b74dee98) · [probe 2](https://deepwiki.com/search/how-are-tasks-created-in-aifha_d8f65789-89f1-43d8-91b1-a2b398080af9) · [probe 3](https://deepwiki.com/search/what-processmanagement-primiti_2eecfc4a-c9d0-4d8b-9ad1-d02dc9f2fc10) · [probe 5 adversarial](https://deepwiki.com/search/is-there-any-watcher-daemon-or_ea002117-844c-45b0-aab1-0ab62784a66f)
 
 ---

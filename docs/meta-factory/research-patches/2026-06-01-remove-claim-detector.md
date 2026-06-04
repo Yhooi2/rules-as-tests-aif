@@ -3,8 +3,8 @@
 
 > **Type:** I-phase (removal of a measured-net-negative mechanism). Single Opus Mode-A session. Maintainer decision 2026-06-01: «не нужен раз не работает».
 > **Date:** 2026-06-01.
-> **Authoritative for:** the rationale + evidence for removing the factual-claim scan from [`.claude/hooks/end-of-turn-reminder.sh`](../../.claude/hooks/end-of-turn-reminder.sh); the surfaces touched; what survives.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). The original measurement — [`2026-05-21-instruction-compliance-empirical.md`](2026-05-21-instruction-compliance-empirical.md) (the pilot that produced the recall/precision numbers). The recap mechanism that survives — [`2026-05-21-end-of-turn-hook-redesign.md`](2026-05-21-end-of-turn-hook-redesign.md).
+> **Authoritative for:** the rationale + evidence for removing the factual-claim scan from [`.claude/hooks/end-of-turn-reminder.sh`](../../../.claude/hooks/end-of-turn-reminder.sh); the surfaces touched; what survives.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). The original measurement — [`2026-05-21-instruction-compliance-empirical.md`](2026-05-21-instruction-compliance-empirical.md) (the pilot that produced the recall/precision numbers). The recap mechanism that survives — [`2026-05-21-end-of-turn-hook-redesign.md`](2026-05-21-end-of-turn-hook-redesign.md).
 
 ---
 
@@ -28,16 +28,16 @@ All numbers from [`2026-05-21-instruction-compliance-empirical.md`](2026-05-21-i
 
 ## §2 Precedent
 
-The recommendation-laziness I-phase already made the same call for the sibling stop-hook scan: [`narrow-b-benchmark.md §1.5`](2026-05-25-narrow-b-benchmark.md) measured **FP = 84.2 % (Wilson 95 % CI [62 %, 95 %])** and **dropped narrow-B** (Option D = A+C only, #210), keeping only the always-on H1 reminder + the T20 trap. Same class (post-hoc verdict/claim grep), same outcome (drop on FP evidence, keep the cheap always-on layer). See [`recommendation-laziness-discipline.md §4 (B)`](../../.claude/rules/recommendation-laziness-discipline.md).
+The recommendation-laziness I-phase already made the same call for the sibling stop-hook scan: [`narrow-b-benchmark.md §1.5`](2026-05-25-narrow-b-benchmark.md) measured **FP = 84.2 % (Wilson 95 % CI [62 %, 95 %])** and **dropped narrow-B** (Option D = A+C only, #210), keeping only the always-on H1 reminder + the T20 trap. Same class (post-hoc verdict/claim grep), same outcome (drop on FP evidence, keep the cheap always-on layer). See [`recommendation-laziness-discipline.md §4 (B)`](../../../.claude/rules/recommendation-laziness-discipline.md).
 
 ## §3 Surfaces touched
 
 | Surface | Change |
 |---|---|
-| [`.claude/hooks/end-of-turn-reminder.sh`](../../.claude/hooks/end-of-turn-reminder.sh) | Removed the claim-scan block + `has_claims`/`claim_count`/`claim_hits` refs in the idle-suppress guard, trigger condition, glance-line, Branch D, and append block. Trigger is now `long_text \|\| asked`; branches A/B/C only. Removal comment + this-patch pointer left in place. |
+| [`.claude/hooks/end-of-turn-reminder.sh`](../../../.claude/hooks/end-of-turn-reminder.sh) | Removed the claim-scan block + `has_claims`/`claim_count`/`claim_hits` refs in the idle-suppress guard, trigger condition, glance-line, Branch D, and append block. Trigger is now `long_text \|\| asked`; branches A/B/C only. Removal comment + this-patch pointer left in place. |
 | `tests/hooks/eot-claim-scan.test.sh` | **Deleted** (185 LOC, entirely claim-scan). |
-| [`.github/workflows/audit-self.yml`](../../.github/workflows/audit-self.yml) | Removed the `eot-claim-scan.test.sh` CI step. |
-| [`packages/core/hooks/end-of-turn-reminder.test.ts`](../../packages/core/hooks/end-of-turn-reminder.test.ts) | Removed the Branch-D test + the code-fence precision-guard test; added a paired-negative «short claim-bearing turn now stays silent» case. 13/13 green. |
+| [`.github/workflows/audit-self.yml`](../../../.github/workflows/audit-self.yml) | Removed the `eot-claim-scan.test.sh` CI step. |
+| [`packages/core/hooks/end-of-turn-reminder.test.ts`](../../../packages/core/hooks/end-of-turn-reminder.test.ts) | Removed the Branch-D test + the code-fence precision-guard test; added a paired-negative «short claim-bearing turn now stays silent» case. 13/13 green. |
 | `tests/eval/claim-groundedness-scorer.py` | **Kept** (historical eval artefact, not CI-wired). Its «same surface as the hook» property is now moot; noted here, not deleted (reversible; preserves the measurement reproducibility). |
 | `docs/meta-factory/project-history-book*.md` | Epilogue: the «искатель утверждений» debt is now **closed by removal**, not «unfixed». |
 
@@ -52,7 +52,7 @@ A short factual-report turn with no question now **stays silent** (previously fi
 
 ## §5 §1.7 self-reflexive
 
-- **Forward-check:** complies with [`no-paid-llm-in-ci.md`](../../.claude/rules/no-paid-llm-in-ci.md) (removal only, no LLM added), [`build-first-reuse-default.md`](../../.claude/rules/build-first-reuse-default.md) (drops a homegrown net-negative mechanism — REUSE the always-on H1 reminder instead), [`doc-authority-hierarchy.md`](../../.claude/rules/doc-authority-hierarchy.md) (this patch carries the `scope:` annotation + Authoritative-for header). T16 problem-class match: the removed scan and narrow-B (#210) share the *post-hoc claim/verdict grep* class → the FP-driven drop transfers.
+- **Forward-check:** complies with [`no-paid-llm-in-ci.md`](../../../.claude/rules/no-paid-llm-in-ci.md) (removal only, no LLM added), [`build-first-reuse-default.md`](../../../.claude/rules/build-first-reuse-default.md) (drops a homegrown net-negative mechanism — REUSE the always-on H1 reminder instead), [`doc-authority-hierarchy.md`](../../../.claude/rules/doc-authority-hierarchy.md) (this patch carries the `scope:` annotation + Authoritative-for header). T16 problem-class match: the removed scan and narrow-B (#210) share the *post-hoc claim/verdict grep* class → the FP-driven drop transfers.
 - **Backward-check:** scope-reducing change. The pilot patch ([`2026-05-21-instruction-compliance-empirical.md`](2026-05-21-instruction-compliance-empirical.md)) is the source of the numbers and is **not** rewritten — it stays the historical measurement; this patch is the *action* taken on its finding. The hook's redesign patch ([`2026-05-21-end-of-turn-hook-redesign.md`](2026-05-21-end-of-turn-hook-redesign.md)) described the recap mechanism that survives; only the claim-scan addition is reverted. No other artefact silently superseded.
 
 ## §6 Recursive-self-application note
@@ -63,5 +63,5 @@ This removal is the project's thesis applied to its own tooling: «documents lie
 
 - [`2026-05-21-instruction-compliance-empirical.md`](2026-05-21-instruction-compliance-empirical.md) — the pilot (recall/precision source).
 - [`2026-05-25-narrow-b-benchmark.md`](2026-05-25-narrow-b-benchmark.md) — sibling FP-drop precedent (#210).
-- [`.claude/rules/recommendation-laziness-discipline.md`](../../.claude/rules/recommendation-laziness-discipline.md) — the surviving inline-verdict discipline (H1 + T20).
+- [`.claude/rules/recommendation-laziness-discipline.md`](../../../.claude/rules/recommendation-laziness-discipline.md) — the surviving inline-verdict discipline (H1 + T20).
 - [`2026-05-21-end-of-turn-hook-redesign.md`](2026-05-21-end-of-turn-hook-redesign.md) — the recap mechanism that survives.

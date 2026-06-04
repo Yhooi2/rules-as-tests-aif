@@ -2,11 +2,11 @@
 # R-phase — meta-orchestrator plan-memory feature
 
 > **Authoritative for:** R-phase verdict for the `meta-orchestrator-plan-memory-rphase` umbrella — Q1–Q8 evidence answers, prior-art extension (§3 items a–d), verdict, SSOT row proposal, I-phase scope hint, §1.7 self-reflexive check.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Brainstorm phase output (directions + questions) — see [2026-05-25-plan-memory-brainstorm.md](2026-05-25-plan-memory-brainstorm.md). Implementation — not started (I-phase is a separate umbrella).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Brainstorm phase output (directions + questions) — see [2026-05-25-plan-memory-brainstorm.md](2026-05-25-plan-memory-brainstorm.md). Implementation — not started (I-phase is a separate umbrella).
 
 > **Date:** 2026-05-25
 > **Status:** R-phase complete — verdict ADOPT Direction B
-> **Origin:** Umbrella R-phase kickoff: [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md](../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md). Meta-launch kickoff: [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md](../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md).
+> **Origin:** Umbrella R-phase kickoff: [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md](../../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md). Meta-launch kickoff: [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md](../../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md).
 
 ---
 
@@ -458,12 +458,12 @@ T15 satisfied: admission path declared. Row not added in this R-phase (umbrella 
 ## See also
 
 - [2026-05-25-plan-memory-brainstorm.md](2026-05-25-plan-memory-brainstorm.md) — binding scope (2 directions + 8 questions + 5 falsifiers)
-- [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md](../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md) — R-phase kickoff
-- [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md](../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md) — meta-launch kickoff
-- [.claude/skills/meta-orchestrator/SKILL.md](../../.claude/skills/meta-orchestrator/SKILL.md) — current skill surface (the read-only surface this feature extends)
-- [.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh](../../.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh) — the modified helper in I-phase
+- [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md](../../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase/kickoff.md) — R-phase kickoff
+- [.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md](../../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory-rphase-meta-launch/kickoff.md) — meta-launch kickoff
+- [.claude/skills/meta-orchestrator/SKILL.md](../../../.claude/skills/meta-orchestrator/SKILL.md) — current skill surface (the read-only surface this feature extends)
+- [.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh](../../../.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh) — the modified helper in I-phase
 - [docs/meta-factory/prior-art-evaluations.md](../prior-art-evaluations.md) — SSOT row #77 appended
 - [docs/meta-factory/wave-sequencing-plan.md](../wave-sequencing-plan.md) — strategy SSOT (NOT auto-modified by Direction B)
-- [.claude/rules/dual-implementation-discipline.md §5-§7](../../.claude/rules/dual-implementation-discipline.md) — @dual-pair annotation convention
-- [.claude/rules/memory-codification.md §3](../../.claude/rules/memory-codification.md) — write-time discipline
-- [.claude/rules/no-paid-llm-in-ci.md §1](../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint on I-phase mechanisms
+- [.claude/rules/dual-implementation-discipline.md §5-§7](../../../.claude/rules/dual-implementation-discipline.md) — @dual-pair annotation convention
+- [.claude/rules/memory-codification.md §3](../../../.claude/rules/memory-codification.md) — write-time discipline
+- [.claude/rules/no-paid-llm-in-ci.md §1](../../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint on I-phase mechanisms

@@ -82,8 +82,8 @@ Save the snippet below as `/tmp/sat-arch-plan.patch` and run `git apply /tmp/sat
 @@ -63,6 +63,7 @@ Origin: §5.4 decision record. All Track M items are cheap, deterministic (no pa
  | 2.1 | N1 — niche-validation research (DeepWiki/WebSearch, $0) | parallel to 1.1 |
  | 2.2 | N4b — design recommendation-moment gate | detector (N4a) already shipped; frontier |
- | 2.3 | **Channel-earliness audit** — retroactive sweep of every existing check vs «earliest reachable channel» (the sweep [channel-selection §6](../../.claude/rules/rule-enforcement-channel-selection.md) deferred) | $0 read-only research; own research-patch (`research-patches/<date>-channel-earliness-audit.md`), **no shared-file writes → parallel-safe**. **Run BEFORE any future check-building wave** (incl. N8 A-phase C1–C5): it sets the channel *default* so new checks don't land later than their data permits. Kickoff authored: `.claude/orchestrator-prompts/channel-earliness-audit/kickoff.md` |
-+| 2.4 | **K1 — niche audit: `self-reflection` + `template-audit` vs companions** — $0 read-only audit per [satellite-architecture positioning §1 point 3](research-patches/2026-05-24-satellite-architecture-and-dogfooding-positioning.md). Read each skill's `SKILL.md` and evaluate function vs companion-installed alternatives. Output: research-patch with per-skill verdict (`KEEP-AS-IS` / `REWRITE-AS-AUGMENTATION` / `REMOVE-USE-COMPANION-INSTEAD`). Parallel-safe. **Precedes K2 (3.4)** — verdicts determine which `.claude/skills/<own>/` entries K2 migrates. |
+ | 2.3 | **Channel-earliness audit** — retroactive sweep of every existing check vs «earliest reachable channel» (the sweep [channel-selection §6](../../../.claude/rules/rule-enforcement-channel-selection.md) deferred) | $0 read-only research; own research-patch (`research-patches/<date>-channel-earliness-audit.md`), **no shared-file writes → parallel-safe**. **Run BEFORE any future check-building wave** (incl. N8 A-phase C1–C5): it sets the channel *default* so new checks don't land later than their data permits. Kickoff authored: `.claude/orchestrator-prompts/channel-earliness-audit/kickoff.md` |
++| 2.4 | **K1 — niche audit: `self-reflection` + `template-audit` vs companions** — $0 read-only audit per [satellite-architecture positioning §1 point 3(./2026-05-24-satellite-architecture-and-dogfooding-positioning.md). Read each skill's `SKILL.md` and evaluate function vs companion-installed alternatives. Output: research-patch with per-skill verdict (`KEEP-AS-IS` / `REWRITE-AS-AUGMENTATION` / `REMOVE-USE-COMPANION-INSTEAD`). Parallel-safe. **Precedes K2 (3.4)** — verdicts determine which `.claude/skills/<own>/` entries K2 migrates. |
  
  ### Track 3 — after dependencies clear
  | # | Task | Gate |
@@ -91,7 +91,7 @@ Save the snippet below as `/tmp/sat-arch-plan.patch` and run `git apply /tmp/sat
  | 3.1 | N7 — dogfood companions | DECISION=C (0.2); overlaps N8 A3 |
  | 3.2 | N5 — give the conscience back | after N7 |
  | 3.3 | N6b — one-button install | last (after portable core + coexistence) |
-+| 3.4 | **K2 — satellite-architecture refactor: install.sh symmetry + companion-offer + source-of-truth** — per [satellite-architecture positioning §5 K2](research-patches/2026-05-24-satellite-architecture-and-dogfooding-positioning.md). R-phase (BFR check on companion-offer + companion self-install patterns) + I-phase (`install.sh` rewrite, dedupe `skills/<own>/` ↔ `.claude/skills/<own>/`, interactive companion-offer prompt). **Predecessor of 3.3 N6b** (consumer-facing scaffold should not inherit defects K2 fixes). **Successor of 2.4 K1** (audit verdicts gate migration scope). |
++| 3.4 | **K2 — satellite-architecture refactor: install.sh symmetry + companion-offer + source-of-truth** — per [satellite-architecture positioning §5 K2(./2026-05-24-satellite-architecture-and-dogfooding-positioning.md). R-phase (BFR check on companion-offer + companion self-install patterns) + I-phase (`install.sh` rewrite, dedupe `skills/<own>/` ↔ `.claude/skills/<own>/`, interactive companion-offer prompt). **Predecessor of 3.3 N6b** (consumer-facing scaffold should not inherit defects K2 fixes). **Successor of 2.4 K1** (audit verdicts gate migration scope). |
  
  ### Track I — infra (independent of niche waves; maintainer-gated)
  | # | Task | Note |
@@ -99,7 +99,7 @@ Save the snippet below as `/tmp/sat-arch-plan.patch` and run `git apply /tmp/sat
  ## §3 — Dependency edges (why this order)
  
  - **N4a → N4b:** detector fixed (#98) → gate design unblocked.
-+- **K1 (2.4) → K2 (3.4) → N6b (3.3):** audit verdicts gate refactor migration scope; refactor must fix architecture before consumer-facing one-button install ships. Per [satellite-architecture positioning §3 + §5](research-patches/2026-05-24-satellite-architecture-and-dogfooding-positioning.md).
++- **K1 (2.4) → K2 (3.4) → N6b (3.3):** audit verdicts gate refactor migration scope; refactor must fix architecture before consumer-facing one-button install ships. Per [satellite-architecture positioning §3 + §5(./2026-05-24-satellite-architecture-and-dogfooding-positioning.md).
  - **N3 (done) + N6a (done) → N6b:** portable core + coexistence both landed → one-button is last build.
  - **N7 gated on DECISION C; N5 follows N7** (know what's unique before giving back).
  - **N8 R-phase feeds N0** (the cost/autonomy answer N0 lacked); **N8 A3 overlaps N7** (process-layer dispatch) and **N0 options a/e**.

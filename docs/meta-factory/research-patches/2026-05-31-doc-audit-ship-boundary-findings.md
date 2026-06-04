@@ -2,7 +2,7 @@
 # Doc-audit-ship-boundary findings — 2026-05-31
 
 > **Authoritative for:** audit findings from the doc-audit-ship-boundary run (Stage 2.0 mutation + Stage 2.1 reconciliation). One-time research-patch, append-only.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Decisions on proposed fixes — those belong to the maintainer.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Decisions on proposed fixes — those belong to the maintainer.
 >
 > **Run date:** 2026-05-31 (executed 2026-06-01)  
 > **Worker branch:** `feature/doc-audit-ship-boundary-meta-launch-bcb2c6`  
@@ -113,7 +113,7 @@ $ timeout 90 npx stryker run stryker.audit-ai-docs.mjs 2>&1 | tee /tmp/doc-audit
 ```
 
 **Result:** Stryker crashed immediately after dry-run with:
-```
+```text
 Error: spawn ps ENOENT
 ```
 Container has no `ps` binary. Stryker's concurrency-token lifecycle requires `ps` to manage worker PIDs — not available in this Docker environment.
@@ -121,7 +121,7 @@ Container has no `ps` binary. Stryker's concurrency-token lifecycle requires `ps
 **universalmutator fallback:** `pip` not installed in container — cannot run universalmutator.
 
 **Base test suite state (vitest run, 2026-06-01 21:36):**
-```
+```text
 Test Files: 13 failed | 73 passed | 10 skipped (96)
 Tests:      32 failed | 1029 passed | 101 skipped (1162)
 ```
@@ -386,8 +386,8 @@ All items below have a proposed resolution. None are auto-applied — each requi
 
 **Proposed diff (Class header, line 10):**
 ```diff
-- > **Class:** B — compensating mechanism shipped: [`.claude/hooks/inject-matching-rule.sh`](../hooks/inject-matching-rule.sh) (PostToolUse path-scoped rule-injector, the §4 mechanism) + a deterministic self-test (`packages/core/hooks/inject-matching-rule.test.ts`). **Activation pending** one `settings.json` PostToolUse `Edit|Write` entry (maintainer-landed — `settings.json` is agent-self-protected). Promotion to A (principle test on rule-channel-declaration) in §6. (Codified Class C 2026-05-22; promoted to B the same wave when the injector shipped — no longer "prose-only".)
-+ > **Class:** B — compensating mechanism shipped: [`.claude/hooks/inject-matching-rule.sh`](../hooks/inject-matching-rule.sh) (PostToolUse path-scoped rule-injector, the §4 mechanism) + a deterministic self-test (`packages/core/hooks/inject-matching-rule.test.ts`). **Activation confirmed** — PostToolUse `Edit|Write` entry present in `.claude/settings.json:114` (wired). Promotion to A (principle test on rule-channel-declaration) in §6. (Codified Class C 2026-05-22; promoted to B the same wave when the injector shipped — no longer "prose-only".)
+- > **Class:** B — compensating mechanism shipped: [`.claude/hooks/inject-matching-rule.sh`(../../../.claude/hooks/inject-matching-rule.sh) (PostToolUse path-scoped rule-injector, the §4 mechanism) + a deterministic self-test (`packages/core/hooks/inject-matching-rule.test.ts`). **Activation pending** one `settings.json` PostToolUse `Edit|Write` entry (maintainer-landed — `settings.json` is agent-self-protected). Promotion to A (principle test on rule-channel-declaration) in §6. (Codified Class C 2026-05-22; promoted to B the same wave when the injector shipped — no longer "prose-only".)
++ > **Class:** B — compensating mechanism shipped: [`.claude/hooks/inject-matching-rule.sh`(../../../.claude/hooks/inject-matching-rule.sh) (PostToolUse path-scoped rule-injector, the §4 mechanism) + a deterministic self-test (`packages/core/hooks/inject-matching-rule.test.ts`). **Activation confirmed** — PostToolUse `Edit|Write` entry present in `.claude/settings.json:114` (wired). Promotion to A (principle test on rule-channel-declaration) in §6. (Codified Class C 2026-05-22; promoted to B the same wave when the injector shipped — no longer "prose-only".)
 ```
 
 **Proposed §4 prose change:**

@@ -2,7 +2,7 @@
 # REJECT log — meta-orchestrator R-phase Surface 6 sweep
 
 > **Provenance:** reconstructed from R-phase patch §1 row 6 + §9 footer (NOT verbatim from `/tmp/meta-orch-survey-6-state-of-art.md` — that scratchpad was ephemeral across sessions and lost at I-phase boundary). Original audit trail evidence is internal to the R-phase patch.
-> **Authoritative for:** Surface 6 REJECT audit trail. **NOT authoritative for:** Surface 1–5 REJECTs (in R-phase patch at `docs/meta-factory/research-patches/2026-05-23-meta-orchestrator-prior-art.md`); project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
+> **Authoritative for:** Surface 6 REJECT audit trail. **NOT authoritative for:** Surface 1–5 REJECTs (in R-phase patch at `docs/meta-factory/research-patches/2026-05-23-meta-orchestrator-prior-art.md`); project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 
 Surface 6 of the BFR §3 six-surface sweep covered «state-of-art multi-agent orchestration tools» via DeepWiki + WebSearch (2026-05-23). The following candidates were surfaced and REJECTed (no SSOT row — REJECT candidates omitted per build-first-reuse-default.md §3 «rows for BUILD/ADOPT/ADAPT/REFERENCE/REJECT with verdict»; REJECTs without rows are audit-trail only).
 
@@ -64,7 +64,7 @@ Zero overlap with §7.14 named gaps. Not installable via `install.sh` skill payl
 
 ## §1.7 Self-application (T15 recursive check)
 
-**Forward-check:** this reject-log is a research-patch promoted from the R-phase ephemeral scratchpad. It complies with [doc-authority-hierarchy.md §2](../../.claude/rules/doc-authority-hierarchy.md) (Authoritative-for header present, line 1-5 above) and [research-patches/README.md §folder-level-authority](../research-patches) folder-level authority convention (one patch per gap, append-only). It does NOT claim Surface 1–5 authority (those live in the primary R-phase patch). The BFR §3 sweep procedure was applied: Surface 6 enumerated, each candidate evaluated, verdict justified per T16 problem-class check.
+**Forward-check:** this reject-log is a research-patch promoted from the R-phase ephemeral scratchpad. It complies with [doc-authority-hierarchy.md §2](../../../.claude/rules/doc-authority-hierarchy.md) (Authoritative-for header present, line 1-5 above) and [research-patches/README.md §folder-level-authority](../research-patches) folder-level authority convention (one patch per gap, append-only). It does NOT claim Surface 1–5 authority (those live in the primary R-phase patch). The BFR §3 sweep procedure was applied: Surface 6 enumerated, each candidate evaluated, verdict justified per T16 problem-class check.
 
 **Backward-check:** this file is new (no prior version to supersede). No existing doc is silently overridden. SSOT rows #66–#70 in `prior-art-evaluations.md` are the canonical BUILD-time record; this reject-log is the audit-trail for the non-SSOT Surface 6 REJECTs. Both are complementary, not contradictory.
 
@@ -74,4 +74,4 @@ Zero overlap with §7.14 named gaps. Not installable via `install.sh` skill payl
 
 - [R-phase patch §1 row 6 + §9 footer](2026-05-23-meta-orchestrator-prior-art.md) — primary Surface 6 evidence.
 - [prior-art-evaluations.md #66–#70](../prior-art-evaluations.md) — SSOT rows from this R-phase (rows with SSOT rows: AIF #66 REFERENCE, aif-handoff #67 REJECT-with-row, OhMyOpencode #68 REFERENCE+ADOPT-VOCABULARY, Bernstein #69 REFERENCE, ComposioHQ #70 REFERENCE).
-- [build-first-reuse-default.md §3](../../.claude/rules/build-first-reuse-default.md) — BFR mechanism this sweep executes.
+- [build-first-reuse-default.md §3](../../../.claude/rules/build-first-reuse-default.md) — BFR mechanism this sweep executes.
