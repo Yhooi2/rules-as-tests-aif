@@ -5,7 +5,7 @@
 # real ceiling is known. Deterministic; no paid LLM (no-paid-llm-in-ci.md).
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
-CEILING="${AIF_ALWAYSON_CEILING:-200000}"   # placeholder default; C1-Audit sets the real value
+CEILING="${AIF_ALWAYSON_CEILING:-101000}"   # set by C1-Audit (2026-06-04); see c1-audit-verdicts.md
 total="$("$DIR/measure-always-on.sh" | jq -r '.total_bytes')"
 if (( total > CEILING )); then
   echo "DRIFT: always-on context ${total}B exceeds ceiling ${CEILING}B" >&2
