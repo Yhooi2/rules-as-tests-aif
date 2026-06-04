@@ -33,11 +33,12 @@ if [[ -n "$UMBRELLA" ]]; then
   # REPO_ROOT needed for kickoff check; source minimal path without full seam setup.
   _SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
   source "${_SCRIPT_DIR}/lib/common.sh"
+  echo "--- kickoff existence check ---"
   KICKOFF_PATH="${REPO_ROOT}/.claude/orchestrator-prompts/${UMBRELLA}/kickoff.md"
   if [[ -f "$KICKOFF_PATH" ]]; then
-    echo "kickoff: EXISTS — .claude/orchestrator-prompts/${UMBRELLA}/kickoff.md"
+    echo "kickoff: EXISTS at .claude/orchestrator-prompts/${UMBRELLA}/kickoff.md"
   else
-    echo "kickoff: MISSING — .claude/orchestrator-prompts/${UMBRELLA}/kickoff.md"
+    echo "kickoff: MISSING — .claude/orchestrator-prompts/${UMBRELLA}/kickoff.md not found"
   fi
   echo "=== plan-currency-check: END rc=0 ==="
   exit 0
