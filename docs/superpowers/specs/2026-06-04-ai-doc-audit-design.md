@@ -27,9 +27,27 @@ This audit checks **all project documentation + the Claude Code configuration su
 
 This project's goal is the **inverse** of Superpowers/AIF's (which are general dev-assistants): here «AI cannot *silently* bypass a rule» ([README.md#why-this-exists](../../../README.md#why-this-exists)). So some prose carries a **second function beyond enforcement — it shapes the agent's reasoning *in the moment*** (e.g. `ai-laziness-traps`, H1 recommendation-discipline). On-demand prose does NOT fire unless the agent *thinks* to load it — and laziness means it won't. Therefore:
 
-- **Default presumption: behavioural-shaping prose STAYS always-on (compressed), not on-demand.** Burden of proof is on *moving it off*, not on keeping it.
-- `MOVE-ON-DEMAND` is justified **only** when the prose merely duplicates a script gate (reference/enforcement-dup), not when its channel is in-context presence at decision time.
+- **Default presumption: behavioural-shaping prose is NOT dropped to best-effort semantic/on-demand loading.** Burden of proof is on *moving it off* always-on.
+- The real answer is the **middle channel**, not the always-on-vs-Skill binary: **deterministic path/glob/event-scoped injection** (fires reliably when relevant, near-zero standing cost). `ON-DEMAND-SKILL` (semantic) is for *non-load-bearing reference* only.
 - Blindly copying Superpowers' on-demand model here is `#pattern-matching-on-name` (T16, [ai-laziness-traps.md §2](../../../.claude/rules/ai-laziness-traps.md)) — upstream's problem-class ≠ ours. Each migration verdict states «upstream problem-class X vs ours Y; match? evidence».
+
+### Risk resolution — the combo (reuse the project's own channel-selection rule)
+
+The deepest risk (over-migration) is resolved by an existing **mature, dogfooded** mechanism, not a new invention — maximal BFR. The audit's decision procedure **IS** [`rule-enforcement-channel-selection.md`](../../../.claude/rules/rule-enforcement-channel-selection.md) (Class B, shipped: `inject-matching-rule.sh` + self-test): two axes — **detectability → gate vs injection**; **relevance → narrowest reliable trigger**, with reliability order `deterministic matcher ≳ always-on digest > semantic > memory`. Its §4 channel catalogue is the verdict vocabulary. The combo across sources:
+
+| Source | Contributes | Used for |
+|---|---|---|
+| **Project `rule-enforcement-channel-selection.md` §1–§4** | the two-axis decision procedure + channel catalogue (the engine) | every per-artefact verdict |
+| **CC-native `paths:` frontmatter** | read-time path-scoped whole-rule load (zero custom code) | behavioural-shaping rules relevant to a file-area |
+| **`inject-matching-rule.sh`** (project ADAPT of OhMyOpencode `rulesInjector`) | edit-time PostToolUse `inject:` summary, session-cached | the `@dual-pair` sibling of `paths:` |
+| **event hooks** (`ask-question-reminder`, `end-of-turn-reminder`) | injection at the *decision point* (about to ask / end turn) | reasoning-shaping rules with an event trigger (H1, T20) |
+| **Anthropic progressive disclosure** | small SKILL.md + referenced files | genuinely on-demand reference / catalogues |
+| **AIF template-vars + `<!-- globs: -->` marker** | harness-agnostic path-scope | the portability (`MAKE-PORTABLE`) axis |
+
+**Candidate verdict vocabulary — NOT settled here; planned umbrella work.** C1-R confirms it against the §4 catalogue, C1-Audit applies it per artefact. Starting candidates, mapped to §4 channels:
+`GATE-ONLY` (detectable → script gate, drop redundant prose) · `KEEP-ALWAYS-ON` (UserPromptSubmit digest — **only the 3–4 invariants**) · `COMPRESS-TO-DIGEST` · `PATH/EVENT-SCOPED-INJECT` (deterministic, the behavioural-shaping default) · `ON-DEMAND-SKILL` (semantic — non-load-bearing reference only) · `MAKE-PORTABLE`.
+
+**This is the planned path** to also close Risk 2 (relevance = the §4 reliability/trigger column, deterministic — not a fabricated %) and Risk 3 (the «reserve always-on for 3–4 invariants» ceiling = the drift-guard's budget basis). The per-artefact resolution is umbrella work — **not pre-decided in this spec**.
 
 ### Evidence base (do not re-derive without re-checking)
 
@@ -46,7 +64,7 @@ Whole surface, decomposed to preserve quality and avoid `#focus-tunnel` / T-seri
 | Phase | Project term | Does | Deliverable | Discipline |
 |---|---|---|---|---|
 | **R** | R-phase (research) | Establish **«how it should be»** — the target standard for this cycle's surface (AIF / Superpowers / Anthropic / 2H-2026). No source edits (T5). | research-patch under `docs/meta-factory/research-patches/` | search-coverage 6-item checklist; cite SSOT by ID |
-| **Audit** | conformance check | Measure this cycle's surface **against R's target**; classify each artefact; decide **«how to fix»**. No source edits. | verdict table + ordered fix-list | T1/T9/T10 sampling-floor + population-enumeration |
+| **Audit** | conformance check | Measure this cycle's surface **against R's target**; classify each artefact **via [`rule-enforcement-channel-selection.md`](../../../.claude/rules/rule-enforcement-channel-selection.md) §1–§4** (detectability + relevance → channel); decide **«how to fix»**. No source edits. | verdict table + ordered fix-list | T1/T9/T10 sampling-floor + population-enumeration |
 | **I** | I-phase (implement) | Apply the fix-list. Atomic commits; capability-commit gate where it applies. | PR(s) of edits | atomic-umbrella; no scope creep |
 | **Verify** | own QA + regression | Cold-review the diff (T19, own-QA-before-handoff); confirm spine-criterion falsifier did not fire; **re-check prior cycles' fixes held**. | verify note / cold-review verdict | CI ≠ design review |
 
@@ -68,7 +86,7 @@ Reuse-maximal (CLAUDE.md build-vs-reuse + [build-first-reuse-default.md](../../.
 
 | Cycle | Surface (Audit + I + Verify operate on) | R-phase target focus |
 |---|---|---|
-| **C1** | CC-config: `.claude/rules/*` (×11), `.claude/hooks/*` (×13), `.claude/skills/*` (×7), `agents/*` (×5), `.claude/settings.json` + root docs (README, CLAUDE.md, INSTALL.md, INSTALL-FOR-AI.md, `.claude/session-bootstrap.md`) | Context-hygiene + AI-agnosticism for **always-on + shipped** surface. **R1 substantially pre-done this session** → the spine criterion above + doc-skill BFR verdict. |
+| **C1** | CC-config: `.claude/rules/*` (×11), `.claude/hooks/*` (×13), `.claude/skills/*` (×7), `agents/*` (×5), `.claude/settings.json` + root docs (README, CLAUDE.md, INSTALL.md, INSTALL-FOR-AI.md, `.claude/session-bootstrap.md`) | Context-hygiene + AI-agnosticism for **always-on + shipped** surface. **R1 substantially pre-done this session** → the spine criterion above + doc-skill BFR verdict; C1-R also confirms the channel-combo (`rule-enforcement-channel-selection` §4) + candidate vocabulary as the Audit method. |
 | **C2** | **C1 surface (regression) +** `docs/meta-factory/*` (EXECUTION-PLAN, open/closed-questions, research-patches, retros) | Doc-authority + drift/duplication standard for large prose corpus. |
 | **C3** | **C1+C2 surface (regression) +** `packages/*` (principle-tests, templates, preset) + final roll-up | Standard for executable artefacts + shipped templates; consolidate. C3-I closes the umbrella (`done.md`). |
 
