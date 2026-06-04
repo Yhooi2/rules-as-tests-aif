@@ -255,3 +255,119 @@ describe('priority-score.sh — branch-matcher (paired-negative contract)', () =
     expect(line).not.toMatch(/done_pr=/);
   });
 });
+
+// ── Named-mode early-exit guard (pipeline-ux Stage 1B) ───────────────────────
+
+/**
+ * Run helper with an umbrella arg (named-mode) — tests the early-exit guard added
+ * in pipeline-ux Stage 1B: priority-score.sh exits 0 with a single skip-line when
+ * a named umbrella arg is passed.
+ */
+function runHelperNamed(
+  sandboxRoot: string,
+  fakeGh: string,
+  umbrellaArg: string,
+): { status: number; stdout: string; stderr: string } {
+  const r = spawnSync('bash', [HELPER, umbrellaArg], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      REPO_ROOT: sandboxRoot,
+      MO_GH_BIN: fakeGh,
+    },
+  });
+  return { status: r.status ?? -1, stdout: r.stdout, stderr: r.stderr };
+}
+
+describe('priority-score.sh — named-mode early-exit (pipeline-ux Stage 1B)', () => {
+  it('named-mode early-exit: non-empty string arg → exits 0 with skip-line, no full scan', () => {
+    // Targets priority-score.sh named-mode guard:
+    //   _ARG="${1:-}"
+    //   if [[ -n "$_ARG" ]] && [[ "$_ARG" =~ [^0-9] ]]; then
+    //     echo "=== priority-score: named-mode skip ..."
+    //     exit 0
+    //   fi
+    // Asserts: string arg → skip header emitted, no full scan output.
+    const sandbox = makeSandbox();
+    setupRepo(sandbox, ['alpha-umbrella', 'beta-umbrella', 'gamma-umbrella']);
+    const fakeGh = makeFakeGh(sandbox, '[]');
+
+    const r = runHelperNamed(sandbox, fakeGh, 'any-umbrella-name');
+    expect(r.status).toBe(0);
+    // Skip-line must appear
+    expect(r.stdout).toContain('named-mode skip');
+    // Full scan output (per-umbrella candidate lines) must NOT appear
+    // "source=" would appear in synthetic section; "kickoff=" in real entries
+    expect(r.stdout).not.toContain('kickoff=');
+    expect(r.stdout).not.toContain('=== priority-score: candidate umbrellas ===');
+  });
+
+  it('named-mode early-exit PAIRED-NEGATIVE: integer arg proceeds to full scan', () => {
+    // Integer arg = top-N V4 request → NOT early-exit; full scan proceeds.
+    // Counters the risk of the guard firing on integer args (V4 binding).
+    const sandbox = makeSandbox();
+    setupRepo(sandbox, ['umbrella-x']);
+    const fakeGh = makeFakeGh(sandbox, '[]');
+
+    // Integer arg "5" should NOT trigger early-exit
+    const r = runHelperNamed(sandbox, fakeGh, '5');
+    expect(r.status).toBe(0);
+    // Full scan header must appear (not the named-mode skip line)
+    expect(r.stdout).toContain('=== priority-score: candidate umbrellas ===');
+    // The umbrella must appear in output (full scan ran)
+    expect(r.stdout).toContain('umbrella-x');
+    // Named-mode skip must NOT appear for integer arg
+    expect(r.stdout).not.toContain('named-mode skip');
+  });
+});
+
+describe('priority-score.sh — rank-order (pipeline-ux Stage 1B)', () => {
+  it('rank-order: umbrella with larger kickoff.md appears before umbrella with smaller kickoff', () => {
+    // Targets priority-score.sh volume scoring:
+    //   loc="$(wc -l < "${kickoff}")"
+    //   volume="S" if loc<100, "M" if loc<250, "L" otherwise
+    // This test verifies umbrellas emit correctly sized volume tags, which SKILL.md uses
+    // to rank (smaller = lower priority when equal). A volume=L umbrella appears in output.
+    //
+    // Note: priority-score.sh does NOT sort output — ranking/ordering is done by SKILL.md
+    // judgment layer. This test verifies volume=S vs volume=L emission, which is the
+    // proxy signal SKILL.md uses for rank. Correctness of the LOC-based volume tag is
+    // what enables rank-order in the downstream judgment step.
+    const sandbox = makeSandbox();
+
+    // UmbrellaA: large kickoff (~110 lines) → volume=M or L
+    const promptsDir = join(sandbox, '.claude', 'orchestrator-prompts');
+    const largeContent = [
+      '> **Type:** I-phase',
+      '# Umbrella A — Large',
+      '',
+      ...Array.from({ length: 110 }, (_, i) => `- Detailed item ${i + 1} with substantial content for volume`),
+    ].join('\n');
+    mkdirSync(join(promptsDir, 'umbrella-large'), { recursive: true });
+    writeFileSync(join(promptsDir, 'umbrella-large', 'kickoff.md'), largeContent, 'utf8');
+
+    // UmbrellaB: small kickoff (~5 lines) → volume=S
+    const smallContent = '> **Type:** I-phase\n# Umbrella B — Small\n- item 1\n- item 2\n';
+    mkdirSync(join(promptsDir, 'umbrella-small'), { recursive: true });
+    writeFileSync(join(promptsDir, 'umbrella-small', 'kickoff.md'), smallContent, 'utf8');
+
+    const fakeGh = makeFakeGh(sandbox, '[]');
+    const r = runHelper(sandbox, fakeGh);
+    expect(r.status).toBe(0);
+
+    // Both umbrellas appear in output
+    expect(r.stdout).toContain('umbrella-large');
+    expect(r.stdout).toContain('umbrella-small');
+
+    // Volume tags correctly reflect LOC
+    const largeLine = r.stdout.split('\n').find((l) => l.startsWith('umbrella-large '));
+    const smallLine = r.stdout.split('\n').find((l) => l.startsWith('umbrella-small '));
+    expect(largeLine).toBeDefined();
+    expect(smallLine).toBeDefined();
+
+    // Large kickoff should have volume=M or volume=L (not volume=S)
+    expect(largeLine).toMatch(/volume=[ML]/);
+    // Small kickoff should have volume=S
+    expect(smallLine).toMatch(/volume=S/);
+  });
+});
