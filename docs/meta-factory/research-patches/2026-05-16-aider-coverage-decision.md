@@ -16,7 +16,7 @@
 Two-fold:
 
 1. DeepWiki has not indexed `paul-gauthier/aider`. Outside our control; remediation = manual indexing request + ~week wait.
-2. Aider's verdict — **framework-consumer** — is structurally consistent with Cline / Codex / Cursor classifications. All four CLI/IDE runtime targets share the same «AI runtime, not companion at framework layer» problem-class analysis. The verdict rests on **architectural-layer match** (T16 per [ai-laziness-traps.md §2](../../.claude/rules/ai-laziness-traps.md)), not on per-feature inventory. Coverage depth therefore is not load-bearing for the verdict.
+2. Aider's verdict — **framework-consumer** — is structurally consistent with Cline / Codex / Cursor classifications. All four CLI/IDE runtime targets share the same «AI runtime, not companion at framework layer» problem-class analysis. The verdict rests on **architectural-layer match** (T16 per [ai-laziness-traps.md §2](../../../.claude/rules/ai-laziness-traps.md)), not on per-feature inventory. Coverage depth therefore is not load-bearing for the verdict.
 
 ## §3 Solution
 
@@ -34,7 +34,7 @@ Open a dedicated follow-up research-patch (`docs/meta-factory/research-patches/2
 
 Until any trigger fires, condensed-coverage classification stays load-bearing under T16's «problem-class layer match dominates over per-feature inventory» rule. No drive-by re-investigation of Aider for completeness-aesthetics is warranted.
 
-**Anti-pattern guard:** this is **not** an instance of `#prompt-list-anchoring` ([phase-research-coverage.md §4](../../.claude/rules/phase-research-coverage.md)) — the kickoff floor (7 candidates surveyed) was met; Aider is one of 6 candidates classified non-companion by the same problem-class lens. Closure at condensed coverage is methodologically justified, not premature.
+**Anti-pattern guard:** this is **not** an instance of `#prompt-list-anchoring` ([phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md)) — the kickoff floor (7 candidates surveyed) was met; Aider is one of 6 candidates classified non-companion by the same problem-class lens. Closure at condensed coverage is methodologically justified, not premature.
 
 ## §5 Tags
 
@@ -43,6 +43,6 @@ Until any trigger fires, condensed-coverage classification stays load-bearing un
 ## §6 See also
 
 - [docs/meta-factory/research-patches/2026-05-16-companion-target-comparison.md §3.7 + §7 Decision C](2026-05-16-companion-target-comparison.md) — parent patch + DECISION-NEEDED surface
-- [.claude/rules/ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md) — pattern-matching-on-name + problem-class match rule
-- [.claude/rules/build-first-reuse-default.md §3](../../.claude/rules/build-first-reuse-default.md) — DeepWiki ask_question protocol + WebSearch alternatives
-- [.claude/rules/phase-research-coverage.md §3 + §4](../../.claude/rules/phase-research-coverage.md) — research-patches/ format spec + anti-pattern catalog
+- [.claude/rules/ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md) — pattern-matching-on-name + problem-class match rule
+- [.claude/rules/build-first-reuse-default.md §3](../../../.claude/rules/build-first-reuse-default.md) — DeepWiki ask_question protocol + WebSearch alternatives
+- [.claude/rules/phase-research-coverage.md §3 + §4](../../../.claude/rules/phase-research-coverage.md) — research-patches/ format spec + anti-pattern catalog

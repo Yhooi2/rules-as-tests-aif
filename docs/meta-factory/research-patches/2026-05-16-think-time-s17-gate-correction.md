@@ -59,7 +59,7 @@ Three-channel verification of B+C session caught what dual-channel did not:
 
 **Type-system evidence (interface fields, required vs optional) is more reliable than prose evidence (lifecycle tables, narrative descriptions) when the two diverge.** Prose can be stale or imprecise; types must compile. For SDK-shaped questions about Claude Code internals, prefer the SDK type definitions as primary source; treat prose docs as cross-reference.
 
-This is a candidate 7th item for [`.claude/rules/phase-research-coverage.md` §1 coverage methodology checklist](../../.claude/rules/phase-research-coverage.md): «for SDK-shaped questions, prefer type-system evidence over prose when they diverge». Surfacing as observation; maintainer decides whether to promote.
+This is a candidate 7th item for [`.claude/rules/phase-research-coverage.md` §1 coverage methodology checklist](../../../.claude/rules/phase-research-coverage.md): «for SDK-shaped questions, prefer type-system evidence over prose when they diverge». Surfacing as observation; maintainer decides whether to promote.
 
 ## §5 Recommendation
 
@@ -69,11 +69,11 @@ Maintainer decision on D6 (per §3 above) determines whether further action is n
 
 ## §6 §1.7 self-review — Skipped (errata patch)
 
-This patch introduces no new rule, principle, or discipline-bearing change. It is a factual correction note for an existing patch, with a single recommendation surfaced as observation (no action taken). Per [`.claude/rules/phase-research-coverage.md` §1.7](../../.claude/rules/phase-research-coverage.md): §1.7 forward+backward checks protect rule-introduction drift; corrections without rule introduction are out of §1.7 scope.
+This patch introduces no new rule, principle, or discipline-bearing change. It is a factual correction note for an existing patch, with a single recommendation surfaced as observation (no action taken). Per [`.claude/rules/phase-research-coverage.md` §1.7](../../../.claude/rules/phase-research-coverage.md): §1.7 forward+backward checks protect rule-introduction drift; corrections without rule introduction are out of §1.7 scope.
 
 ## §7 See also
 
 - [`2026-05-16-§17-think-time-gate.md`](2026-05-16-§17-think-time-gate.md) — parent patch; §5.1 H2 evaluation is the subject of this errata
 - [`2026-05-16-claude-code-guide-cross-verification.md`](2026-05-16-claude-code-guide-cross-verification.md) §12 addendum — three-channel verification that surfaced this correction
-- [`.claude/rules/phase-research-coverage.md` §1](../../.claude/rules/phase-research-coverage.md) — candidate location for the «type-system over prose» 7th methodology item (maintainer decides)
-- [`~/.claude/skills/orchestrator/references/queue-mode.md` §10-§11](../../../../.claude/skills/orchestrator/references/queue-mode.md) — already-revised dual-channel discipline that this finding empirically validates (and pushes toward three-channel for SDK-shaped questions)
+- [`.claude/rules/phase-research-coverage.md` §1](../../../.claude/rules/phase-research-coverage.md) — candidate location for the «type-system over prose» 7th methodology item (maintainer decides)
+- [`~/.claude/skills/orchestrator/references/queue-mode.md` §10-§11](../../../.claude/skills/orchestrator/references/queue-mode.md) — already-revised dual-channel discipline that this finding empirically validates (and pushes toward three-channel for SDK-shaped questions)

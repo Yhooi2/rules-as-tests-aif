@@ -3,7 +3,7 @@
 
 > **Class:** C — исследовательский патч (R-phase output); механизм — I-phase (данный патч закрывает blocker, не шипает механизм).
 > **Authoritative for:** empirical FP-rate measurement of the narrow-B variant (short turn + zero tool_use + verdict-word regex) on production session transcripts; §1.5 verdict on Option D composition.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../../README.md#why-this-exists). Option A or Option C evaluation — those are out-of-scope per kickoff §1.6 backward-check. I-phase mechanism design — следует после этого патча.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Option A or Option C evaluation — those are out-of-scope per kickoff §1.6 backward-check. I-phase mechanism design — следует после этого патча.
 
 > **Origin:** 2026-05-25. Закрывает blocker из [2026-05-24-recommendation-laziness-discipline.md §1.5 item 4](2026-05-24-recommendation-laziness-discipline.md): «Если narrow-B FP-rate >20% на реальном corpus → исключить narrow-B из Option D». Kickoff: `.claude/orchestrator-prompts/narrow-b-benchmark/kickoff.md`.
 
@@ -289,18 +289,18 @@ Per `2026-05-24-recommendation-laziness-discipline.md §1.5 item 4`:
 
 ### Forward-check
 
-**[build-first-reuse-default.md §3](../../../../.claude/rules/build-first-reuse-default.md):** бенчмарк — это измерение, не введение capability. Полный 6-layer search не требуется (§1.6 kickoff). Upstream survey (обязательная 1× проверка):
+**[build-first-reuse-default.md §3](../../../.claude/rules/build-first-reuse-default.md):** бенчмарк — это измерение, не введение capability. Полный 6-layer search не требуется (§1.6 kickoff). Upstream survey (обязательная 1× проверка):
 
 - DeepWiki `ask_question` на `obra/superpowers`: «Does this repo have a production-corpus benchmark for verdict-word regex false-positive rate in chat transcripts?» → **INCONCLUSIVE-no-upstream** (Superpowers фокусируется на workflow automation, не на transcript measurement tooling).
 - WebSearch (recall): нет production-grade tool для «verdict-word benchmark on AI chat transcripts» как отдельного namespace. Проблема слишком project-specific (T16: наш problem class = measure FP rate of a specific regex on this project's transcript corpus; нет категории tools).
 
 Verdict: **BUILD** justified for this measurement (project-specific, no upstream analog). Не capability commit — это исследовательский патч.
 
-**[no-paid-llm-in-ci.md](../../../../.claude/rules/no-paid-llm-in-ci.md):** вся классификация выполнена Worker'ом (reading turns manually); ноль API-billed LLM вызовов. ✅
+**[no-paid-llm-in-ci.md](../../../.claude/rules/no-paid-llm-in-ci.md):** вся классификация выполнена Worker'ом (reading turns manually); ноль API-billed LLM вызовов. ✅
 
-**[doc-authority-hierarchy.md §3](../../../../.claude/rules/doc-authority-hierarchy.md):** этот файл несёт Class + Authoritative-for header. ✅
+**[doc-authority-hierarchy.md §3](../../../.claude/rules/doc-authority-hierarchy.md):** этот файл несёт Class + Authoritative-for header. ✅
 
-**[phase-research-coverage.md §1.11](../../../../.claude/rules/phase-research-coverage.md):** каждый claim подкреплён командой + output или file:line + content. Классификация каждого match приводит actual text + explicit shape. ✅
+**[phase-research-coverage.md §1.11](../../../.claude/rules/phase-research-coverage.md):** каждый claim подкреплён командой + output или file:line + content. Классификация каждого match приводит actual text + explicit shape. ✅
 
 ### Backward-check
 

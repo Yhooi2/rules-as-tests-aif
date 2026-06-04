@@ -3,10 +3,10 @@
 
 > **Date:** 2026-05-16
 > **Session type:** Step 1A — Goal Clarity Dialogue (maintainer-AI single-sitting, dialogue not implementation)
-> **Predecessor:** [next-session-prioritization](../../.claude/orchestrator-prompts/next-session-prioritization/kickoff.md) — D8 closure session (commit `1feb479`)
-> **Successor (sequential):** [swarm-tools-research](../../.claude/orchestrator-prompts/swarm-tools-research/kickoff.md) — 1B, runs after 1A
-> **Kickoff:** [.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md)
-> **Drafts:** [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/) (gitignored)
+> **Predecessor:** [next-session-prioritization](../../../.claude/orchestrator-prompts/next-session-prioritization/kickoff.md) — D8 closure session (commit `1feb479`)
+> **Successor (sequential):** [swarm-tools-research](../../../.claude/orchestrator-prompts/swarm-tools-research/kickoff.md) — 1B, runs after 1A
+> **Kickoff:** [.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md)
+> **Drafts:** [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/) (gitignored)
 
 ## §1 Session purpose + maintainer-stated framing recap
 
@@ -25,20 +25,20 @@ Output = research-patch (this file) + 8 drafts in kickoff's `drafts/` subdir + 3
 
 Prior session (2026-05-13 next-session-prioritization) covered: D8 closure (5 wishful triggers resolved → commit `1feb479`); priority survey Q1-Q5 (Phase 10 deferred, Wave 10 recommended unblock, Think-time §1.7 standalone); DeepWiki MCP adoption; empirical findings on `ai-factory` (0/7 enforcement-discipline patterns) and `aif-handoff` (3/7 on different application surface).
 
-For full DeepWiki probe results + aif-handoff full monorepo structure: see [research-tooling-evaluation/kickoff.md §10](../../.claude/orchestrator-prompts/research-tooling-evaluation/kickoff.md). For SSOT attribution errors that led to §10.2 of that kickoff: see [aif-ssot-corrections kickoff](../../.claude/orchestrator-prompts/aif-ssot-corrections/kickoff.md).
+For full DeepWiki probe results + aif-handoff full monorepo structure: see [research-tooling-evaluation/kickoff.md §10](../../../.claude/orchestrator-prompts/research-tooling-evaluation/kickoff.md). For SSOT attribution errors that led to §10.2 of that kickoff: see [aif-ssot-corrections kickoff](../../../.claude/orchestrator-prompts/aif-ssot-corrections/kickoff.md).
 
 This research-patch does NOT re-narrate that evidence — it builds on it.
 
 ## §3 Goal-framing analysis (§4.1)
 
 **Current state observed in 1A session:** three documents share identical narrow phrasing «AI cannot silently bypass what fails CI on violation»:
-- [README.md:43](../../README.md#L43)
-- [CLAUDE.md «Project goal pointer»](../../CLAUDE.md) (verbatim mirror)
-- [.claude/session-bootstrap.md](../../.claude/session-bootstrap.md) — auto-injected at every `UserPromptSubmit` via [.claude/hooks/inject-session-bootstrap.sh](../../.claude/hooks/inject-session-bootstrap.sh)
+- [README.md:43](../../../README.md#L43)
+- [CLAUDE.md «Project goal pointer»](../../../CLAUDE.md) (verbatim mirror)
+- [.claude/session-bootstrap.md](../../../.claude/session-bootstrap.md) — auto-injected at every `UserPromptSubmit` via [.claude/hooks/inject-session-bootstrap.sh](../../../.claude/hooks/inject-session-bootstrap.sh)
 
 **Empirical evidence of self-reinforcing drift (in-session observation):** at the start of this 1A dialogue, the session-bootstrap-hook injected the narrow phrasing as the *first content* in the active AI session's context (visible as `[session-bootstrap digest — auto-injected at prompt submit]` system reminder). Recursive form: the dialogue whose purpose is to fix narrow framing receives narrow framing as anchor before the discussion starts.
 
-This is `#operational-doc-redefines-goal` anti-pattern (per [.claude/rules/doc-authority-hierarchy.md §4](../../.claude/rules/doc-authority-hierarchy.md)) in **self-inflicted recursive form**: README's own narrow operational summary occupies goal-position; auto-injection reinforces.
+This is `#operational-doc-redefines-goal` anti-pattern (per [.claude/rules/doc-authority-hierarchy.md §4](../../../.claude/rules/doc-authority-hierarchy.md)) in **self-inflicted recursive form**: README's own narrow operational summary occupies goal-position; auto-injection reinforces.
 
 **Multi-channel reality table (empirically gathered from project state):**
 
@@ -54,7 +54,7 @@ This is `#operational-doc-redefines-goal` anti-pattern (per [.claude/rules/doc-a
 
 **Maintainer verdict §4.1: BROAD multi-channel with punchline preserved.**
 
-Adopted text (drafted in [drafts/README-why-this-exists-revised.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/README-why-this-exists-revised.md)):
+Adopted text (drafted in [drafts/README-why-this-exists-revised.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/README-why-this-exists-revised.md)):
 
 > Every rule that governs your codebase is an **executable artifact** that **fails when violated, at the earliest reachable channel**: edit-time → pre-commit → pre-push → CI → production audit. **CI is the last-resort gate, not the primary one.** AI cannot silently bypass what fails at any of these channels.
 
@@ -71,13 +71,13 @@ Adopted text (drafted in [drafts/README-why-this-exists-revised.md](../../.claud
 - **NOW (Commit 1):** subline + new «What this project is and isn't» subsection name AI Factory + aif-handoff with explicit `(today)` temporal marker. «broader AI-runtime integration on roadmap» reserves future expansion without forcing rewrite.
 - **FUTURE (separate research session, blocking dependency for §4.4 codification):** alt-target comparison research session. **NOT IN 1A SCOPE.** Surfaced in §11 as research-patch follow-up.
 
-V1 subline (drafted in [drafts/README-why-this-exists-revised.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/README-why-this-exists-revised.md)):
+V1 subline (drafted in [drafts/README-why-this-exists-revised.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/README-why-this-exists-revised.md)):
 
 > Companion to AI Factory + aif-handoff (today) — broader AI-runtime integration on roadmap. Converts every codebase rule into an executable artifact that fails at the earliest reachable channel (edit-time → pre-commit → pre-push → CI → production audit). Adds Living Documentation enforcement and 5-layer framework for AI-resistant codebases — server-side TypeScript and React/Next.js stacks.
 
 ## §5 Operating philosophy codification — build-first reuse-default (§4.3)
 
-**Existing state:** [CLAUDE.md «Build-vs-reuse invariant (Phase 8.8)»](../../CLAUDE.md) — per-commit gate (SSOT consult + context7 query + Prior-art trailer; enforced via `.husky/pre-push`). Works at micro level — single capability commit check.
+**Existing state:** [CLAUDE.md «Build-vs-reuse invariant (Phase 8.8)»](../../../CLAUDE.md) — per-commit gate (SSOT consult + context7 query + Prior-art trailer; enforced via `.husky/pre-push`). Works at micro level — single capability commit check.
 
 **Gap identified:** macro-level scope drift. Each commit can legitimately pass prior-art consult (no exact match in SSOT at that moment), but **composed at 3-6 month scale** the result becomes parallel-evolution of what aif-handoff already does better. Per-commit gate doesn't see this. Need separate macro-level operating philosophy.
 
@@ -89,7 +89,7 @@ V1 subline (drafted in [drafts/README-why-this-exists-revised.md](../../.claude/
 - **Commit B (≤2 weeks):** real principle test `packages/core/principles/10-build-first-reuse-default.test.ts`
 - **Fallback:** if Commit B slips past 2-week deadline, rule retains prose-only status; promotion criterion reverts to violation-rate-based («promote when 3+ violations / 6 months») matching peer-rule pattern in project (`phase-research-coverage.md`, `reviewer-discipline.md`, etc.)
 
-Rule body drafted in [drafts/build-first-reuse-default-rule.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/build-first-reuse-default-rule.md). Design sketch in [drafts/principle-10-build-first-reuse-default-design.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/principle-10-build-first-reuse-default-design.md).
+Rule body drafted in [drafts/build-first-reuse-default-rule.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/build-first-reuse-default-rule.md). Design sketch in [drafts/principle-10-build-first-reuse-default-design.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/principle-10-build-first-reuse-default-design.md).
 
 ## §6 5-item build-vs-reuse decisions (§4.4) — DEFERRED
 
@@ -121,7 +121,7 @@ Wave 10 (AST-based hooks migration, bash → TypeScript with Stryker mutation co
 - `aif-handoff`: bash/husky + lint-staged, no AST
 - `OhMyOpencode`: tool-restrictions-as-permissions (different approach, not hooks)
 
-**Learn-from-upstream mandate added (per maintainer 2026-05-16):** Wave 10 R-phase MUST not only execute binary prior-art check but ALSO mine ≥3 «patterns to consider integrating» from existing AI-runtime ecosystem players. Patch drafted in [drafts/wave-10-kickoff-learn-from-upstream-patch.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/wave-10-kickoff-learn-from-upstream-patch.md). Ships as separate atomic commit 4b (kickoff §5 hard-constraint prevented editing Wave 10 kickoff in 1A).
+**Learn-from-upstream mandate added (per maintainer 2026-05-16):** Wave 10 R-phase MUST not only execute binary prior-art check but ALSO mine ≥3 «patterns to consider integrating» from existing AI-runtime ecosystem players. Patch drafted in [drafts/wave-10-kickoff-learn-from-upstream-patch.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/wave-10-kickoff-learn-from-upstream-patch.md). Ships as separate atomic commit 4b (kickoff §5 hard-constraint prevented editing Wave 10 kickoff in 1A).
 
 ## §8 Drafts produced
 
@@ -140,7 +140,7 @@ All 8 drafts in `.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/` (gi
 
 ## §9 Atomic commit roadmap
 
-See [drafts/atomic-commit-plan.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md) for the full plan. Summary:
+See [drafts/atomic-commit-plan.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md) for the full plan. Summary:
 
 1. **Commit 1** (week 1, 30-40 min): goal-framing triplet alignment (README + CLAUDE + bootstrap)
 2. **Commit 2** (week 1, 20-30 min): BFR-default rule + principle 10 design sketch
@@ -203,7 +203,7 @@ Per §10 self-application: 1A did NOT execute WebSearch ≥3 phrasings on «macr
 - No actual grep / AST / parser probe was run for any «Class A — mechanically detectable» claim
 - No bench-test for any «Class B — compensating mechanism present» claim
 - §1.7 Forward+Backward check skipped on the classification recommendation itself
-- Self-reflexive trigger (self-review patch shipping with recommendation per [`phase-research-coverage.md §1.7`](../../.claude/rules/phase-research-coverage.md)) skipped
+- Self-reflexive trigger (self-review patch shipping with recommendation per [`phase-research-coverage.md §1.7`](../../../.claude/rules/phase-research-coverage.md)) skipped
 
 **Provisional classification (NOT load-bearing until corrective R-phase verifies):**
 
@@ -217,7 +217,7 @@ Per §10 self-application: 1A did NOT execute WebSearch ≥3 phrasings on «macr
 
 **Corrective action — dedicated R-phase mandated:**
 
-[.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md](../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) created 2026-05-16. R-phase scope (3-4h focused session):
+[.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md](../../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) created 2026-05-16. R-phase scope (3-4h focused session):
 
 - Per-rule §4.1 tooling prior-art sweep (DeepWiki ≥3 phrasings + WebSearch ≥3 phrasings + SSOT consult)
 - Per-rule §4.2 substantive verification probe (actual grep/AST/parser/LLM-bench run, output documented)
@@ -233,7 +233,7 @@ Actions D (`no-paid-llm-in-ci.md` + `parallel-subwave-isolation.md`) defer-by-tr
 
 ### §11.4 Wave 10 kickoff edit (Commit 4b)
 
-Wave 10 kickoff edit (learn-from-upstream mandate) cannot ship in 1A per §5 hard-constraint. Drafted as ready-to-apply patch in [drafts/wave-10-kickoff-learn-from-upstream-patch.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/wave-10-kickoff-learn-from-upstream-patch.md). Maintainer applies as separate Commit 4b. **MUST ship before Wave 10 R-phase launches** — otherwise R-phase scope reverts to binary prior-art check.
+Wave 10 kickoff edit (learn-from-upstream mandate) cannot ship in 1A per §5 hard-constraint. Drafted as ready-to-apply patch in [drafts/wave-10-kickoff-learn-from-upstream-patch.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/wave-10-kickoff-learn-from-upstream-patch.md). Maintainer applies as separate Commit 4b. **MUST ship before Wave 10 R-phase launches** — otherwise R-phase scope reverts to binary prior-art check.
 
 ### §11.5 1B handoff
 
@@ -258,11 +258,11 @@ Three memory entries finalized post-dialogue (updated in §13):
 
 This research-patch's findings, if applied, would produce these directly verifiable end-states:
 
-- `README.md:43` no longer contains «fails CI on violation» phrasing; revised text per [drafts/README-why-this-exists-revised.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/README-why-this-exists-revised.md) lines 30-60
-- `CLAUDE.md` «Project goal pointer» section uses multi-channel explicit text per [drafts/CLAUDE-md-goal-pointer-revised.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/CLAUDE-md-goal-pointer-revised.md)
-- `.claude/session-bootstrap.md` Goal line + Invariants line use revised text per [drafts/session-bootstrap-md-goal-section-revised.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/session-bootstrap-md-goal-section-revised.md)
-- New file `.claude/rules/build-first-reuse-default.md` exists with 7-verdict body per [drafts/build-first-reuse-default-rule.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/build-first-reuse-default-rule.md)
-- New file `packages/core/principles/10-build-first-reuse-default.design.md` exists per [drafts/principle-10-build-first-reuse-default-design.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/principle-10-build-first-reuse-default-design.md)
+- `README.md:43` no longer contains «fails CI on violation» phrasing; revised text per [drafts/README-why-this-exists-revised.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/README-why-this-exists-revised.md) lines 30-60
+- `CLAUDE.md` «Project goal pointer» section uses multi-channel explicit text per [drafts/CLAUDE-md-goal-pointer-revised.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/CLAUDE-md-goal-pointer-revised.md)
+- `.claude/session-bootstrap.md` Goal line + Invariants line use revised text per [drafts/session-bootstrap-md-goal-section-revised.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/session-bootstrap-md-goal-section-revised.md)
+- New file `.claude/rules/build-first-reuse-default.md` exists with 7-verdict body per [drafts/build-first-reuse-default-rule.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/build-first-reuse-default-rule.md)
+- New file `packages/core/principles/10-build-first-reuse-default.design.md` exists per [drafts/principle-10-build-first-reuse-default-design.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/principle-10-build-first-reuse-default-design.md)
 - `.claude/rules/reviewer-discipline.md` contains new §5 «Compensating mechanism» section
 - `.claude/orchestrator-prompts/wave-10-hook-architecture/kickoff.md` contains new §6.X learn-from-upstream mandate
 
@@ -270,18 +270,18 @@ This research-patch's findings, if applied, would produce these directly verifia
 
 Each finding above was traced backward to source evidence:
 
-- Multi-channel reality table (§3) verified against [`.husky/pre-push`](../../.husky/pre-push) (lines 1-449), `eslint.config.mjs`, `vitest.config.ts`, `stryker.config.json`, `audit-ai-docs.sh` — all 7 channels empirically present in repo
+- Multi-channel reality table (§3) verified against [`.husky/pre-push`](../../../.husky/pre-push) (lines 1-449), `eslint.config.mjs`, `vitest.config.ts`, `stryker.config.json`, `audit-ai-docs.sh` — all 7 channels empirically present in repo
 - Auto-injected hook digest (§3 T-GC-E observation) verified via system-reminder content visible in 1A session context at prompt submit
-- DeepWiki probe results (§4 + §7) traced to [research-tooling-evaluation/kickoff.md §10](../../.claude/orchestrator-prompts/research-tooling-evaluation/kickoff.md) — empirical evidence pool
+- DeepWiki probe results (§4 + §7) traced to [research-tooling-evaluation/kickoff.md §10](../../../.claude/orchestrator-prompts/research-tooling-evaluation/kickoff.md) — empirical evidence pool
 - 5 prose-only rules classification (§11.3) verified by reading each rule file's «Promotion / retirement» section: `phase-research-coverage.md` («3+ violations / 6 months»), `reviewer-discipline.md` («3 role-swap incidents / 6 months»), `no-paid-llm-in-ci.md` («operator override per session»), `parallel-subwave-isolation.md` («detection hard, defer until Wave 10»), `ai-laziness-traps.md` («3+ kickoffs without enumeration / 6 months»)
-- Existing principle test inventory (`packages/core/principles/01-09.test.ts`) verified via [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — companion principle for `doc-authority-hierarchy.md` exists, confirming Model A precedent
+- Existing principle test inventory (`packages/core/principles/01-09.test.ts`) verified via [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — companion principle for `doc-authority-hierarchy.md` exists, confirming Model A precedent
 - Search-coverage check applied to «no upstream macro-level scope-discipline rule at this granularity» claim — DeepWiki probes (2026-05-13) + SSOT consult ([prior-art-evaluations.md](../prior-art-evaluations.md)) covered; WebSearch deferred to §11.2 follow-up; meets 6-item checklist for «load-bearing» claim only partially. Flagged.
 
 ## §13 See also
 
-- Kickoff: [.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md)
-- Drafts directory: [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/)
-- Predecessor session: [next-session-prioritization](../../.claude/orchestrator-prompts/next-session-prioritization/kickoff.md)
-- Successor (sequential): [swarm-tools-research](../../.claude/orchestrator-prompts/swarm-tools-research/kickoff.md)
-- Empirical evidence pool: [research-tooling-evaluation/kickoff.md §10](../../.claude/orchestrator-prompts/research-tooling-evaluation/kickoff.md)
+- Kickoff: [.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/kickoff.md)
+- Drafts directory: [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/)
+- Predecessor session: [next-session-prioritization](../../../.claude/orchestrator-prompts/next-session-prioritization/kickoff.md)
+- Successor (sequential): [swarm-tools-research](../../../.claude/orchestrator-prompts/swarm-tools-research/kickoff.md)
+- Empirical evidence pool: [research-tooling-evaluation/kickoff.md §10](../../../.claude/orchestrator-prompts/research-tooling-evaluation/kickoff.md)
 - Memory entries: `/Users/art/.claude/projects/-Users-art-code-rules-as-tests-aif/memory/MEMORY.md` (operator-level)

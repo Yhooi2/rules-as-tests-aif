@@ -2,7 +2,7 @@
 # aif-skills-delivery — R-phase research patch (industry best-practices survey)
 
 > **Authoritative for:** external industry-practice survey of "how skills/discipline reach an autonomous agent in a container", the six-option verdict table with upstream sourcing, the upstream-vs-ours T16 problem-class table, and the recommended operator+shipped composition — as the *external complement* validating the in-repo candidate scoring already done in [`2026-06-03-aif-operator-asset-access.md`](2026-06-03-aif-operator-asset-access.md).
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). The in-repo mechanism audit + candidate A–E scoring + DN-1/2/3 decision points — those are owned by the sibling patch [`2026-06-03-aif-operator-asset-access.md`](2026-06-03-aif-operator-asset-access.md); this patch does NOT re-decide them.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). The in-repo mechanism audit + candidate A–E scoring + DN-1/2/3 decision points — those are owned by the sibling patch [`2026-06-03-aif-operator-asset-access.md`](2026-06-03-aif-operator-asset-access.md); this patch does NOT re-decide them.
 > **Date:** 2026-06-03
 
 ---

@@ -2,7 +2,7 @@
 # Research-patch — BFR-default rule upstream verification (post-1A coordination Track 2)
 
 > **Date:** 2026-05-16
-> **Session type:** Post-1A coordination Track 2 — WebSearch + DeepWiki verification per [post-1a-coordination kickoff §3.3](../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md)
+> **Session type:** Post-1A coordination Track 2 — WebSearch + DeepWiki verification per [post-1a-coordination kickoff §3.3](../../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md)
 > **Predecessor:** [2026-05-16-goal-clarity-dialogue.md §11.2](2026-05-16-goal-clarity-dialogue.md)
 > **Gates:** atomic-commit-plan Commit 2 (BFR-default rule + design sketch). Cannot ship cleanly without this verification per 1A explicit deferral.
 > **T7 template:** Problem → Root Cause → Solution → Prevention → Tags
@@ -16,7 +16,7 @@
 
 ## §2 Methodology
 
-Per [build-first-reuse-default-rule.md §3 mechanism](../../.claude/rules/build-first-reuse-default.md):
+Per [build-first-reuse-default-rule.md §3 mechanism](../../../.claude/rules/build-first-reuse-default.md):
 
 - **WebSearch** — ≥3 phrasings on the problem-domain term
 - **DeepWiki `ask_question`** — ≥3 candidate repositories
@@ -78,7 +78,7 @@ Across all 4 DeepWiki probes + 3 WebSearches + SSOT review, the pattern is consi
 
 ### §3.1 Per-candidate problem-class analysis (T16 protocol)
 
-Per [ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md), explicit problem-class match analysis required before adopting upstream pattern:
+Per [ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md), explicit problem-class match analysis required before adopting upstream pattern:
 
 | Candidate | Upstream problem class | Our problem class | Match? |
 |---|---|---|---|
@@ -111,7 +111,7 @@ The rule remains a genuine BUILD (first-of-kind) at the specific intersection: f
 
 ### §4.3 SSOT entries to add (recommended, separate atomic commit)
 
-Per [CLAUDE.md «Build-vs-reuse invariant»](../../CLAUDE.md) requirement that new SSOT entries land «in the same commit as the capability artifact», the BFR rule's BUILD verdict should ideally have a new SSOT entry. **However**, since this verification is being performed RETROACTIVELY (rule already drafted in Commit 2 prep), the SSOT entry can be added in a follow-up Commit 2-tail or absorbed into the Commit 2 commit message body.
+Per [CLAUDE.md «Build-vs-reuse invariant»](../../../CLAUDE.md) requirement that new SSOT entries land «in the same commit as the capability artifact», the BFR rule's BUILD verdict should ideally have a new SSOT entry. **However**, since this verification is being performed RETROACTIVELY (rule already drafted in Commit 2 prep), the SSOT entry can be added in a follow-up Commit 2-tail or absorbed into the Commit 2 commit message body.
 
 **Proposed SSOT entries (4 new, for maintainer review):**
 
@@ -215,11 +215,11 @@ Areas NOT probed:
 ## §10 See also
 
 - [docs/meta-factory/research-patches/2026-05-16-goal-clarity-dialogue.md §11.2](2026-05-16-goal-clarity-dialogue.md) — origin of this Track 2 verification
-- [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md §3.3](../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) — kickoff mandate
-- [.claude/rules/build-first-reuse-default.md §3](../../.claude/rules/build-first-reuse-default.md) — rule §3 mechanism applied here
-- [packages/core/principles/11-build-first-reuse-default.design.md](../../packages/core/principles/11-build-first-reuse-default.design.md) — companion design sketch
+- [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md §3.3](../../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) — kickoff mandate
+- [.claude/rules/build-first-reuse-default.md §3](../../../.claude/rules/build-first-reuse-default.md) — rule §3 mechanism applied here
+- [packages/core/principles/11-build-first-reuse-default.design.md](../../../packages/core/principles/11-build-first-reuse-default.design.md) — companion design sketch
 - [docs/meta-factory/prior-art-evaluations.md](../prior-art-evaluations.md) — SSOT register
-- [.claude/rules/ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md) — pattern-matching-on-name antipattern protocol
+- [.claude/rules/ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md) — pattern-matching-on-name antipattern protocol
 - DeepWiki URLs (consulted 2026-05-16):
   - <https://deepwiki.com/search/does-aifactory-have-any-projec_81293420-4386-4e98-93b3-bcaca011b769>
   - <https://deepwiki.com/search/does-aifhandoff-have-any-proje_e8aeecb5-9b98-427d-a2e4-a7f472450e93>

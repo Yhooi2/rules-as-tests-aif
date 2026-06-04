@@ -132,12 +132,12 @@ ATTN: none. Source-prompt ATTN «STOP if D-3 SHIP path cannot satisfy Prior-art 
 
 ## §5 §1.7 forward+backward check (per phase-research-coverage.md)
 
-Applied per [phase-research-coverage.md §1.7](../../.claude/rules/phase-research-coverage.md). This patch introduces an **analytical artefact about discipline** (verdicts on audit findings + capability-gate correction). It does NOT introduce a new rule, principle, or process step — but it edits the operational understanding of an existing one (capability-commit gate). §1.7 applies.
+Applied per [phase-research-coverage.md §1.7](../../../.claude/rules/phase-research-coverage.md). This patch introduces an **analytical artefact about discipline** (verdicts on audit findings + capability-gate correction). It does NOT introduce a new rule, principle, or process step — but it edits the operational understanding of an existing one (capability-commit gate). §1.7 applies.
 
 ### Forward-check — does this patch comply with existing R/principles/SSOT?
 
 - **Code-level (R1-R20 lint):** patch has no code; non-applicable.
-- **Principle-level meta-tests:** patch is a research-patch markdown file; passes principle 09 (Authoritative-for header per [doc-authority-hierarchy.md §3](../../.claude/rules/doc-authority-hierarchy.md)). research-patches/ has folder-level authority via [research-patches/README.md](../research-patches/README.md); per-file header is permitted (escape hatch) — and this patch carries one for clarity.
+- **Principle-level meta-tests:** patch is a research-patch markdown file; passes principle 09 (Authoritative-for header per [doc-authority-hierarchy.md §3](../../../.claude/rules/doc-authority-hierarchy.md)). research-patches/ has folder-level authority via [research-patches/README.md](../research-patches/README.md); per-file header is permitted (escape hatch) — and this patch carries one for clarity.
 - **Commit-level (Build-vs-reuse + `Prior-art:` trailer):** patch creation commit and §13.26 status-update commit are both doc edits; neither triggers capability-commit gate (no new file ≥80 LOC under packages/ — research-patches lives under docs/, not packages/; no new dep; no new packages/core/ subdir). Both commits use `Prior-art: skipped — <rationale ≥20 chars>` escape hatch with explicit rationale per CONTRIBUTING.md.
 - **Build-vs-reuse SSOT:** the patch itself surfaces a build-vs-reuse claim about D-3 («doc-vs-doc parity» as new conceptual capability), but defers the actual consult to D-3 implementation session. SSOT not edited in this patch.
 - **Trigger sweep (§1.6):** Wave 6 audit's parent §7 already performed the trigger sweep at audit close. This patch does not introduce new triggers; it surfaces D-4's trigger ambiguity for Wave 7 to operationalise (§3 informational note).
@@ -174,7 +174,7 @@ This patch IS a discipline-bearing artefact (it claims authority over verdicts +
 ```text
 ATTN: none.
 
-Source-prompt ATTN «STOP if D-3 SHIP path cannot satisfy Prior-art consult» from [wave-6-review.md L86-87](../../.claude/orchestrator-prompts/wave-6-ai-doc-cold-audit/wave-6-review.md) does NOT fire as ship-blocker per MAJOR-1 correction (§2 of this patch). Discipline-recommended consult is good practice; if context7 surfaces production-grade analog, SSOT verdict becomes WATCHLIST/DEFER (not BUILD), but D-3 ship is not blocked because pre-push hook does not gate Modified-status commits.
+Source-prompt ATTN «STOP if D-3 SHIP path cannot satisfy Prior-art consult» from [wave-6-review.md L86-87](../../../.claude/orchestrator-prompts/wave-6-ai-doc-cold-audit/wave-6-review.md) does NOT fire as ship-blocker per MAJOR-1 correction (§2 of this patch). Discipline-recommended consult is good practice; if context7 surfaces production-grade analog, SSOT verdict becomes WATCHLIST/DEFER (not BUILD), but D-3 ship is not blocked because pre-push hook does not gate Modified-status commits.
 
 Branch wave-6/ai-doc-cold-audit ready for push (N commits ahead of origin). Push + PR — operator confirms (a) push now / (b) hold / (c) defer.
 ```

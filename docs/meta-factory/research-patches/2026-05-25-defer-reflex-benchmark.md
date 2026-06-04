@@ -470,8 +470,8 @@ Does this benchmark audit itself?
 ## See Also
 
 - [`docs/meta-factory/research-patches/2026-05-25-defer-reflex-detection.md`](2026-05-25-defer-reflex-detection.md) — Stage 1 R-phase; §3.4 has the regex and gate design benchmarked here
-- [`.claude/orchestrator-prompts/defer-reflex-detection/kickoff-stage-2-and-3.md`](../../.claude/orchestrator-prompts/defer-reflex-detection/kickoff-stage-2-and-3.md) — kickoff spec; §2.2 output requirements, §5 verdict branches
+- [`.claude/orchestrator-prompts/defer-reflex-detection/kickoff-stage-2-and-3.md`](../../../.claude/orchestrator-prompts/defer-reflex-detection/kickoff-stage-2-and-3.md) — kickoff spec; §2.2 output requirements, §5 verdict branches
 - [`docs/meta-factory/research-patches/2026-05-25-narrow-b-benchmark.md`](2026-05-25-narrow-b-benchmark.md) — precedent benchmark (recommendation-laziness); Wilson CI formula source; FP>20% → DROP lesson
 - [`docs/meta-factory/research-patches/2026-05-24-recommendation-laziness-discipline.md`](2026-05-24-recommendation-laziness-discipline.md) — companion discipline; H1 always-on mechanism already in place covers defer-tell family
-- [`.claude/rules/ai-laziness-traps.md §2 T20`](../../.claude/rules/ai-laziness-traps.md) — T20 (inline-verdict-without-evidence); defer-tell is a specialisation of this trap
-- [`.claude/rules/no-paid-llm-in-ci.md §1`](../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint: deterministic regex/grep only; LLM-in-CI permanently blocked; relevant to §5 path-forward Option 3
+- [`.claude/rules/ai-laziness-traps.md §2 T20`](../../../.claude/rules/ai-laziness-traps.md) — T20 (inline-verdict-without-evidence); defer-tell is a specialisation of this trap
+- [`.claude/rules/no-paid-llm-in-ci.md §1`](../../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint: deterministic regex/grep only; LLM-in-CI permanently blocked; relevant to §5 path-forward Option 3

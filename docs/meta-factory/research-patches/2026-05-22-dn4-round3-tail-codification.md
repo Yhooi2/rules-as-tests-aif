@@ -1,7 +1,7 @@
 <!-- scope:dn4-round3-tail-codification -->
 # DN-4 round 3 (tail) — worktree-setup + research-priority codification + final disposition
 
-> **Scope:** §1.7 self-review for the change codifying DN-4 gaps #29 (`worktree_node_modules_symlink` → CONTRIBUTING.md) and #30 (`ai_doc_research_priority_pool` → [`phase-research-coverage.md` §1.13](../../../.claude/rules/phase-research-coverage.md)), plus the honest disposition of the 4 non-codifiable tail gaps (#18/#19 reference-facts, #21 thesis-level, #24 out-of-repo) in the [tracker](../meta-factory/memory-codification-gap-tracker.md). Inherits folder authority from [research-patches/README.md](README.md); NOT authoritative for project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
+> **Scope:** §1.7 self-review for the change codifying DN-4 gaps #29 (`worktree_node_modules_symlink` → CONTRIBUTING.md) and #30 (`ai_doc_research_priority_pool` → [`phase-research-coverage.md` §1.13](../../../.claude/rules/phase-research-coverage.md)), plus the honest disposition of the 4 non-codifiable tail gaps (#18/#19 reference-facts, #21 thesis-level, #24 out-of-repo) in the [tracker(../memory-codification-gap-tracker.md). Inherits folder authority from [research-patches/README.md](README.md); NOT authoritative for project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 >
 > **Origin:** DN-4 autonomous sweep round 3, 2026-05-22 (`/orchestrator`; after [round 1](2026-05-22-dn4-verify-before-claim-codification.md) §1.11 and [round 2](2026-05-22-dn4-round2-codification.md) §1.12 + T17-T19). Completes the sweep — every one of the 15 stage-0 gaps is now codified or has a noted disposition.
 

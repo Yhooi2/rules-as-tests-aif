@@ -3,7 +3,7 @@
 
 > **Class:** R-phase deliverable (research-patch). No code changes; verdict + design only.
 > **Authoritative for:** BFR §3 prior-art survey + falsifier outcome + BUILD verdict for the orchestrator-prompts hydration step in `.claude/hooks/worktree-setup.sh` + `scripts/create-worktree.sh`. Documents the J5 gap (fresh worktree is blind to gitignored kickoff content), deferred alternative (git-tracking), and re-evaluation trigger.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 
 ---
 

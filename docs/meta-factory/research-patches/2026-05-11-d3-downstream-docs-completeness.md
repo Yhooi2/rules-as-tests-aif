@@ -5,7 +5,7 @@
 
 ## Problem
 
-The D-3 probe at [packages/core/audit-self/audit-ai-docs.sh:145-184](../../packages/core/audit-self/audit-ai-docs.sh) enforces «canonical goal-phrase parity»: every entry in `DOWNSTREAM_DOCS` must contain `CANON_PHRASE` (`"AI agents can't silently bypass undocumented conventions"`) or `CANON_ALT` (`"AI cannot silently bypass what fails CI"`). On 2026-05-11, a paired negative test was added in PR #37 (commit `03b6382`) — closing Incident 2 of Wave 8's ORIGIN section.
+The D-3 probe at [packages/core/audit-self/audit-ai-docs.sh:145-184](../../../packages/core/audit-self/audit-ai-docs.sh) enforces «canonical goal-phrase parity»: every entry in `DOWNSTREAM_DOCS` must contain `CANON_PHRASE` (`"AI agents can't silently bypass undocumented conventions"`) or `CANON_ALT` (`"AI cannot silently bypass what fails CI"`). On 2026-05-11, a paired negative test was added in PR #37 (commit `03b6382`) — closing Incident 2 of Wave 8's ORIGIN section.
 
 The negative test verifies the **probe fires when an enrolled file is mutated**. It does *not* verify the **enrollment list itself is complete**.
 
@@ -18,7 +18,7 @@ The negative test verifies the **probe fires when an enrolled file is mutated**.
 | **`.claude/hooks/inject-session-bootstrap.sh`** | ✗ (dyrа #1) |
 | **`docs/meta-factory/EXECUTION-PLAN.md`** | ✗ (dyrа #2) |
 
-Both missing files contain the literal canonical phrase, both are active (not frozen per [doc-authority-hierarchy §4 frozen-doc rule](../../.claude/rules/doc-authority-hierarchy.md)), and both are exactly the *load-bearing* downstream surface — the hook injects the phrase into every Claude session prompt, and EXECUTION-PLAN is the operational planning document whose goal-drift caused Incident 3 (2026-05-09) of Wave 8's ORIGIN.
+Both missing files contain the literal canonical phrase, both are active (not frozen per [doc-authority-hierarchy §4 frozen-doc rule](../../../.claude/rules/doc-authority-hierarchy.md)), and both are exactly the *load-bearing* downstream surface — the hook injects the phrase into every Claude session prompt, and EXECUTION-PLAN is the operational planning document whose goal-drift caused Incident 3 (2026-05-09) of Wave 8's ORIGIN.
 
 ## Root Cause
 
@@ -32,7 +32,7 @@ This is the **third documented occurrence** of `DOWNSTREAM_DOCS` curation drift 
 | 2026-05-11 (this session, manual review) | `.claude/hooks/inject-session-bootstrap.sh` missing | external reviewer noted the hook's hardcoded heredoc as a possible drift point |
 | 2026-05-11 (this session, follow-up grep) | `docs/meta-factory/EXECUTION-PLAN.md` missing | grep-driven sweep done to verify the first finding's blast radius |
 
-Each finding surfaced **post-fact** — after the probe was declared «done», during an unrelated discussion, by accident. None of the three originated from a systematic process. The pattern is `#own-stack-blind-spot` ([phase-research-coverage.md §4](../../.claude/rules/phase-research-coverage.md)) applied to *the project's own canonical-phrase surface*: the author treats the curation list as authoritative because they wrote it, and does not subject it to the same adversarial check that other negative-existence claims receive (§1.4).
+Each finding surfaced **post-fact** — after the probe was declared «done», during an unrelated discussion, by accident. None of the three originated from a systematic process. The pattern is `#own-stack-blind-spot` ([phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md)) applied to *the project's own canonical-phrase surface*: the author treats the curation list as authoritative because they wrote it, and does not subject it to the same adversarial check that other negative-existence claims receive (§1.4).
 
 The deeper failure mode is the same as Wave 8 (§13.29)'s central thesis — `#discipline-theatre`:
 
@@ -46,7 +46,7 @@ The form is satisfied (the 2 enrolled files have the phrase). The substance is n
 
 Two-layer fix — **surface** (close the 2 known dyrы) + **structural** (close the *class* of dyrа):
 
-1. **Surface fix.** Extend `DOWNSTREAM_DOCS` in [audit-ai-docs.sh:163-166](../../packages/core/audit-self/audit-ai-docs.sh) to include the two missing paths:
+1. **Surface fix.** Extend `DOWNSTREAM_DOCS` in [audit-ai-docs.sh:163-166](../../../packages/core/audit-self/audit-ai-docs.sh) to include the two missing paths:
    - `.claude/hooks/inject-session-bootstrap.sh`
    - `docs/meta-factory/EXECUTION-PLAN.md`
 
@@ -55,11 +55,11 @@ Two-layer fix — **surface** (close the 2 known dyrы) + **structural** (close 
    - Compute `FOUND = grep results`, `ENROLLED = DOWNSTREAM_DOCS`, `EXEMPT = explicit allowlist patterns`.
    - **Invariant**: `FOUND ⊆ ENROLLED ∪ EXEMPT`. Any file in `FOUND` but not in `ENROLLED ∪ EXEMPT` is a coverage gap → D5 fails.
    - Exemption patterns enumerate the three legitimate categories of «canonical phrase appears but enrollment unnecessary»:
-     - **`FROZEN_PATTERNS`** — `docs/meta-factory/research-patches/*.md`, `docs/audits/*.md` (frozen historical artefacts per [doc-authority-hierarchy §4 frozen-doc rule](../../.claude/rules/doc-authority-hierarchy.md)).
+     - **`FROZEN_PATTERNS`** — `docs/meta-factory/research-patches/*.md`, `docs/audits/*.md` (frozen historical artefacts per [doc-authority-hierarchy §4 frozen-doc rule](../../../.claude/rules/doc-authority-hierarchy.md)).
      - **`TEST_INFRASTRUCTURE_PATTERNS`** — `packages/core/audit-self/audit-ai-docs.sh` itself (defines `CANON_PHRASE`/`CANON_ALT`), `packages/core/audit-self/audit-ai-docs.test.sh` (test fixture), `packages/core/audit-self/template-render.audit.ts` (synonym whitelist for template-render audit).
      - **`FALSE_POSITIVE_ALLOWLIST`** — `packages/preset-next-15-canonical/RULES.md` (contains the unrelated phrase «to silently bypass it» which substring-matches but is semantically distinct; one-line exemption with rationale comment).
 
-3. **Paired negative test for D5** (per [audit-ai-docs.sh:32 discipline](../../packages/core/audit-self/audit-ai-docs.sh) and Wave 8 §13.29 thesis) — `test_D5` in `audit-ai-docs.test.sh`:
+3. **Paired negative test for D5** (per [audit-ai-docs.sh:32 discipline](../../../packages/core/audit-self/audit-ai-docs.sh) and Wave 8 §13.29 thesis) — `test_D5` in `audit-ai-docs.test.sh`:
    - Mutation: write a tmp file under `docs/` containing the canonical phrase, not in any exemption category.
    - Assert: D5 emits FAIL referencing the orphan file.
    - Cleanup: remove tmp file, assert D5 returns to green.
@@ -93,7 +93,7 @@ The general shape — «curated enumeration + presence-check probe → vulnerabl
 |---|---|
 | Principle 08 (`Prior-art:` trailer) | New D5 probe is a refactor/test addition, not a capability commit (no new dep, no new ≥50/80 LOC file under `packages/core/<new>/` or `packages/`). Escape hatch acceptable. Implementation commit will surface this verdict explicitly. |
 | Build-vs-reuse SSOT | D5 is a within-project extension of an existing probe (D-3), not a new capability area. No SSOT entry required; if implementation diverges (e.g. extracts a shared completeness-check helper used by other probes), revisit. |
-| Doc-authority hierarchy | This research-patch lives in `research-patches/` (folder-level authority per [doc-authority-hierarchy §5](../../.claude/rules/doc-authority-hierarchy.md)); no per-file Authoritative-for header needed. Scope marker `<!-- scope:§13.29-incident-4 -->` per Wave 4 convention (SSOT #29). |
+| Doc-authority hierarchy | This research-patch lives in `research-patches/` (folder-level authority per [doc-authority-hierarchy §5](../../../.claude/rules/doc-authority-hierarchy.md)); no per-file Authoritative-for header needed. Scope marker `<!-- scope:§13.29-incident-4 -->` per Wave 4 convention (SSOT #29). |
 | Trigger sweep (§1.6) | §13.29 (Wave 8) is the relevant trigger; this patch is incident-4 evidence for it. No other §13.x entry obviously bears on D-3 enrollment specifically. |
 | Paired-negative discipline | Solution §3 (test_D5) + §4 (hook stdout snapshot) explicitly ship paired-negative tests — exactly the discipline this incident reveals as previously missing. |
 
@@ -114,15 +114,15 @@ The full sweep is **deferred** — fixing all three with D5-shape probes in this
 ## Tags
 
 - `#discipline-theatre` (Wave 8 §13.29 parent — form satisfied, substance not verified)
-- `#recursive-self-application-gap` ([phase-research-coverage.md §4](../../.claude/rules/phase-research-coverage.md) — D-3 probe was created to prevent drift, but its own enrollment was not subjected to drift-detection)
-- `#own-stack-blind-spot` ([phase-research-coverage.md §4](../../.claude/rules/phase-research-coverage.md) — manual recall of «which downstream docs exist» treated as authoritative; not adversarially checked)
-- `#curated-list-without-completeness-gate` (new — proposed addition to [phase-research-coverage.md §4](../../.claude/rules/phase-research-coverage.md) anti-pattern catalogue if a second list-class incident lands)
+- `#recursive-self-application-gap` ([phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md) — D-3 probe was created to prevent drift, but its own enrollment was not subjected to drift-detection)
+- `#own-stack-blind-spot` ([phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md) — manual recall of «which downstream docs exist» treated as authoritative; not adversarially checked)
+- `#curated-list-without-completeness-gate` (new — proposed addition to [phase-research-coverage.md §4](../../../.claude/rules/phase-research-coverage.md) anti-pattern catalogue if a second list-class incident lands)
 
 ## See also
 
 - [open-questions.md §13.29](../open-questions.md) — Wave 8 «Substantive Compliance Verification» (parent; this finding is Incident 4 of its origin set; cross-reference back from Wave 8 research-patch when it lands)
-- [phase-research-coverage.md §1.4](../../.claude/rules/phase-research-coverage.md) — adversarial counter-prompt rule that would have caught the manual-curation gap had it been applied to the list itself
-- [phase-research-coverage.md §1.9](../../.claude/rules/phase-research-coverage.md) — SSOT citation existence-check (Wave 7 M2) — same shape (verify cited thing exists, don't trust the trailer's claim); D5 is the same pattern (verify enrolled list is complete, don't trust the curator's claim)
-- [packages/core/audit-self/audit-ai-docs.sh:145-184](../../packages/core/audit-self/audit-ai-docs.sh) — D-3 probe source
-- [packages/core/audit-self/audit-ai-docs.test.sh:test_D3](../../packages/core/audit-self/audit-ai-docs.test.sh) — D-3 paired negative test (Incident 2 closure, 2026-05-11 PR #37)
+- [phase-research-coverage.md §1.4](../../../.claude/rules/phase-research-coverage.md) — adversarial counter-prompt rule that would have caught the manual-curation gap had it been applied to the list itself
+- [phase-research-coverage.md §1.9](../../../.claude/rules/phase-research-coverage.md) — SSOT citation existence-check (Wave 7 M2) — same shape (verify cited thing exists, don't trust the trailer's claim); D5 is the same pattern (verify enrolled list is complete, don't trust the curator's claim)
+- [packages/core/audit-self/audit-ai-docs.sh:145-184](../../../packages/core/audit-self/audit-ai-docs.sh) — D-3 probe source
+- [packages/core/audit-self/audit-ai-docs.test.sh:test_D3](../../../packages/core/audit-self/audit-ai-docs.test.sh) — D-3 paired negative test (Incident 2 closure, 2026-05-11 PR #37)
 - Wave 8 implementation prompt: `.claude/orchestrator-prompts/wave-8-substantive-compliance/d3-completeness-fix.md` (DRAFT-pending-wave-8-research)

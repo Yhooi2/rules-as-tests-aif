@@ -4,14 +4,14 @@
 > **Date:** 2026-05-16
 > **Session type:** Post-1A coordination — §6.6 pre-ship substantive review batch
 > **Predecessor:** [2026-05-16-goal-clarity-dialogue.md](2026-05-16-goal-clarity-dialogue.md) — 1A research-patch
-> **Kickoff:** [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md](../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) §6.6
-> **Reviewed drafts:** all 8 in [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/) (gitignored)
+> **Kickoff:** [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md](../../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) §6.6
+> **Reviewed drafts:** all 8 in [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/) (gitignored)
 > **T7 template:** Problem → Root Cause → Solution → Prevention → Tags
 > **Outcome:** **2 BLOCKs, 5 REVISEs, 1 PASS.** Commit 1 cannot ship as currently scoped.
 
 ## §1 Problem
 
-The 1A dialogue (2026-05-16) produced 8 drafts but did not ship a self-review patch closing the §1.7 self-reflexive trigger ([phase-research-coverage.md §1.7](../../.claude/rules/phase-research-coverage.md)). One instance of `#discipline-theatre` was already caught in 1A's prose-rules audit by maintainer pushback. The drafts themselves were never substantively probed before being declared «READY» in [atomic-commit-plan.md](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md).
+The 1A dialogue (2026-05-16) produced 8 drafts but did not ship a self-review patch closing the §1.7 self-reflexive trigger ([phase-research-coverage.md §1.7](../../../.claude/rules/phase-research-coverage.md)). One instance of `#discipline-theatre` was already caught in 1A's prose-rules audit by maintainer pushback. The drafts themselves were never substantively probed before being declared «READY» in [atomic-commit-plan.md](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/atomic-commit-plan.md).
 
 Per kickoff §6.6: «if one 1A output contained syntactic-OK / substantive-untested claims, others may too.» This pre-ship review tests that hypothesis. **Result: 7 of 8 drafts carry at least one substantive defect; 2 carry blocking defects.** The hypothesis is confirmed; pre-ship review caught what 1A's own self-application sections missed.
 
@@ -21,7 +21,7 @@ Per kickoff §6.6: «if one 1A output contained syntactic-OK / substantive-untes
 
 **VERIFIABLE claim audit:**
 
-- ✅ Subline restructure preserves punchline shape — verified by reading current [README.md:8](../../README.md#L8) and comparing to draft AFTER.
+- ✅ Subline restructure preserves punchline shape — verified by reading current [README.md:8](../../../README.md#L8) and comparing to draft AFTER.
 - ✅ New invariant «Multi-channel enforcement» wording empirically matches existing channels — verified against actual `.husky/pre-push` (449 lines, present), `eslint.config.mjs` (present), `audit-ai-docs.sh` (311 lines, present).
 - ⚠️ **Forward-reference defect**: the revised «Build-vs-reuse discipline» invariant says «Macro-level operating philosophy: `.claude/rules/build-first-reuse-default.md`», but that file does not exist yet — it ships in Commit 2. If Commit 1 ships alone, README references a non-existent path. Tolerable if Commits 1 and 2 ship within the same maintainer window; broken-link rot risk if Commit 2 slips.
 
@@ -47,7 +47,7 @@ ls .claude/rules/build-first-reuse-default.md
 
 **VERIFIABLE claim audit:**
 
-- ✅ Draft's «BEFORE» (labelled «approximate») is in fact EXACT verbatim match of current [.claude/session-bootstrap.md:11](../../.claude/session-bootstrap.md#L11) — verified.
+- ✅ Draft's «BEFORE» (labelled «approximate») is in fact EXACT verbatim match of current [.claude/session-bootstrap.md:11](../../../.claude/session-bootstrap.md#L11) — verified.
 - ❌ **BLOCKING defect: hook script hardcodes the digest text, NOT extracted from session-bootstrap.md.** The atomic-commit-plan §Commit-1 «Verification post-commit» says «open a fresh session, verify auto-injected digest reflects new text. If old text persists — inspect `.claude/hooks/inject-session-bootstrap.sh` for cache or path issue.» This framing is wrong — there is no cache or path issue. The hook hardcodes text via heredoc:
 
 **Probe:**
@@ -93,7 +93,7 @@ Output:
 packages/core/principles/10-research-patch-annotation.test.ts
 ```
 
-The existing file [packages/core/principles/10-research-patch-annotation.test.ts](../../packages/core/principles/10-research-patch-annotation.test.ts) was committed 2026-05-13 and enforces the `<!-- scope:<slug> -->` annotation on research-patches (SSOT #29, ADAPT verdict). It is operational; principle 10 is taken.
+The existing file [packages/core/principles/10-research-patch-annotation.test.ts](../../../packages/core/principles/10-research-patch-annotation.test.ts) was committed 2026-05-13 and enforces the `<!-- scope:<slug> -->` annotation on research-patches (SSOT #29, ADAPT verdict). It is operational; principle 10 is taken.
 
 Draft 4 §5 «Promotion timeline» references «companion principle test `packages/core/principles/10-build-first-reuse-default.test.ts`» — direct slot collision.
 
@@ -114,7 +114,7 @@ The atomic-commit-plan §Commit 4 «Numbering caveat» line («if Commit 2's pri
 - ✅ Design sketch is markdown not TypeScript (matches kickoff §6.2 «sketch only»).
 - ✅ Open design questions explicit (Q1-Q5) — substantive.
 - ❌ Same BLOCKING defect as Draft 4 — references `packages/core/principles/10-build-first-reuse-default.design.md` and `.test.ts` at slot 10.
-- ⚠️ Additional REVISE concern: design sketch §1 invariant («every shipped capability has SSOT entry OR Prior-art trailer rationale») partially overlaps with existing [packages/core/principles/08-prior-art-cited.test.ts](../../packages/core/principles/08-prior-art-cited.test.ts) (research-files cite SSOT by ID) and `.husky/pre-push` capability-commit Prior-art trailer enforcement. §2 of sketch acknowledges hook complementarity but does not explicitly deduplicate vs principle 08. Recommend revising §1 to articulate the distinct gap (aggregate-state drift not caught by per-research-file or per-commit checks).
+- ⚠️ Additional REVISE concern: design sketch §1 invariant («every shipped capability has SSOT entry OR Prior-art trailer rationale») partially overlaps with existing [packages/core/principles/08-prior-art-cited.test.ts](../../../packages/core/principles/08-prior-art-cited.test.ts) (research-files cite SSOT by ID) and `.husky/pre-push` capability-commit Prior-art trailer enforcement. §2 of sketch acknowledges hook complementarity but does not explicitly deduplicate vs principle 08. Recommend revising §1 to articulate the distinct gap (aggregate-state drift not caught by per-research-file or per-commit checks).
 
 **Verdict: BLOCK.** Slot collision same as Draft 4. Plus REVISE on principle-08 overlap clarity.
 
@@ -123,7 +123,7 @@ The atomic-commit-plan §Commit 4 «Numbering caveat» line («if Commit 2's pri
 **VERIFIABLE claim audit:**
 
 - ✅ Patch text body is coherent — compensating mechanism articulated, cross-references concrete (`agents/compliance-verifier.md` exists at the cited path).
-- ✅ Cited compensating mechanism [agents/compliance-verifier.md](../../agents/compliance-verifier.md) does exist and actually performs the claimed semantic check (verified by reading its «What you check» sections — Forward-check substance + citation integrity + Backward-check sweep completeness).
+- ✅ Cited compensating mechanism [agents/compliance-verifier.md](../../../agents/compliance-verifier.md) does exist and actually performs the claimed semantic check (verified by reading its «What you check» sections — Forward-check substance + citation integrity + Backward-check sweep completeness).
 - ❌ **REVISE defect: internal inconsistency in renumbering instructions.** Current rule structure is:
 
 **Probe:**
@@ -207,7 +207,7 @@ Post-Commit-1: EXECUTION-PLAN.md:21 still matches; anti-patterns-with-examples.m
 
 ## §3 Root cause
 
-The 1A drafts were produced in a single session that authored both the research-patch AND the drafts AND the atomic-commit-plan. The drafts' «Self-application check (T15)» sections were authored by the same head that wrote the drafts — the same blind spots applied to all artefacts. This is the structural failure mode `#two-AI-review-pattern-violated` documented in [agents/compliance-verifier.md](../../agents/compliance-verifier.md) preface: «the implementing session wrote the §1.7 sections in the same head that wrote the diff — same model, same blind spots».
+The 1A drafts were produced in a single session that authored both the research-patch AND the drafts AND the atomic-commit-plan. The drafts' «Self-application check (T15)» sections were authored by the same head that wrote the drafts — the same blind spots applied to all artefacts. This is the structural failure mode `#two-AI-review-pattern-violated` documented in [agents/compliance-verifier.md](../../../agents/compliance-verifier.md) preface: «the implementing session wrote the §1.7 sections in the same head that wrote the diff — same model, same blind spots».
 
 The 1A research-patch acknowledged this risk in §10 (T15 syntactic-only finding) and §11.3 (prose-rules audit reclassification) — but **only for the prose-rules audit area**, not for the other 7 drafts. Maintainer 2026-05-16 surfaced the more general risk via §6.6 «mandate for pre-ship review of all 8 drafts». This patch executes that mandate and confirms 7-of-8 drafts carry defects.
 
@@ -220,7 +220,7 @@ The 1A research-patch acknowledged this risk in §10 (T15 syntactic-only finding
 - **Backward-check empirical falseness (Draft 8)** — 1A session did not actually run the claimed `grep` before stating the Backward-check claim. T3 + T15 (claim of self-application without running the probe self-application requires).
 - **Self-application syntactic theatre (Draft 8 §T15)** — 1A session pattern-matched the format of «✅ five bullets» rather than performing substantive verification per `#discipline-theatre` antipattern. T15 + T7.
 
-The dominant trap across all 7 defects is **T3 «plausible findings without verification»** ([ai-laziness-traps.md §2](../../.claude/rules/ai-laziness-traps.md)). One session, one batch of work, six instances of the same antipattern. This is the same shape that `#discipline-theatre` predicts (Wave 8 thesis): syntactic compliance + substantive vacancy.
+The dominant trap across all 7 defects is **T3 «plausible findings without verification»** ([ai-laziness-traps.md §2](../../../.claude/rules/ai-laziness-traps.md)). One session, one batch of work, six instances of the same antipattern. This is the same shape that `#discipline-theatre` predicts (Wave 8 thesis): syntactic compliance + substantive vacancy.
 
 ## §4 Solution
 
@@ -258,7 +258,7 @@ Concretely, for any draft authored in a dialogue / research / planning session, 
 4. For every «§1.7 Backward-check returns N hits» claim → actually run the grep, document output.
 5. For every «hook does X» / «script does X» claim → read the hook/script source.
 
-This is a stricter version of T3 «every finding must have ONE of: command + output, file:line citation, INCONCLUSIVE marker». Promote to §1 of [phase-research-coverage.md](../../.claude/rules/phase-research-coverage.md) when ≥3 patches surface this defect class. **This patch is incident #1**; predecessors §13.29 substantive compliance + 1A prose-rules audit are #0a and #0b in the same family.
+This is a stricter version of T3 «every finding must have ONE of: command + output, file:line citation, INCONCLUSIVE marker». Promote to §1 of [phase-research-coverage.md](../../../.claude/rules/phase-research-coverage.md) when ≥3 patches surface this defect class. **This patch is incident #1**; predecessors §13.29 substantive compliance + 1A prose-rules audit are #0a and #0b in the same family.
 
 ### §5.2 Domain-specific traps to enumerate in pre-ship review kickoffs
 
@@ -311,9 +311,9 @@ Re-checked: Draft 2 contains only the goal-pointer rewrite — no forward-refere
 ## §8 What this patch DOES NOT do
 
 - Does NOT silently fix any of the 7 defects. Surfaces them with verdicts; maintainer decides.
-- Does NOT re-litigate any 1A verdict (per [reviewer-discipline.md](../../.claude/rules/reviewer-discipline.md) §1 — verdict authority lies with maintainer / orchestrator session).
+- Does NOT re-litigate any 1A verdict (per [reviewer-discipline.md](../../../.claude/rules/reviewer-discipline.md) §1 — verdict authority lies with maintainer / orchestrator session).
 - Does NOT ship Commit 1 or any other commit. Per kickoff §6.6: «verdict per draft → maintainer approval gates».
-- Does NOT cover the prose-rules audit R-phase area (1A.6) — that has its own armed kickoff at [.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md](../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) and runs separately.
+- Does NOT cover the prose-rules audit R-phase area (1A.6) — that has its own armed kickoff at [.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md](../../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) and runs separately.
 
 ## §9 DECISION-NEEDED surfaces (per reviewer-discipline.md §2 pattern)
 
@@ -346,9 +346,9 @@ Re-checked: Draft 2 contains only the goal-pointer rewrite — no forward-refere
 ## §10 See also
 
 - [docs/meta-factory/research-patches/2026-05-16-goal-clarity-dialogue.md](2026-05-16-goal-clarity-dialogue.md) — 1A research-patch
-- [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md §6.6](../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) — pre-ship review mandate
-- [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/) — the 8 drafts (gitignored)
-- [.claude/rules/phase-research-coverage.md §1.7](../../.claude/rules/phase-research-coverage.md) — self-reflexive trigger this patch closes
-- [.claude/rules/ai-laziness-traps.md §2 T3 + T15](../../.claude/rules/ai-laziness-traps.md) — dominant trap class
-- [agents/compliance-verifier.md](../../agents/compliance-verifier.md) — two-AI review pattern reference
-- [packages/core/principles/10-research-patch-annotation.test.ts](../../packages/core/principles/10-research-patch-annotation.test.ts) — existing principle 10 (slot collision evidence)
+- [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md §6.6](../../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) — pre-ship review mandate
+- [.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/](../../../.claude/orchestrator-prompts/goal-clarity-dialogue/drafts/) — the 8 drafts (gitignored)
+- [.claude/rules/phase-research-coverage.md §1.7](../../../.claude/rules/phase-research-coverage.md) — self-reflexive trigger this patch closes
+- [.claude/rules/ai-laziness-traps.md §2 T3 + T15](../../../.claude/rules/ai-laziness-traps.md) — dominant trap class
+- [agents/compliance-verifier.md](../../../agents/compliance-verifier.md) — two-AI review pattern reference
+- [packages/core/principles/10-research-patch-annotation.test.ts](../../../packages/core/principles/10-research-patch-annotation.test.ts) — existing principle 10 (slot collision evidence)

@@ -2,7 +2,7 @@
 # aif-operator-asset-access — R-phase research patch
 
 > **Authoritative for:** R-phase gap verification + candidate scoring A-E + DN-1/2/3 decision points for bridging operator `~/.claude/` assets into the aif-handoff container; recommended composition.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 > **Date:** 2026-06-03
 
 ---
