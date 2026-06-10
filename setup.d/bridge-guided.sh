@@ -29,7 +29,18 @@ bridge_guided_run() {
   esac
   # our-side writes are delegated to the existing, tested script:
   if [ "$state" = "up" ]; then
-    bash packages/runtime-bridge/scripts/setup-runtime-bridge.sh
+    # Lib is sourced (from ./setup and from tests) → $0 is the caller, not this
+    # file. Resolve the framework/consumer root via BASH_SOURCE: this lib lives
+    # in setup.d/, so its parent dir is the root. Keeps the call cwd-independent.
+    local root; root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    if [ -f "$root/packages/runtime-bridge/scripts/setup-runtime-bridge.sh" ]; then
+      bash "$root/packages/runtime-bridge/scripts/setup-runtime-bridge.sh"
+    else
+      # Consumer install: the script ships with the framework repo, not with
+      # install.sh payload. Graceful pointer, not a failure (dual-impl §3).
+      printf '  setup-runtime-bridge.sh not present in this checkout (consumer install) — see docs/runtime-bridge-setup.md for manual setup.\n'
+      return 0
+    fi
   fi
 }
 
