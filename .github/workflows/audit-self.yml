@@ -236,6 +236,16 @@ jobs:
         run: bash tests/hooks/prepush-fallback-base-ref.test.sh
       - name: Run runtime-bridge dispatch opt-IN gate paired-negative (one-click-installer kickoff §7)
         run: bash tests/hooks/runtime-bridge-dispatch-optin.test.sh
+      - name: Run install-sh no-companion-blocks test (one-click-installer S1)
+        run: bash tests/install-sh/no-companion-blocks.test.sh
+      - name: Run install-sh manifest-parse test (one-click-installer S2)
+        run: bash tests/install-sh/manifest-parse.test.sh
+      - name: Run install-sh engine test (one-click-installer S2)
+        run: bash tests/install-sh/engine.test.sh
+      - name: Run install-sh bridge-guided test (one-click-installer S2)
+        run: bash tests/install-sh/bridge-guided.test.sh
+      - name: Run install-sh setup-orchestrator test (one-click-installer S3)
+        run: bash tests/install-sh/setup-orchestrator.test.sh
       - name: Run ci-success aggregate-gate paired-negative
         run: bash scripts/ci-success-gate.test.sh
       - name: Run install.sh internal-refs transform test (Item 12 mirror-sync, SSOT)
