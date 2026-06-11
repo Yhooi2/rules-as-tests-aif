@@ -26,10 +26,12 @@
 import { Linter } from 'eslint';
 import * as tseslintParser from '@typescript-eslint/parser';
 import corePlugin from '../../eslint-rules/index.ts';
-// Relative import (not the @rules-as-tests/... package name): the workspace
-// symlink only exists after a root-level install, but CI jobs run
-// `npm ci --prefix packages/core` — the sibling package is reachable on disk.
-import presetPlugin from '../../../preset-next-15-canonical/eslint-rules/index.ts';
+// Package-name import — same style as the validator precedents
+// (gate-rule-tester.ts / gate-conflict.ts / gate-tautology.ts). This module is
+// lazily imported by pre-push.ts (guardLivenessSection), so the workspace
+// symlink + the preset's own deps (@typescript-eslint/utils) are only required
+// when the gate actually runs — i.e. after a root-level install.
+import presetPlugin from '@rules-as-tests/preset-next-15-canonical/eslint-rules';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,7 +58,9 @@ function getPluginKey(ruleName: string): string | null {
   if (!ruleName.includes('/')) return null; // built-in (e.g. no-throw-literal)
   if (ruleName.startsWith('@')) {
     const parts = ruleName.split('/');
-    return `${parts[0]}/${parts[1]}`; // e.g. @next/next, @typescript-eslint
+    // 3 parts = scoped plugin with sub-name (@next/next/no-img-element → @next/next);
+    // 2 parts = scope IS the plugin (@typescript-eslint/no-floating-promises → @typescript-eslint).
+    return parts.length >= 3 ? `${parts[0]}/${parts[1]}` : parts[0];
   }
   return ruleName.split('/')[0]; // e.g. rules-as-tests, jsx-a11y
 }

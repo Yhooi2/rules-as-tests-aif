@@ -29,7 +29,11 @@ import { fileURLToPath } from 'node:url';
 import { runCheck, type CheckResult } from './utils/run-check.ts';
 import { runPriorArtCheck, loadSsotIds } from './checks/prior-art.ts';
 import { runS17Check } from './checks/s17.ts';
-import { runGuardLivenessGate } from './checks/guard-liveness.ts';
+// NOTE: checks/guard-liveness.ts is intentionally NOT imported statically — see
+// guardLivenessSection. Its import chain (eslint → @typescript-eslint/parser →
+// core+preset plugins → @typescript-eslint/utils) only resolves after a
+// root-level workspace install, and this orchestrator must stay loadable in
+// ESLint-stack-free topologies (CI principles job installs packages/core only).
 import {
   getCommits,
   getChangedFiles,
@@ -315,12 +319,26 @@ function s17Section(rb: ResolvedBase): void {
  * negative-test.input entry trips the rule and examples.good stays clean.
  * Lives beside §7 (prior-art) and §1.7 (s17) in the base-scoped gate family.
  */
-function guardLivenessSection(rb: ResolvedBase): void {
+async function guardLivenessSection(rb: ResolvedBase): Promise<void> {
   if (rb.base === null) {
     warnSkip('guard-liveness', 'no resolvable base for change-scoped liveness diff');
     return;
   }
-  const report = runGuardLivenessGate(rb.base);
+  // Lazy-load the gate: keeps PREPUSH_ONLY=prior-art / =s17 seams and the CI
+  // principles job (packages/core-only install) free of the ESLint stack. A
+  // resolution failure here is a loud die, never a silent pass — the gate only
+  // loads on the path where it must actually run.
+  let gate: typeof import('./checks/guard-liveness.ts');
+  try {
+    gate = await import('./checks/guard-liveness.ts');
+  } catch (err) {
+    die(
+      '❌ guard-liveness: failed to load the ESLint stack — the gate requires a\n' +
+        '   root-level workspace install (run `npm install` at the repo root).\n' +
+        `   ${(err as Error).message}`,
+    );
+  }
+  const report = gate.runGuardLivenessGate(rb.base);
 
   for (const s of report.skipped) {
     process.stdout.write(`ℹ guard-liveness: SKIP ${s}\n`);
@@ -351,7 +369,7 @@ function guardLivenessSection(rb: ResolvedBase): void {
   process.exit(1);
 }
 
-function main(): void {
+async function main(): Promise<void> {
   // Resolve the diff base ONCE, up front — this consumes git's pre-push stdin
   // (which must be read before any other use). All base-scoped sections (6, 7,
   // §1.7, 8) thread the same ResolvedBase.
@@ -369,7 +387,7 @@ function main(): void {
     process.exit(0);
   }
   if (process.env['PREPUSH_ONLY'] === 'guard-liveness') {
-    guardLivenessSection(rb);
+    await guardLivenessSection(rb);
     process.exit(0);
   }
 
@@ -467,7 +485,7 @@ function main(): void {
   // ── guard-liveness. Change-scoped ESLint liveness gate (Wave guard-liveness v1) ─
   // For each ESLint manifest rule changed in this push, proves negative-test.input
   // trips the rule and examples.good stays clean. Skips when no base is resolvable.
-  guardLivenessSection(rb);
+  await guardLivenessSection(rb);
 
   // ── 8. lychee offline link check on changed *.md ─────────────────────────────
   if (rb.base !== null) {
@@ -491,9 +509,7 @@ function main(): void {
   process.exit(0);
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   process.stderr.write(`❌ pre-push hook crashed: ${(err as Error).message}\n`);
   process.exit(1);
-}
+});
