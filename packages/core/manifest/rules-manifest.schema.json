@@ -77,6 +77,51 @@
               "description": "Optional ESLint rule config value, replacing bare 'error' for option-bearing rules (e.g. no-restricted-imports)."
             }
           }
+        },
+        "fixture": {
+          "type": "object",
+          "description": "Liveness data for command/script rules: a violating filesystem/env state the rule's check.command/check.script must exit-non-zero on. Presence is optional; v1.5 flips to required for command/script rules after migration.",
+          "required": ["setup-script"],
+          "additionalProperties": false,
+          "properties": {
+            "setup-script": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Shell commands that create the violating state. Must not be a trivial force-fail (e.g. `exit 1`)."
+            },
+            "cleanup-script": {
+              "type": "string",
+              "description": "Shell commands that restore the environment after the liveness probe."
+            },
+            "cwd": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Working directory for the setup and cleanup scripts."
+            }
+          }
+        },
+        "pressure-scenario": {
+          "type": "object",
+          "description": "RED→GREEN forcing-function data for the manual rule prober (v3). Presence is optional; v3 flips to required for manual rules after migration.",
+          "required": ["baseline-prompt", "observable-failure", "observable-compliance"],
+          "additionalProperties": false,
+          "properties": {
+            "baseline-prompt": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The AI prompt that, WITHOUT the rule enforced, produces the failing behaviour."
+            },
+            "observable-failure": {
+              "type": "string",
+              "minLength": 1,
+              "description": "What the AI produces when the rule is NOT enforced (RED state)."
+            },
+            "observable-compliance": {
+              "type": "string",
+              "minLength": 1,
+              "description": "What the AI produces when the rule IS enforced (GREEN state). Must differ from observable-failure."
+            }
+          }
         }
       }
     }

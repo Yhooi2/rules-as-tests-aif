@@ -450,3 +450,166 @@ describe('Principle 2 — Liveness corpus (manifest ESLint rules)', () => {
     expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
   });
 });
+
+// Liveness field shapes — mirrors types.ts Fixture and PressureScenario (line 2-4 contract)
+interface Fixture {
+  'setup-script': string;
+  'cleanup-script'?: string;
+  cwd?: string;
+}
+
+interface PressureScenario {
+  'baseline-prompt': string;
+  'observable-failure': string;
+  'observable-compliance': string;
+}
+
+
+// ── Stage 2a prelude — liveness field well-formedness (fixture + pressure-scenario) ──────────
+
+/**
+ * Trivial force-fail patterns that produce exit-non-zero without exercising
+ * the rule's own check surface (MAJOR-2 anti-tautology axis for cmd/script).
+ * Comparand: does the setup-script represent the violation? NOT: is it ≠ examples.good
+ * (code-string vs FS-state comparison is a no-op).
+ */
+const TRIVIAL_SETUP_RE = /^(false|exit\s+\d+)\s*$/;
+
+/**
+ * Asserts fixture is well-formed IF present (presence-optional — v1.5 flips to required).
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ trivial force-fail setup-script → throws "trivial force-fail"
+ *   ❌ empty setup-script → throws "too short"
+ *   ❌ empty cwd (when present) → throws "cwd.*empty"
+ *   ✅ non-trivial setup-script → no throw
+ *
+ * Paired-negative contract:
+ *   ❌ fixture.setup-script = "exit 1" → assertFixtureLiveness throws (trivial force-fail)
+ *   ✅ fixture.setup-script = "touch /tmp/missing-lock-file" → no throw
+ */
+function assertFixtureLiveness(id: string, fixture: Fixture): void {
+  if (!fixture['setup-script'] || fixture['setup-script'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: fixture.setup-script is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars). ` +
+        'A meaningful setup script is required to represent the violating state.',
+    );
+  }
+  if (TRIVIAL_SETUP_RE.test(fixture['setup-script'].trim())) {
+    throw new Error(
+      `Rule ${id}: fixture.setup-script is a trivial force-fail ("${fixture['setup-script'].trim()}"). ` +
+        "The setup script must represent the rule's actual violation scenario, not just force exit-1.",
+    );
+  }
+  if (fixture.cwd !== undefined && fixture.cwd.trim().length === 0) {
+    throw new Error(
+      `Rule ${id}: fixture.cwd is present but empty. Either omit it or provide a non-empty path.`,
+    );
+  }
+}
+
+/**
+ * Asserts pressure-scenario is well-formed IF present (presence-optional — v3 flips to required).
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ identical observable-failure and observable-compliance → throws "tautology"
+ *   ❌ empty observable-failure → throws "too short"
+ *   ✅ distinct non-empty fields → no throw
+ *
+ * Paired-negative contract:
+ *   ❌ observable-failure === observable-compliance → assertPressureScenarioLiveness throws (tautology)
+ *   ✅ distinct, non-empty observable fields → no throw
+ */
+function assertPressureScenarioLiveness(id: string, ps: PressureScenario): void {
+  if (!ps['baseline-prompt'] || ps['baseline-prompt'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.baseline-prompt is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars).`,
+    );
+  }
+  if (!ps['observable-failure'] || ps['observable-failure'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.observable-failure is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars).`,
+    );
+  }
+  if (!ps['observable-compliance'] || ps['observable-compliance'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.observable-compliance is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars).`,
+    );
+  }
+  if (ps['observable-failure'].trim() === ps['observable-compliance'].trim()) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.observable-failure and observable-compliance are identical — tautology. ` +
+        'They must document distinct observable behaviors (RED vs GREEN state).',
+    );
+  }
+}
+
+describe('Principle 2 — Liveness fixture well-formedness (command/script rules) [M4]', () => {
+  it('all manifest command/script rules with fixture have well-formed setup-script [M4]', () => {
+    const manifest = loadManifest();
+    const violations: string[] = [];
+    for (const [id, rule] of Object.entries(manifest)) {
+      const checkType = (rule.check as { type: string }).type;
+      if (checkType !== 'command' && checkType !== 'script') continue;
+      const fixtureField = rule['fixture'] as Fixture | undefined;
+      if (!fixtureField) continue; // presence-optional: no fixture = skip (v1.5 flips to required)
+      try {
+        assertFixtureLiveness(id, fixtureField);
+      } catch (err) {
+        violations.push((err as Error).message);
+      }
+    }
+    expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+
+  it('mutation: fixture with trivial force-fail setup-script causes assertion to fail [M4]', () => {
+    const trivialFixture: Fixture = { 'setup-script': 'exit 1' };
+    expect(() => assertFixtureLiveness('R-test', trivialFixture)).toThrow(/trivial force-fail/);
+  });
+
+  it('mutation: fixture with empty setup-script causes assertion to fail [M4]', () => {
+    const emptyFixture: Fixture = { 'setup-script': '   ' };
+    expect(() => assertFixtureLiveness('R-test', emptyFixture)).toThrow(/too short/);
+  });
+
+  it('mutation: fixture with empty cwd causes assertion to fail [M4]', () => {
+    const emptyCwdFixture: Fixture = { 'setup-script': 'touch /tmp/test-violation-file', cwd: '' };
+    expect(() => assertFixtureLiveness('R-test', emptyCwdFixture)).toThrow(/cwd.*empty/);
+  });
+});
+
+describe('Principle 2 — Liveness pressure-scenario well-formedness (manual rules) [M4]', () => {
+  it('all manifest manual rules with pressure-scenario have well-formed scenario fields [M4]', () => {
+    const manifest = loadManifest();
+    const violations: string[] = [];
+    for (const [id, rule] of Object.entries(manifest)) {
+      if ((rule.check as { type: string }).type !== 'manual') continue;
+      const ps = rule['pressure-scenario'] as PressureScenario | undefined;
+      if (!ps) continue; // presence-optional: no scenario = skip (v3 flips to required)
+      try {
+        assertPressureScenarioLiveness(id, ps);
+      } catch (err) {
+        violations.push((err as Error).message);
+      }
+    }
+    expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+
+  it('mutation: pressure-scenario with identical failure/compliance causes assertion to fail [M4]', () => {
+    const tautologicalPs: PressureScenario = {
+      'baseline-prompt': 'Refactor this function and add test coverage',
+      'observable-failure': 'Code is committed without any tests',
+      'observable-compliance': 'Code is committed without any tests',
+    };
+    expect(() => assertPressureScenarioLiveness('R-test', tautologicalPs)).toThrow(/tautology/);
+  });
+
+  it('mutation: pressure-scenario with empty observable-failure causes assertion to fail [M4]', () => {
+    const emptyFailurePs: PressureScenario = {
+      'baseline-prompt': 'Refactor this function and add test coverage',
+      'observable-failure': '   ',
+      'observable-compliance': 'Tests are added before commit and CI passes',
+    };
+    expect(() => assertPressureScenarioLiveness('R-test', emptyFailurePs)).toThrow(/too short/);
+  });
+});
