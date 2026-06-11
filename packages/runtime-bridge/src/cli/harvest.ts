@@ -11,10 +11,14 @@
  * API, push that already-made commit out of aif's container to origin, open a PR
  * against the trunk, and arm GitHub native auto-merge (which merges it on green CI).
  *
- * Rework exception: aif only commits on its approve_done && commitOnApprove path;
- * the request_changes→implementing→done rework path leaves the work uncommitted
- * (dirty tree, branch == base HEAD). Harvest detects the dirty tree and commits it
- * deterministically (git add -A + a templated message, ZERO LLM) before pushing.
+ * Rework exception (disambiguated): aif only commits on its approve_done &&
+ * commitOnApprove path; the request_changes→implementing→done rework path leaves the
+ * work uncommitted (dirty tree, branch == base HEAD). Harvest commits a dirty tree
+ * deterministically (git add -A + a templated message, ZERO LLM) ONLY when the branch
+ * is 0 commits ahead of base (the true-rework signature). When the branch already
+ * carries commits, a dirty tree is stale base-state residue — harvest pushes the
+ * existing commit(s) and leaves the tree behind (warns), never `add -A`'ing
+ * out-of-scope files into the PR (the #370/#457 regression class).
  *
  * ZERO LLM by construction — plain git + gh. (aif's own commit flow spends a paid
  * `claude -p` query to run git; harvest does not.) Complies with no-paid-llm-in-ci.md.
@@ -74,6 +78,24 @@ function dockerGit(container: string, args: string[]): string {
   }).trim();
 }
 
+/**
+ * First resolvable base ref inside the container. The container is a full clone
+ * with `origin`, so prefer the durable remote ref `origin/<base>`; fall back to a
+ * local `<base>` ref. Throws (→ graceful degradation prints the fallback) if the
+ * base cannot be resolved — only ever reached on a DIRTY tree, never the clean path.
+ */
+function resolveBaseRef(container: string, base: string): string {
+  for (const ref of [`origin/${base}`, base]) {
+    try {
+      dockerGit(container, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]);
+      return ref;
+    } catch {
+      // ref not present in the container — try the next candidate
+    }
+  }
+  throw new Error(`harvest: base ref '${base}' not found in container (tried origin/${base}, ${base})`);
+}
+
 /** Wire the real git/gh/docker side-effects. Each throws on non-zero exit. */
 function realDeps(container: string): HarvestDeps {
   return {
@@ -81,6 +103,15 @@ function realDeps(container: string): HarvestDeps {
       // The container's checkout is the one aif left dirty on the rework path.
       // `git status --porcelain` is empty iff the tree is clean.
       return dockerGit(container, ['status', '--porcelain']).length > 0;
+    },
+    commitsAhead: async (_branch, base) => {
+      // How many commits HEAD carries ahead of base (git rev-list --count base..HEAD).
+      // 0 ⇒ true-rework leg (branch == base HEAD) → harvest commits the dirty tree;
+      // ≥1 ⇒ aif already committed the deliverable → harvest must NOT add -A the dirty
+      // tree (stale base-state residue). Only called when the tree is dirty.
+      const baseRef = resolveBaseRef(container, base);
+      const n = dockerGit(container, ['rev-list', '--count', `${baseRef}..HEAD`]);
+      return Number.parseInt(n, 10) || 0;
     },
     commitAll: async (branch, message) => {
       // Safety: only commit when the checkout is actually on the task's branch —
@@ -139,6 +170,17 @@ async function main(): Promise<void> {
       { baseBranch: args.base, body, autoMerge: args.autoMerge },
       realDeps(args.container),
     );
+    if (res.dirtyTreeLeftBehind) {
+      // Surfaced, not silent: the branch already carried commits, so harvest pushed
+      // those and deliberately left the dirty tree behind (it is stale base-state
+      // residue, NOT add -A'd into the PR — the #370/#457 regression class). If those
+      // changes were intended, commit them inside the container and re-run.
+      process.stderr.write(
+        `[harvest] WARNING: branch '${res.branch}' had a DIRTY working tree but already carries commits ` +
+          `ahead of '${args.base}' — pushed the existing commit(s) and LEFT the dirty tree uncommitted ` +
+          `(stale base-state residue not swept into the PR).\n`,
+      );
+    }
     process.stdout.write(
       JSON.stringify({
         ok: true,
@@ -146,6 +188,7 @@ async function main(): Promise<void> {
         branch: res.branch,
         autoMerge: res.autoMerge,
         committed: res.committed,
+        dirtyTreeLeftBehind: res.dirtyTreeLeftBehind,
       }) + '\n',
     );
     process.exit(0);
