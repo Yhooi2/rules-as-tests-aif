@@ -17,6 +17,18 @@ export interface NegativeTest {
   'expect-violation': string;
 }
 
+export interface Fixture {
+  'setup-script': string;
+  'cleanup-script'?: string;
+  cwd?: string;
+}
+
+export interface PressureScenario {
+  'baseline-prompt': string;
+  'observable-failure': string;
+  'observable-compliance': string;
+}
+
 export interface SynthesizedRule {
   id: string;
   title: string;
@@ -25,6 +37,8 @@ export interface SynthesizedRule {
   check: ManifestCheck;
   examples: { bad: string; good: string };
   'negative-test'?: NegativeTest;
+  fixture?: Fixture;
+  'pressure-scenario'?: PressureScenario;
   research: { entryId: string; provenance: Provenance[] };
 }
 
