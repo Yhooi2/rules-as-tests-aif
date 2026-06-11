@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { runCheck, type CheckResult } from './utils/run-check.ts';
 import { runPriorArtCheck, loadSsotIds } from './checks/prior-art.ts';
 import { runS17Check } from './checks/s17.ts';
+import { runGuardLivenessGate } from './checks/guard-liveness.ts';
 import {
   getCommits,
   getChangedFiles,
@@ -308,6 +309,48 @@ function s17Section(rb: ResolvedBase): void {
   }
 }
 
+/**
+ * Guard-liveness section: change-scoped ESLint roundtrip gate.
+ * For each ESLint manifest rule changed in this push, proves that every
+ * negative-test.input entry trips the rule and examples.good stays clean.
+ * Lives beside §7 (prior-art) and §1.7 (s17) in the base-scoped gate family.
+ */
+function guardLivenessSection(rb: ResolvedBase): void {
+  if (rb.base === null) {
+    warnSkip('guard-liveness', 'no resolvable base for change-scoped liveness diff');
+    return;
+  }
+  const report = runGuardLivenessGate(rb.base);
+
+  for (const s of report.skipped) {
+    process.stdout.write(`ℹ guard-liveness: SKIP ${s}\n`);
+  }
+  for (const id of report.noData) {
+    process.stdout.write(`⚠ guard-liveness: ${id} has no negative-test data — add negative-test.input to enable liveness check\n`);
+  }
+
+  if (report.failures.length === 0) {
+    if (report.passed.length > 0) {
+      process.stdout.write(`✅ guard-liveness: ${report.passed.length} ESLint rule(s) passed liveness check\n`);
+    }
+    return;
+  }
+
+  process.stdout.write('\n❌ Guard-liveness: ESLint rule negative-test failures on changed rules:\n');
+  for (const f of report.failures) {
+    process.stdout.write(`  ${f.ruleId}:\n`);
+    for (const msg of f.failures) {
+      process.stdout.write(`    - ${msg}\n`);
+    }
+  }
+  process.stdout.write(
+    '\nFix: ensure each negative-test.input entry actually triggers the ESLint rule,\n' +
+      'and that examples.good produces no violation.\n' +
+      'See packages/core/manifest/rules-manifest.json — the negative-test block.\n\n',
+  );
+  process.exit(1);
+}
+
 function main(): void {
   // Resolve the diff base ONCE, up front — this consumes git's pre-push stdin
   // (which must be read before any other use). All base-scoped sections (6, 7,
@@ -323,6 +366,10 @@ function main(): void {
   }
   if (process.env['PREPUSH_ONLY'] === 's17') {
     s17Section(rb);
+    process.exit(0);
+  }
+  if (process.env['PREPUSH_ONLY'] === 'guard-liveness') {
+    guardLivenessSection(rb);
     process.exit(0);
   }
 
@@ -416,6 +463,11 @@ function main(): void {
   // Ported from s17_* in the (now deleted) legacy-trailer-checks.sh. Both arms
   // enforce (blocking) by default since 2026-05-21; S17_WARN_ONLY=true downgrades.
   s17Section(rb);
+
+  // ── guard-liveness. Change-scoped ESLint liveness gate (Wave guard-liveness v1) ─
+  // For each ESLint manifest rule changed in this push, proves negative-test.input
+  // trips the rule and examples.good stays clean. Skips when no base is resolvable.
+  guardLivenessSection(rb);
 
   // ── 8. lychee offline link check on changed *.md ─────────────────────────────
   if (rb.base !== null) {
