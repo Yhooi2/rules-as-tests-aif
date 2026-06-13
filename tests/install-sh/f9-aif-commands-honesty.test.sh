@@ -8,17 +8,18 @@
 # + CI. This probe asserts the reframe: `/aif-verify` survives only as an "if you use
 # AI-Factory" enhancement, never as the named/required gate.
 #
-# SCOPE (intentional, per kickoff-s2 §2): F9 reframes ONLY AGENTS.md.template +
-# checks-map.md. Other shipped docs (CLAUDE.md.template, DESCRIPTION.template.md,
-# overview.md, SKILL.md, …) also mention `/aif-*` — those are a TRACKED FOLLOW-UP the
-# orchestrator surfaces separately. A green probe here is therefore NOT "no doc anywhere
-# lies"; it is "the 2 docs in scope no longer present /aif-* as the shipped gate" (T14).
+# SCOPE (F9 + F9b): §2/§3 below gate AGENTS.md + checks-map.md specifically (F9, PR #480);
+# §4 SWEEPS every shipped markdown doc (F9b) — no shipped doc may present /aif-verify as the
+# UNCONDITIONAL required gate. The sweep's lie-patterns catch the "REQUIRED before commit" /
+# "Don't bypass /aif-verify" / "/aif-verify before commit" framing (CLAUDE.md, DESCRIPTION,
+# ai-traps) WITHOUT matching the benign descriptive "AI Factory /aif-verify pre-PR gate"
+# mentions (SKILL.md, overview, self-testing-docs, doc-organization) — verified zero-hit on
+# those 4. With §4 the green probe now DOES mean "no shipped doc presents /aif-verify as the
+# required gate" — the F9 2-doc-scope caveat is closed.
 #
 # Of the 7 checks-map `/aif-verify` refs, only the 3 PRIMARY level-4 STAGE LABELS are
-# MECHANICALLY asserted here (ASCII diagram PRE-PR column + table rows 44 / 106). The
-# soft-conditional "AIF /aif-verify" refs (mature-pipeline + cheat-sheet rows) and the
-# sub-agent prose are reframed by hand per the dispatch but not mechanically gated —
-# a green probe must not be read as "every /aif ref is honest" (T14).
+# MECHANICALLY asserted by §3 (ASCII diagram PRE-PR column + table rows 44 / 106); the
+# soft-conditional "AIF /aif-verify" refs and sub-agent prose are reframed by hand.
 #
 # PAIRED-NEGATIVE (umbrella discipline): each pos arm has a neg arm that re-introduces
 # the exact dishonest phrasing into the rendered doc and re-runs the SAME grep — it MUST
@@ -102,5 +103,31 @@ out=$(grep -nE 'Pre-PR\*\* \([^)]*aif-verify' "$C")
   && ok "checks-map neg: re-injected '**Pre-PR** (\`/aif-verify\`)' → pos-A1 grep bites (non-vacuous)" \
   || bad "checks-map neg: re-injected dishonest stage label but pos-A1 stayed empty → VACUOUS check"
 mv "$C.bak" "$C"
+
+# ── 4. all-shipped-docs honesty sweep (F9b) ──
+# Broadens beyond §2/§3: EVERY shipped *.md must not present /aif-verify as the unconditional
+# required gate. Portable (no mapfile — macOS bash 3.2): find + while-read accumulate hits.
+LIE='(REQUIRED|required) before commit|(Don.t bypass|Skipping)[^|]*/aif-verify|/aif-verify`?[^|]{0,6}before commit'
+sweep_hits() { # echoes lie-pattern hits across all shipped .md docs (empty = honest)
+  while IFS= read -r d; do grep -HnE "$LIE" "$d" 2>/dev/null || true; done \
+    < <(find "$T" -name '*.md' -not -path '*/node_modules/*')
+}
+ndocs=$(find "$T" -name '*.md' -not -path '*/node_modules/*' 2>/dev/null | grep -c . || true)
+
+# pos: no shipped doc carries the unconditional-required /aif-verify lie
+out=$(sweep_hits)
+[ -z "$out" ] \
+  && ok "sweep: no shipped doc presents /aif-verify as the unconditional required gate ($ndocs docs)" \
+  || bad "sweep: a shipped doc still lies about /aif-verify:"$'\n'"$out"
+
+# neg (LOAD-BEARING): inject the lie into one shipped doc → sweep MUST bite
+INJ="$T/CLAUDE.md"; [ -f "$INJ" ] || INJ="$A"
+cp "$INJ" "$INJ.bak"
+printf '\n- `/aif-verify` REQUIRED before commit.\n' >> "$INJ"
+out=$(sweep_hits)
+[ -n "$out" ] \
+  && ok "sweep neg: injected '/aif-verify REQUIRED before commit' → sweep bites (non-vacuous)" \
+  || bad "sweep neg: injected lie but sweep stayed empty → VACUOUS check"
+mv "$INJ.bak" "$INJ"
 
 echo ""; echo "PASS=$PASS FAIL=$FAIL"; [ "$FAIL" -eq 0 ]
