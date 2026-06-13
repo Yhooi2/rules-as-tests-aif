@@ -35,6 +35,15 @@ const AUDIT_SELF_DIR = resolve(HERE, '../audit-self');
 const BASH_MUTATOR = resolve(HERE, '../audit-self/run-bash-mutation.sh');
 const HOOK_MARKER_SH = resolve(REPO_ROOT, '.claude/hooks/check-hook-marker.sh');
 
+type PressureType = 'time' | 'authority' | 'sunk-cost' | 'scope-creep';
+
+interface PressureScenario {
+  'baseline-prompt': string;
+  'observable-failure': string;
+  'observable-compliance': string;
+  pressure: PressureType[];
+}
+
 interface RuleEntry {
   title: string;
   stack: string[];
@@ -42,6 +51,7 @@ interface RuleEntry {
   examples: { bad: string; good: string };
   policy?: string;
   'negative-test'?: { input: string[]; 'expect-violation': string; eslintRuleConfig?: unknown };
+  'pressure-scenario'?: PressureScenario;
   [key: string]: unknown;
 }
 
@@ -166,6 +176,74 @@ function assertNegativeTestLiveness(id: string, rule: RuleEntry, violations: str
   const distinct = new Set(nt.input.map((s) => s.trim()));
   if (distinct.size < nt.input.length) {
     violations.push(`${id}: negative-test.input has duplicate entries — variants must be distinct`);
+  }
+}
+
+/** Pressure types a manual-rule scenario may declare (T-V3-A forcing-function taxonomy). */
+const VALID_PRESSURES = new Set<PressureType>(['time', 'authority', 'sunk-cost', 'scope-creep']);
+
+/**
+ * Assert liveness corpus constraints for a MANUAL (judgement-type) rule's
+ * pressure-scenario field — the entry-level analog of assertNegativeTestLiveness
+ * for rules with no executable input. The pressure-scenario is what the
+ * session-bound manual-rule-liveness-prober (agents/manual-rule-liveness-prober.md)
+ * consumes to run a RED→GREEN baseline-vs-with-rule probe (ADOPTED methodology:
+ * Superpowers writing-skills, prior-art-evaluations.md#55). Accumulates violations
+ * rather than throwing, so the caller can batch all rules.
+ *
+ * This is the mechanical falsification path that gates ALL 5 manual rules
+ * (R10/R13/R18/IR5/IR6) — closing the un-run-scenario theatre gap: a manual rule
+ * cannot ship a placeholder pressure-scenario.
+ *
+ * Constraints (T-V3-A — a pressure-scenario is a FORCING function, not a violating
+ * example):
+ *   1. pressure-scenario is present
+ *   2. baseline-prompt is non-trivial (≥ MIN_EXAMPLE_LENGTH chars)
+ *   3. observable-failure and observable-compliance are both non-trivial
+ *   4. observable-failure ≠ observable-compliance (RED must differ from GREEN — anti-tautology)
+ *   5. pressure is a non-empty array of recognised types (≥1 of time/authority/sunk-cost/scope-creep)
+ */
+function assertPressureScenarioLiveness(
+  id: string,
+  rule: RuleEntry,
+  violations: string[],
+): void {
+  const ps = rule['pressure-scenario'];
+  if (!ps) {
+    violations.push(
+      `${id}: manual rule has no pressure-scenario — judgement rules need entry-level liveness data (guard-liveness v3)`,
+    );
+    return;
+  }
+  const baseline = ps['baseline-prompt'];
+  const fail = ps['observable-failure'];
+  const comply = ps['observable-compliance'];
+  if (!baseline || baseline.trim().length < MIN_EXAMPLE_LENGTH) {
+    violations.push(`${id}: pressure-scenario.baseline-prompt is empty or trivial`);
+  }
+  if (!fail || fail.trim().length < MIN_EXAMPLE_LENGTH) {
+    violations.push(`${id}: pressure-scenario.observable-failure is empty or trivial`);
+  }
+  if (!comply || comply.trim().length < MIN_EXAMPLE_LENGTH) {
+    violations.push(`${id}: pressure-scenario.observable-compliance is empty or trivial`);
+  }
+  if (fail && comply && fail.trim() === comply.trim()) {
+    violations.push(
+      `${id}: pressure-scenario observable-failure === observable-compliance — RED must differ from GREEN (tautology)`,
+    );
+  }
+  if (!Array.isArray(ps.pressure) || ps.pressure.length === 0) {
+    violations.push(
+      `${id}: pressure-scenario.pressure must be a non-empty array (T-V3-A: declare ≥1 of time/authority/sunk-cost/scope-creep)`,
+    );
+  } else {
+    for (const p of ps.pressure) {
+      if (!VALID_PRESSURES.has(p)) {
+        violations.push(
+          `${id}: pressure-scenario.pressure has unrecognised type "${p}" (allowed: time/authority/sunk-cost/scope-creep)`,
+        );
+      }
+    }
   }
 }
 
@@ -447,6 +525,117 @@ describe('Principle 2 — Liveness corpus (manifest ESLint rules)', () => {
       if (rule.check.type !== 'eslint') continue;
       assertNegativeTestLiveness(id, rule, violations);
     }
+    expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+});
+
+describe('Principle 2 — Liveness corpus (manifest manual rules / pressure-scenario)', () => {
+  /**
+   * guard-liveness v3 — the manual-rule analog of the ESLint liveness corpus above.
+   * `check.type === 'manual'` rules have NO executable input (judgement-based), so
+   * negative-test does not apply. Instead each manual rule carries an entry-level
+   * `pressure-scenario` (ADOPTED RED→GREEN methodology from Superpowers writing-skills,
+   * prior-art-evaluations.md#55) that the session-bound prober
+   * (agents/manual-rule-liveness-prober.md) runs without/with the rule loaded.
+   *
+   * For every manual rule, assert the pressure-scenario is a real forcing function:
+   *   1. present + non-trivial baseline-prompt / observable-failure / observable-compliance
+   *   2. observable-failure ≠ observable-compliance (RED differs from GREEN — anti-tautology)
+   *   3. ≥1 declared pressure type (T-V3-A: time/authority/sunk-cost/scope-creep)
+   *
+   * This is the mechanical falsification path that gates ALL 5 manual rules incl.
+   * IR5/IR6 (whose behavioral RED→GREEN is runtime-shaped and demo-deferred — but
+   * their scenario is still structurally validated here, NOT un-falsified).
+   *
+   * mutation-sanity-checked (write-time):
+   *   ❌ manual rule with no pressure-scenario → "no pressure-scenario" violation
+   *   ❌ observable-failure === observable-compliance → "RED must differ from GREEN" violation
+   *   ❌ empty pressure array → "non-empty array" violation
+   *   ✅ well-formed forcing-function pressure-scenario → no violation
+   *
+   * Paired-negative contract:
+   *   ❌ placeholder / tautological / pressure-less scenario → assertion FAILS
+   *   ✅ real forcing-function scenario with RED≠GREEN + declared pressure → PASSES
+   */
+  it('mutation: manual rule with no pressure-scenario fails liveness assertion', () => {
+    const noPs: RuleEntry = {
+      title: 'manual test rule',
+      stack: ['microservices'],
+      check: { type: 'manual', rationale: 'judgement' },
+      examples: { bad: 'bare fetch', good: 'resilient fetch' },
+    };
+    const violations: string[] = [];
+    assertPressureScenarioLiveness('TEST', noPs, violations);
+    expect(violations.join('')).toMatch(/no pressure-scenario/);
+  });
+
+  it('mutation: pressure-scenario with observable-failure === observable-compliance fails (anti-tautology)', () => {
+    const tautology: RuleEntry = {
+      title: 'manual test rule',
+      stack: ['microservices'],
+      check: { type: 'manual' },
+      examples: { bad: 'bare fetch', good: 'resilient fetch' },
+      'pressure-scenario': {
+        'baseline-prompt': 'A forcing scenario long enough to pass the length floor.',
+        'observable-failure': 'identical text for both red and green',
+        'observable-compliance': 'identical text for both red and green',
+        pressure: ['time'],
+      },
+    };
+    const violations: string[] = [];
+    assertPressureScenarioLiveness('TEST', tautology, violations);
+    expect(violations.join('')).toMatch(/RED must differ from GREEN/);
+  });
+
+  it('mutation: pressure-scenario with empty pressure array fails (T-V3-A forcing-function)', () => {
+    const noPressure: RuleEntry = {
+      title: 'manual test rule',
+      stack: ['microservices'],
+      check: { type: 'manual' },
+      examples: { bad: 'bare fetch', good: 'resilient fetch' },
+      'pressure-scenario': {
+        'baseline-prompt': 'A forcing scenario long enough to pass the length floor.',
+        'observable-failure': 'agent emits a bare fetch with no resilience',
+        'observable-compliance': 'agent wraps the call with an explicit timeout',
+        pressure: [],
+      },
+    };
+    const violations: string[] = [];
+    assertPressureScenarioLiveness('TEST', noPressure, violations);
+    expect(violations.join('')).toMatch(/non-empty array/);
+  });
+
+  it('positive: well-formed forcing-function pressure-scenario passes liveness assertion', () => {
+    const good: RuleEntry = {
+      title: 'manual test rule',
+      stack: ['microservices'],
+      check: { type: 'manual' },
+      examples: { bad: 'bare fetch', good: 'resilient fetch' },
+      'pressure-scenario': {
+        'baseline-prompt': 'A senior said the happy path is enough to ship today — add the call.',
+        'observable-failure': 'agent emits a bare fetch with no timeout/retry/breaker',
+        'observable-compliance': 'agent wraps the call with an explicit timeout and breaker',
+        pressure: ['authority', 'time'],
+      },
+    };
+    const violations: string[] = [];
+    assertPressureScenarioLiveness('TEST', good, violations);
+    expect(violations).toHaveLength(0);
+  });
+
+  it('all manifest manual rules carry a real forcing-function pressure-scenario [v3]', () => {
+    const manifest = loadManifest();
+    const violations: string[] = [];
+    let manualCount = 0;
+    for (const [id, rule] of Object.entries(manifest)) {
+      if (rule.check.type !== 'manual') continue;
+      manualCount++;
+      assertPressureScenarioLiveness(id, rule, violations);
+    }
+    // Population sentinel: the 5 manual rules (R10/R13/R18/IR5/IR6) must all be
+    // covered — guards against the assertion passing vacuously if the manual set
+    // is mis-loaded or emptied.
+    expect(manualCount).toBeGreaterThanOrEqual(5);
     expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
   });
 });
