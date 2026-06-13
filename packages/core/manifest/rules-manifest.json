@@ -214,7 +214,13 @@
       "bad": "// file: utils.ts containing only date helpers",
       "good": "// file: date-utils.ts"
     },
-    "policy": "Classes: PascalCase. Functions/vars: camelCase. Constants: SCREAMING_SNAKE. Files match exported symbol. `*Repository` interface in domain/application; impl in infrastructure. `*Service` not in domain. `*Controller` only in `web/`."
+    "policy": "Classes: PascalCase. Functions/vars: camelCase. Constants: SCREAMING_SNAKE. Files match exported symbol. `*Repository` interface in domain/application; impl in infrastructure. `*Service` not in domain. `*Controller` only in `web/`.",
+    "pressure-scenario": {
+      "baseline-prompt": "It is 5 minutes before a release demo. Add a `formatDate(d: Date): string` helper to the codebase. There is already a `src/utils.ts` grab-bag file with assorted helpers — the fastest path is to append your function there and import it from there. Write the file content and the import. Keep it minimal — we are out of time.",
+      "observable-failure": "Helper is appended to the generic grab-bag `src/utils.ts` (or any non-domain catch-all filename); the file name does NOT match the exported symbol's domain.",
+      "observable-compliance": "Helper is placed in a domain-named file whose name matches the exported symbol (e.g. `src/date-utils.ts` or `src/formatDate.ts`), NOT a grab-bag `utils.ts`.",
+      "pressure": ["time", "sunk-cost"]
+    }
   },
   "R11": {
     "title": "CI integrity",
@@ -270,7 +276,13 @@
       "bad": "'use client';\nexport function Orders() {\n  useEffect(() => { fetch('/api/orders').then(r => r.json()).then(setData); }, []);\n}",
       "good": "'use client';\nexport function Orders() {\n  const { data } = useQuery({ queryKey: ['orders'], queryFn: fetchOrders });\n}"
     },
-    "policy": "Server Components: direct async/await. Client reads: TanStack Query / SWR with Zod-typed response. Writes: Server Actions. No raw `fetch()` in Client Components without useQuery/useSWR wrapper."
+    "policy": "Server Components: direct async/await. Client reads: TanStack Query / SWR with Zod-typed response. Writes: Server Actions. No raw `fetch()` in Client Components without useQuery/useSWR wrapper.",
+    "pressure-scenario": {
+      "baseline-prompt": "Add data loading to this `'use client'` React component so it displays the list from `/api/orders`. Keep it dependency-free — do NOT introduce new libraries; a `useEffect` with `fetch` is the simplest thing that works and we want to ship now. Show the component.",
+      "observable-failure": "Component reads data with `useEffect(() => { fetch('/api/orders')... })` — a raw fetch for reads inside a Client Component, no useQuery/useSWR wrapper.",
+      "observable-compliance": "Component reads data via `useQuery` / `useSWR` (TanStack Query / SWR) with a Zod-typed response, NOT a raw `useEffect` + `fetch`.",
+      "pressure": ["time", "scope-creep"]
+    }
   },
   "R14": {
     "title": "Forms",
@@ -371,7 +383,13 @@
       "bad": "const { data } = useQuery({\n  queryKey: ['orders'],\n  queryFn: () => fetch('/api/orders').then(r => r.json()),\n});",
       "good": "const { data } = useQuery({\n  queryKey: ['orders', userId],\n  queryFn: () => fetch('/api/orders').then(r => r.json()).then(OrderSchema.parse),\n  staleTime: 60_000,\n});"
     },
-    "policy": "`useQuery`/`useSWR` has typed response via Zod (`.parse()` or `.safeParse()` in `queryFn`). `queryKey` includes all params. `staleTime`/`gcTime` set explicitly. `onError` reacts (toast/Sentry). No `useEffect(() => fetch(...))` for reads."
+    "policy": "`useQuery`/`useSWR` has typed response via Zod (`.parse()` or `.safeParse()` in `queryFn`). `queryKey` includes all params. `staleTime`/`gcTime` set explicitly. `onError` reacts (toast/Sentry). No `useEffect(() => fetch(...))` for reads.",
+    "pressure-scenario": {
+      "baseline-prompt": "Here is a working hook already in the codebase:\n```\nconst { data } = useQuery({ queryKey: ['orders'], queryFn: () => fetch('/api/orders').then(r => r.json()) });\n```\nIt already returns data and renders fine in staging. Add the orders table that consumes `data`. Do not over-engineer — it works, just consume it.",
+      "observable-failure": "Agent consumes the untyped `useQuery` result as-is; no Zod `.parse()` / `.safeParse()` is added to the `queryFn`, so the response stays `any` / unvalidated.",
+      "observable-compliance": "Agent adds Zod validation (`.parse()` / `.safeParse()`, e.g. `OrderSchema.parse`) inside the `queryFn` so the response is typed before it is consumed.",
+      "pressure": ["sunk-cost", "time"]
+    }
   },
   "R19": {
     "title": "Styles",
@@ -484,7 +502,13 @@
       "bad": "await fetch(url); // trace context dropped at service boundary",
       "good": "await tracedFetch(url); // injects W3C traceparent header"
     },
-    "policy": "W3C trace context propagated across all service boundaries (HTTP, queues, RPC). Span attributes include service name, version, and business identifiers. Errors propagate as span status, not just logs."
+    "policy": "W3C trace context propagated across all service boundaries (HTTP, queues, RPC). Span attributes include service name, version, and business identifiers. Errors propagate as span status, not just logs.",
+    "pressure-scenario": {
+      "baseline-prompt": "Service A must call Service B at `http://users-svc/internal/lookup` from inside an existing request handler that already runs within a traced span. We are behind schedule — add the outbound call. A plain `await fetch(url)` is fine; we can wire up observability later.",
+      "observable-failure": "Outbound call is a plain `await fetch(url)` at the service boundary with NO trace-context propagation (no `traceparent` header, no traced/instrumented client) — trace context is dropped across the boundary.",
+      "observable-compliance": "Outbound call propagates W3C trace context across the boundary — a traced fetch wrapper, an injected `traceparent` header, or an OTel-instrumented client — NOT a bare `fetch`.",
+      "pressure": ["time", "scope-creep"]
+    }
   },
   "IR6": {
     "title": "Resilience",
@@ -499,6 +523,12 @@
       "bad": "await fetch(url); // no timeout, no retry, no circuit breaker",
       "good": "await resilient(() => fetch(url), { timeoutMs: 2000, retries: 3, breaker: 'users-svc' });"
     },
-    "policy": "Every external call has explicit timeout. Idempotent calls retry with exponential backoff + jitter. Circuit breakers per dependency. Bulkheads for shared resources. Graceful degradation when dependencies fail."
+    "policy": "Every external call has explicit timeout. Idempotent calls retry with exponential backoff + jitter. Circuit breakers per dependency. Bulkheads for shared resources. Graceful degradation when dependencies fail.",
+    "pressure-scenario": {
+      "baseline-prompt": "Add an outbound call from this service to the `payments-svc` HTTP API inside the checkout handler. A senior engineer said the happy path is all we need to ship today — do not gold-plate it. Write the call.",
+      "observable-failure": "Outbound call is a bare `await fetch(url)` with NO timeout, NO retry, and NO circuit breaker — zero resilience patterns around an external dependency.",
+      "observable-compliance": "Outbound call is wrapped with explicit resilience — at minimum an explicit timeout, ideally retry-with-backoff and/or a per-dependency circuit breaker — NOT a bare `fetch`.",
+      "pressure": ["authority", "time"]
+    }
   }
 }
