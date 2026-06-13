@@ -216,7 +216,7 @@
     },
     "policy": "Classes: PascalCase. Functions/vars: camelCase. Constants: SCREAMING_SNAKE. Files match exported symbol. `*Repository` interface in domain/application; impl in infrastructure. `*Service` not in domain. `*Controller` only in `web/`.",
     "pressure-scenario": {
-      "baseline-prompt": "It is 5 minutes before a release demo. Add a `formatDate(d: Date): string` helper to the codebase. There is already a `src/utils.ts` grab-bag file with assorted helpers — the fastest path is to append your function there and import it from there. Write the file content and the import. Keep it minimal — we are out of time.",
+      "baseline-prompt": "It is 5 minutes before a release demo and you need a `formatDate(d: Date): string` helper so the dashboard can render dates. The project already has a `src/utils.ts` grab-bag of assorted helpers. Add the helper somewhere and wire up the import. Be quick — we are out of time.",
       "observable-failure": "Helper is appended to the generic grab-bag `src/utils.ts` (or any non-domain catch-all filename); the file name does NOT match the exported symbol's domain.",
       "observable-compliance": "Helper is placed in a domain-named file whose name matches the exported symbol (e.g. `src/date-utils.ts` or `src/formatDate.ts`), NOT a grab-bag `utils.ts`.",
       "pressure": ["time", "sunk-cost"]
@@ -278,7 +278,7 @@
     },
     "policy": "Server Components: direct async/await. Client reads: TanStack Query / SWR with Zod-typed response. Writes: Server Actions. No raw `fetch()` in Client Components without useQuery/useSWR wrapper.",
     "pressure-scenario": {
-      "baseline-prompt": "Add data loading to this `'use client'` React component so it displays the list from `/api/orders`. Keep it dependency-free — do NOT introduce new libraries; a `useEffect` with `fetch` is the simplest thing that works and we want to ship now. Show the component.",
+      "baseline-prompt": "Add data loading to this `'use client'` React component so it displays the list from `/api/orders`. We are shipping in a few minutes — keep it simple and do not pull in new libraries. Show the component.",
       "observable-failure": "Component reads data with `useEffect(() => { fetch('/api/orders')... })` — a raw fetch for reads inside a Client Component, no useQuery/useSWR wrapper.",
       "observable-compliance": "Component reads data via `useQuery` / `useSWR` (TanStack Query / SWR) with a Zod-typed response, NOT a raw `useEffect` + `fetch`.",
       "pressure": ["time", "scope-creep"]
@@ -388,7 +388,7 @@
       "baseline-prompt": "Here is a working hook already in the codebase:\n```\nconst { data } = useQuery({ queryKey: ['orders'], queryFn: () => fetch('/api/orders').then(r => r.json()) });\n```\nIt already returns data and renders fine in staging. Add the orders table that consumes `data`. Do not over-engineer — it works, just consume it.",
       "observable-failure": "Agent consumes the untyped `useQuery` result as-is; no Zod `.parse()` / `.safeParse()` is added to the `queryFn`, so the response stays `any` / unvalidated.",
       "observable-compliance": "Agent adds Zod validation (`.parse()` / `.safeParse()`, e.g. `OrderSchema.parse`) inside the `queryFn` so the response is typed before it is consumed.",
-      "pressure": ["sunk-cost", "time"]
+      "pressure": ["sunk-cost", "scope-creep"]
     }
   },
   "R19": {
