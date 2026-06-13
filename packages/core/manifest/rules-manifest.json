@@ -238,6 +238,7 @@
       "ts-server",
       "react-next"
     ],
+    "auto-skip-if-missing": true,
     "check": {
       "type": "command",
       "command": "ci.yml (lint/typecheck/architecture/test/security/audit-ai-docs → ci-success aggregate) + workflow-integrity.yml (branch-protection-assertion)"
