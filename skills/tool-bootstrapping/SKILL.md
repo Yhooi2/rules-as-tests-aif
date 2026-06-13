@@ -48,9 +48,9 @@ Accepted and rejected decisions are recorded in `.ai-factory/tool-decisions.md` 
 
 Rules 1-4 reuse AIF `/aif` (already an integrated dependency if you installed this framework via `install.sh`). Rules 5-6 are thin additions: the `deps-hash` hook and the `.ai-factory/tool-decisions.md` persistence file. You do not need to rebuild AIF's stack-detection or proposal logic.
 
-## §3 Recursive bootstrap
+## §3 context7 — strongly recommended, not auto-installed
 
-`context7` MCP is required for rule 2 (researching available MCPs). To avoid the bootstrap paradox, `setup.sh` installs `context7` unconditionally before rule 2 can run (GCC stage1 analogue). `context7` is never proposed by rule 2; it is assumed present. If `context7` is missing, install it manually before running the bootstrapping loop.
+`context7` MCP is the preferred documentation-lookup tool for rule 2 (researching available MCPs). The installer does **not** install or guarantee it — there is no hard dependency (consumers may be on any OS / harness / license; see build-first-reuse-default discipline). Instead the bootstrap **insists on it**: rule 2 surfaces `context7` as its first recommended MCP with a load-bearing rationale, and the loop **degrades gracefully** when it is absent — fall back to `WebSearch` / DeepWiki for the doc-research step while continuing to recommend installing `context7`. There is no bootstrap paradox: the recommendation is data the loop emits, not a runtime precondition it requires.
 
 ## §4 §13.18 cascade note
 

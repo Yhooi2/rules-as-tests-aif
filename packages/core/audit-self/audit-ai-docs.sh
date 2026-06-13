@@ -238,7 +238,7 @@ if skip_unless D4; then : ; else
   if [ ! -f package.json ]; then
     pass "$RULE (no package.json — skipped)"
   elif [ ! -f .ai-factory/tool-decisions.md ]; then
-    warn "$RULE — .ai-factory/tool-decisions.md missing; run setup.sh or /tool-bootstrapping to seed"
+    warn "$RULE — .ai-factory/tool-decisions.md missing; re-run install.sh (auto-seeds it) or /tool-bootstrapping"
   else
     # Compare mtimes: if package.json is strictly newer → stale.
     # Asymmetric stat-failure fallbacks (PKG=0, DEC=1) ensure PKG_MTIME ≤ DEC_MTIME

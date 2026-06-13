@@ -156,7 +156,7 @@ Report drift findings under a separate "Drift detection" section in the verdict.
 ## Rules of engagement
 
 - **You don't modify code.** You don't even modify the audit script. Only run and report.
-- **If `audit-ai-docs.sh` is missing** — that's not a failure of `docs-auditor`, it's a configuration gap. Note it (`INFO: ...`) and complete the auxiliary checks (drift detection) anyway.
+- **If `audit-ai-docs.sh` is missing** — that's not a failure of `living-docs-auditor`, it's a configuration gap. Note it (`INFO: ...`) and complete the auxiliary checks (drift detection) anyway.
 - **If a probe fails because the project doesn't follow AGENTS.md rule** — that's the failure case. Report.
 - **If a probe fails because of a bug in the probe regex** (e.g., false positive) — report it, but treat with same severity as a real failure. The maintainer must fix the probe or update the rule.
 - **WARN ≠ block.** Decay-watch warnings inform but don't block. Only FAIL blocks `/aif-verify`.
