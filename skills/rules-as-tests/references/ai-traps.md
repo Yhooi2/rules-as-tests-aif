@@ -224,7 +224,7 @@ The reason isn't that AI tests are *worse* per line — it's that AI tests are *
 
 ✅ **State the executable contracts**: "Inputs validated by Zod at boundaries. Run `npm run validate` before committing."
 
-✅ **Mention the workflow**: "Use `/aif-plan` for new features, `/aif-verify` before commit."
+✅ **Mention the enforced gate, then optional tooling**: "Run `npm run validate` (or `./scripts/audit-ai-docs.sh`) before committing — the pre-push hook + CI enforce it. If you use AI Factory: `/aif-plan` for features; `/aif-verify` wraps that gate."
 
 ❌ **Do not** rely on it for soft conventions ("prefer composition over inheritance"). Soft conventions become "we used to follow this" within a quarter of AI-driven development.
 
@@ -248,10 +248,12 @@ Before any non-trivial change:
 2. Read `.ai-factory/ARCHITECTURE.md` — layer rules and dependency direction.
 3. Read `.ai-factory/RULES.md` — code rules R1–R20 (enforced).
 
-Use AIF commands:
+Before committing: run `npm run validate` — the pre-push hook + CI enforce the gate.
+
+If you use AI Factory (optional, not bundled):
 - `/aif-plan <task>` for new features.
 - `/aif-fix <error>` for bugs.
-- `/aif-verify` before committing — runs sub-agents over RULES.md.
+- `/aif-verify` wraps the gate above (sub-agents over RULES.md).
 
 Stack constraints (enforced by lint/test/CI):
 - TypeScript strict + noUncheckedIndexedAccess.
