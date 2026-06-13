@@ -1,7 +1,7 @@
 name: workflow-integrity
 
 # R11 — CI integrity, executable form.
-# See factory/RULES.md#r11--ci-integrity for policy.
+# See packages/preset-next-15-canonical/RULES.md#r11--ci-integrity for policy.
 
 on:
   pull_request:
