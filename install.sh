@@ -626,7 +626,7 @@ echo "       eslint-plugin-testing-library @playwright/test"
 fi
 echo ""
 echo "  5. Add scripts to package.json (see INSTALL.md §3)"
-echo "  6. npx husky init && verify hooks installed"
+echo "  6. Verify git hooks: 'git config core.hooksPath' should print .husky (install activated it; do NOT run 'npx husky init' — it would clobber the shipped .husky/pre-commit + pre-push)"
 echo "  7. Run: ./scripts/audit-ai-docs.sh — should PASS"
 echo "  8. Run: npm run validate"
 echo ""

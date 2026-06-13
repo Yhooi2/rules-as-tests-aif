@@ -270,6 +270,10 @@ jobs:
         run: bash tests/install-sh/f8-agents-scripts-shipped.test.sh
       - name: Run install-sh /aif-* command honesty test (consumer-install-hardening F9)
         run: bash tests/install-sh/f9-aif-commands-honesty.test.sh
+      - name: Run install-sh RuleCreator doc-URL honesty test (consumer-install-hardening F8b)
+        run: bash tests/install-sh/f8b-rulecreator-doc-urls.test.sh
+      - name: Run install-sh no-husky-init-advice test (consumer-install-hardening F8c)
+        run: bash tests/install-sh/f8c-no-husky-init-advice.test.sh
 
   # Static type gate. Closes the missing edit-time→CI typecheck channel: `tsc
   # --noEmit` was a local-only `package.json` script, never gated, so a type
