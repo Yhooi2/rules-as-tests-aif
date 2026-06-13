@@ -77,6 +77,36 @@
               "description": "Optional ESLint rule config value, replacing bare 'error' for option-bearing rules (e.g. no-restricted-imports)."
             }
           }
+        },
+        "pressure-scenario": {
+          "type": "object",
+          "required": ["baseline-prompt", "observable-failure", "observable-compliance", "pressure"],
+          "additionalProperties": false,
+          "description": "Liveness data for manual (judgement) rules — the entry-level analog of negative-test. A forcing scenario where the rationalising-shortcut path is tempting and only the rule prevents it. The session-bound manual-rule-liveness-prober (agents/manual-rule-liveness-prober.md) dispatches a fresh subagent into baseline-prompt twice: WITHOUT the rule loaded (expect observable-failure / RED) and WITH the rule loaded (expect observable-compliance / GREEN), then reports the delta. Never invoked from CI (.claude/rules/no-paid-llm-in-ci.md §1). ADOPTED methodology: Superpowers writing-skills RED-GREEN pressure-scenario pattern (prior-art-evaluations.md#55).",
+          "properties": {
+            "baseline-prompt": {
+              "type": "string",
+              "minLength": 20,
+              "description": "Scenario forcing a choice between the rule and a tempting shortcut. Must apply >=1 pressure (see `pressure`)."
+            },
+            "observable-failure": {
+              "type": "string",
+              "minLength": 10,
+              "description": "What RED looks like — the literal behaviour/output a subagent emits WITHOUT the rule loaded."
+            },
+            "observable-compliance": {
+              "type": "string",
+              "minLength": 10,
+              "description": "What GREEN looks like — the behaviour a subagent emits WITH the rule loaded. MUST differ from observable-failure."
+            },
+            "pressure": {
+              "type": "array",
+              "items": { "enum": ["time", "authority", "sunk-cost", "scope-creep"] },
+              "minItems": 1,
+              "uniqueItems": true,
+              "description": "Which pressure(s) the scenario applies (T-V3-A: a pressure-scenario is a forcing function, not merely a violating example)."
+            }
+          }
         }
       }
     }

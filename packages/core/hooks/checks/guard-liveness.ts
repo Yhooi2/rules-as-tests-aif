@@ -100,10 +100,31 @@ export interface ManifestNegativeTest {
   eslintRuleConfig?: unknown;
 }
 
+/**
+ * Pressure type a manual-rule scenario applies (T-V3-A: a pressure-scenario is a
+ * forcing function, not merely a violating example).
+ */
+export type PressureType = 'time' | 'authority' | 'sunk-cost' | 'scope-creep';
+
+/**
+ * Liveness data for manual (judgement-type) rules — the entry-level analog of
+ * negative-test for rules with no executable input. Consumed by the session-bound
+ * manual-rule-liveness-prober (agents/manual-rule-liveness-prober.md), never CI.
+ * ADOPTED methodology: Superpowers writing-skills RED-GREEN pressure-scenario
+ * (prior-art-evaluations.md#55).
+ */
+export interface ManifestPressureScenario {
+  'baseline-prompt': string;
+  'observable-failure': string;
+  'observable-compliance': string;
+  pressure: PressureType[];
+}
+
 export interface ManifestRule {
   check: { type: string; rule?: string };
   examples: { bad: string; good: string };
   'negative-test'?: ManifestNegativeTest;
+  'pressure-scenario'?: ManifestPressureScenario;
 }
 
 export type RuleLivenessStatus = 'pass' | 'fail' | 'skipped' | 'no-data' | 'n/a';
