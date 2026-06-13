@@ -25,7 +25,7 @@ automated check. Bypass via `/aif-rules` (with rationale), never via `--no-verif
 | **R8 Observability** | ts-server, react-next | ESLint `rules-as-tests/require-otel-span` |
 | **R9 Imports / dependencies** | ts-server, react-next | ESLint `no-restricted-imports` |
 | **R10 Naming** | ts-server, react-next | Manual review — Naming conventions are too project-specific to formalize reliably; sidecar runs ad-hoc grep on the diff. |
-| **R11 CI integrity** | ts-server, react-next | `audit-self.yml (actionlint + zizmor → ci-success aggregate) + workflow-integrity.yml (branch-protection-assertion)` |
+| **R11 CI integrity** | ts-server, react-next | `ci.yml (lint/typecheck/architecture/test/security/audit-ai-docs → ci-success aggregate) + workflow-integrity.yml (branch-protection-assertion)` |
 | **R12 Server vs Client Components** | react-next | ESLint `rules-as-tests/no-server-imports-in-client` |
 | **R13 Data fetching** | react-next | Manual review — AST grep on TanStack Query / SWR usage; no ESLint rule today. |
 | **R14 Forms** | react-next | ESLint `rules-as-tests/require-form-safe-parse` |
@@ -184,7 +184,9 @@ throw new ValidationError('bad input', { cause: err });
 - No `Math.random()` (except `infrastructure/random/`).
 - No direct `fs`, `http`, `https` imports outside `infrastructure/`.
 
-**Check:** ESLint rule `rules-as-tests/no-direct-time-randomness` (allows `src/infrastructure/**`).
+**Check:** ESLint rule `rules-as-tests/no-direct-time-randomness` (layout-agnostic globs, ignores `**/infrastructure/**`).
+
+**Opt-in (cih-s3 F7):** deferred by default — R7 needs an injected Clock/Random + an `infrastructure/` layer a fresh skeleton lacks. The shipped `eslint.config.mjs` enables it only when the environment sets `AIF_STRICT_RUNTIME=1`. Turn it on once those primitives exist.
 
 ### Examples
 
@@ -203,7 +205,9 @@ const now = clock.now(); // injected from infrastructure/clock
 - Span attributes include: relevant business identifiers and active feature flags.
 - Errors set span status with structured cause, never bare error strings.
 
-**Check:** ESLint rule `rules-as-tests/require-otel-span` (scoped to `src/application/**`).
+**Check:** ESLint rule `rules-as-tests/require-otel-span` (layout-agnostic globs, e.g. `**/application/**`, `**/use-cases/**`).
+
+**Opt-in (cih-s3 F7):** deferred by default — R8 needs an OpenTelemetry tracer a fresh skeleton lacks. The shipped `eslint.config.mjs` enables it only when the environment sets `AIF_STRICT_RUNTIME=1`. Turn it on once a tracer is wired.
 
 ### Examples
 
@@ -265,12 +269,11 @@ import fs from 'fs'; // in src/domain/
 - The `ci-success` job must remain a required check on main.
 - New jobs are added through PR with explicit rationale.
 
-**Check:** three executable layers, all funnelled into the single required `ci-success` aggregate context:
-1. `actionlint` — YAML/expression correctness, script-injection vectors, runner-label validity. Runs in `.github/workflows/audit-self.yml` (every PR) and feeds `ci-success` via `needs:`.
-2. `zizmor` — supply-chain audits (`unpinned-uses`, `dangerous-triggers`, `excessive-permissions`, `template-injection`, `cache-poisoning`). Also in `audit-self.yml`, feeds `ci-success` via `needs:`.
-3. `gh api repos/:owner/:repo/branches/main/protection | jq -e '.required_status_checks.contexts | contains(["ci-success"])'` — `.github/workflows/workflow-integrity.yml` asserts the `ci-success` gate remains a required status check on `main`.
+**Check:** two executable layers, both shipped by `install.sh`:
+1. `.github/workflows/ci.yml` — every quality job (`lint`, `typecheck`, `architecture`, `test`, `security`, `audit-ai-docs`) is funnelled into the single required `ci-success` aggregate via `needs:`. `ci-success` is the only context that must be a required check (it always runs and depends on all jobs).
+2. `.github/workflows/workflow-integrity.yml` — `branch-protection-assertion` job asserts the `ci-success` gate stays a required status check on the default protected branch. Tri-states: pass when configured-and-present, fail when configured-but-missing, warn-and-pass when no protection is configured yet (so it never blocks a fresh consumer).
 
-Why co-located: `needs:` aggregation works only within one workflow file, and a path-filtered required check (e.g. one scoped to `.github/workflows/**`) never reports on PRs that don't touch that path → the PR deadlocks. Requiring only `ci-success` (which always runs and `needs:` the linters) avoids both.
+Why one aggregate context: `needs:` aggregation works only within one workflow file, and a path-filtered required check (e.g. one scoped to `.github/workflows/**`) never reports on PRs that don't touch that path → the PR deadlocks. Requiring only `ci-success` (which always runs and `needs:` every job) avoids both.
 
 ### Examples
 

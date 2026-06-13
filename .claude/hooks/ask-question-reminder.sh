@@ -20,6 +20,15 @@
 # to normal flow → the question proceeds (benign, no block).
 set -euo pipefail
 
+# Language pack (payload prose). Default en (canonical, public repo); operator sets
+# AIF_HOOK_LANG=ru in ~/.claude/settings.json env. Missing pack → en fallback.
+# @dual-pair: hook-lang-i18n (spec: docs/superpowers/specs/2026-06-01-hook-lang-i18n-design.md)
+_lang_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lang"
+_lang_file="${_lang_dir}/${AIF_HOOK_LANG:-en}.sh"
+[ -f "$_lang_file" ] || _lang_file="${_lang_dir}/en.sh"
+# shellcheck source=/dev/null
+. "$_lang_file"
+
 input=$(cat)
 
 tool_name=$(echo "$input" | jq -r '.tool_name // empty' 2>/dev/null || echo "")
@@ -46,14 +55,7 @@ fi
 # Fresh challenge: record the moment, then deny once so the model reconsiders before asking.
 touch "$flag"
 
-reminder=$(cat <<'EOF'
-Стоп — ты собираешься задать вопрос. Сначала проверь сам вопрос, в первую очередь для себя.
-1. Это настоящая развилка — или ты перекладываешь решение, которое можешь принять сам? Если один вариант явно лучше по существу (по целям сессии и дисциплине проекта) — НЕ спрашивай: сделай его и скажи, что сделал.
-2. Если это правда развилка — сначала ТВОЯ обоснованная рекомендация: «Рекомендую <вариант>, потому что <причина против целей и трейдоффов>», потом альтернативы коротко. Решает человек.
-3. Простыми словами: что именно решаем и почему это блокирует — на конкретном примере, не повтор текста вопроса.
-Если всё это уже сделано в твоём ответе — просто задай вопрос снова: повтор не блокируется.
-EOF
-)
+reminder=$(aif_msg_question_challenge)
 
 jq -n --arg r "$reminder" '{
   hookSpecificOutput: {

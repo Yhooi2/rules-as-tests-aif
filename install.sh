@@ -8,7 +8,7 @@
 #   ./install.sh react-next --dry-run --force   # preview overwrite plan
 #
 # What it does:
-#   1. Copies skills/ + .claude/skills/meta-orchestrator/ → .claude/skills/
+#   1. Copies skills/ + .claude/skills/pipeline/ → .claude/skills/
 #      (meta-orchestrator is shipped from .claude/skills/ as single source of truth;
 #       cross-refs to repo-internal paths get sed-transformed to GitHub blob URLs —
 #       see UPSTREAM_BLOB_URL + transform_internal_refs() below;
@@ -59,14 +59,11 @@ fi
 STACK=""
 FORCE=""
 DRY_RUN=""
-# Per Stage 2 v3 §4.4 — COMPANIONS flag parse; CSV or none|all
-COMPANIONS="${COMPANIONS:-}"
 for arg in "$@"; do
   case "$arg" in
     --dry-run)              DRY_RUN="--dry-run" ;;
     --force)                FORCE="--force" ;;
     ts-server|react-next)   STACK="$arg" ;;
-    --companions=*)         COMPANIONS="${arg#*=}" ;;
     *)                      ;;
   esac
 done
@@ -84,11 +81,18 @@ fi
 # docs/meta-factory/research-patches/2026-05-09-§13.21-l3-revision.md).
 # Mirrors the canonical list at
 # packages/core/principles/09-doc-authority-hierarchy.test.ts
-# (REQUIRED_HEADER_DOCS Wave 2 + Wave 5.1 + memory-codification-auditor — 16 shipped surfaces).
+# (REQUIRED_HEADER_DOCS Wave 2 + Wave 5.1 + memory-codification-auditor + manual-rule-liveness-prober — 18 shipped surfaces).
 # Runs in --dry-run too, so preview also catches drift between PR-side
 # (principle 09 CI) and release-time copy. Positioned before package.json
 # check + stack picker so framework-author drift fails fastest, before any
 # interactive prompt.
+# SHIPPED_DOCS is the SINGLE SOURCE OF TRUTH for both the header-verify loop (below) AND the
+# §3 skill-context copy step (which derives its skill-context entries from this very array —
+# see the `*/skill-context/*/SKILL.md` case there). Adding a skill-context doc here wires it
+# into verify AND deploy in one edit → the two lists cannot drift (FQA S1-A P2: aif-orchestrator-
+# discipline was header-verified but absent from the hand-maintained copy step, so consumers
+# landed 2/3). Keep all three skill-context entries listed explicitly (static-parseable by
+# principle 09's SHIPPED_DOCS↔REQUIRED_HEADER_DOCS check).
 SHIPPED_DOCS=(
   "packages/core/templates/shared/AGENTS.md.template"
   "packages/core/templates/shared/CLAUDE.md.template"
@@ -100,10 +104,12 @@ SHIPPED_DOCS=(
   "packages/preset-next-15-canonical/templates/ARCHITECTURE.react-next.md"
   "packages/core/templates/shared/skill-context/aif-review/SKILL.md"
   "packages/core/templates/shared/skill-context/aif-rules-check/SKILL.md"
+  "packages/core/templates/shared/skill-context/aif-orchestrator-discipline/SKILL.md"
   "agents/review-sidecar.md"
   "agents/living-docs-auditor.md"
   "agents/compliance-verifier.md"
   "agents/memory-codification-auditor.md"
+  "agents/manual-rule-liveness-prober.md"
   "skills/tool-bootstrapping/SKILL.md"
   "skills/tool-bootstrapping/references/decision-format.md"
 )
@@ -202,6 +208,35 @@ chmod_safe() {
   chmod "$@"
 }
 
+# The shipped stryker.config.json hardcodes "packageManager": "npm" (the template can't
+# self-detect). Patch the COPIED config in place to match the consumer's lockfile so a
+# pnpm/yarn consumer doesn't get an npm-locked mutation run. Non-destructive: rewrites only
+# the packageManager key. Guarded on --dry-run and on node availability (no node → leave npm).
+patch_stryker_package_manager() {
+  _cfg="$PROJECT_ROOT/stryker.config.json"
+  if [ "$DRY_RUN" = "--dry-run" ]; then
+    echo "  [dry-run] would set stryker packageManager from consumer lockfile"
+    return 0
+  fi
+  command -v node >/dev/null 2>&1 || return 0
+  [ -f "$_cfg" ] || return 0
+  if [ -f "$PROJECT_ROOT/pnpm-lock.yaml" ]; then
+    _pm="pnpm"
+  elif [ -f "$PROJECT_ROOT/yarn.lock" ]; then
+    _pm="yarn"
+  else
+    _pm="npm"
+  fi
+  AIF_STRYKER_CFG="$_cfg" AIF_STRYKER_PM="$_pm" node -e '
+    const fs = require("fs");
+    const p = process.env.AIF_STRYKER_CFG;
+    const cfg = JSON.parse(fs.readFileSync(p, "utf8"));
+    cfg.packageManager = process.env.AIF_STRYKER_PM;
+    fs.writeFileSync(p, JSON.stringify(cfg, null, 2) + "\n");
+  '
+  echo "  ✓ stryker packageManager → $_pm"
+}
+
 # ─── 1. Skills ──────────────────────────────────────────
 echo "▶ Skills → .claude/skills/"
 mkdir_safe "$PROJECT_ROOT/.claude/skills"
@@ -233,26 +268,26 @@ else
   cp -r "$PKG_ROOT/skills/tool-bootstrapping" "$PROJECT_ROOT/.claude/skills/tool-bootstrapping"
   echo "  ✓ .claude/skills/tool-bootstrapping/"
 fi
-# meta-orchestrator: shipped from authoring location .claude/skills/meta-orchestrator/
+# meta-orchestrator: shipped from authoring location .claude/skills/pipeline/
 # as single source of truth (no separate mirror under skills/). Repo-internal cross-refs
 # in .md files get rewritten to GitHub blob URLs via transform_internal_refs().
-if [ -e "$PROJECT_ROOT/.claude/skills/meta-orchestrator" ] && [ "$FORCE" != "--force" ]; then
-  SKIPPED+=("$PROJECT_ROOT/.claude/skills/meta-orchestrator")
+if [ -e "$PROJECT_ROOT/.claude/skills/pipeline" ] && [ "$FORCE" != "--force" ]; then
+  SKIPPED+=("$PROJECT_ROOT/.claude/skills/pipeline")
   if [ "$DRY_RUN" = "--dry-run" ]; then
-    echo "  [dry-run] would skip: .claude/skills/meta-orchestrator (exists)"
+    echo "  [dry-run] would skip: .claude/skills/pipeline (exists)"
   else
-    echo "  ⊝ .claude/skills/meta-orchestrator (exists — skipping)"
+    echo "  ⊝ .claude/skills/pipeline (exists — skipping)"
   fi
 elif [ "$DRY_RUN" = "--dry-run" ]; then
-  echo "  [dry-run] would copy: $PKG_ROOT/.claude/skills/meta-orchestrator → $PROJECT_ROOT/.claude/skills/meta-orchestrator (+ transform internal refs)"
+  echo "  [dry-run] would copy: $PKG_ROOT/.claude/skills/pipeline → $PROJECT_ROOT/.claude/skills/pipeline (+ transform internal refs)"
 else
-  rm -rf "$PROJECT_ROOT/.claude/skills/meta-orchestrator"
-  cp -r "$PKG_ROOT/.claude/skills/meta-orchestrator" "$PROJECT_ROOT/.claude/skills/meta-orchestrator"
+  rm -rf "$PROJECT_ROOT/.claude/skills/pipeline"
+  cp -r "$PKG_ROOT/.claude/skills/pipeline" "$PROJECT_ROOT/.claude/skills/pipeline"
   # Rewrite repo-internal cross-refs in all .md files to GitHub blob URLs.
   while IFS= read -r -d '' mdfile; do
     transform_internal_refs "$mdfile"
-  done < <(find "$PROJECT_ROOT/.claude/skills/meta-orchestrator" -name '*.md' -print0)
-  echo "  ✓ .claude/skills/meta-orchestrator/ (cross-refs rewritten to ${UPSTREAM_BLOB_URL})"
+  done < <(find "$PROJECT_ROOT/.claude/skills/pipeline" -name '*.md' -print0)
+  echo "  ✓ .claude/skills/pipeline/ (cross-refs rewritten to ${UPSTREAM_BLOB_URL})"
 fi
 
 # ─── 1b. Hooks ──────────────────────────────────────────
@@ -314,144 +349,33 @@ copy_safe "$PKG_ROOT/packages/core/templates/shared/ARCHITECTURE.ts-server.md" "
 copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/RULES.md" "$PROJECT_ROOT/.ai-factory/RULES.md"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/integration-rules.md" "$PROJECT_ROOT/.ai-factory/rules/integration-rules.md"
 
+# Seed tool-decisions.md so the deps-change re-evaluation hook actually fires (FQA S1-B P1:
+# deps-hash-check.sh short-circuits to silent exit 0 when this file is absent — on the ./setup
+# path nothing ever created it, so the whole automation was dead). The template carries the
+# `deps-hash: <pending>` sentinel (DN-1 = Option B): the hook WARNs every session until the
+# consumer runs /tool-bootstrapping once, which stamps the real hash. file-deploy only (kind
+# identical to the seeds above) — no npm/package.json dependency at install time.
+copy_safe "$PKG_ROOT/skills/tool-bootstrapping/templates/tool-decisions.md.template" "$PROJECT_ROOT/.ai-factory/tool-decisions.md"
+
 # skill-context overrides — AIF-native "extend a vendored sub-agent" mechanism (C-1, SSOT #50).
 # AIF's own background sidecars MANDATORY-read .ai-factory/skill-context/<skill>/SKILL.md
 # (verified live: a background maxTurns:6 sidecar reads + applies these). We ride that wiring
 # instead of shipping colliding agents: aif-review gets our anti-tautology test-review content;
 # aif-rules-check gets the R10-naming + test-existence residue of the removed best-practices-sidecar.
-mkdir_safe "$PROJECT_ROOT/.ai-factory/skill-context/aif-review"
-copy_safe "$PKG_ROOT/packages/core/templates/shared/skill-context/aif-review/SKILL.md" "$PROJECT_ROOT/.ai-factory/skill-context/aif-review/SKILL.md"
-mkdir_safe "$PROJECT_ROOT/.ai-factory/skill-context/aif-rules-check"
-copy_safe "$PKG_ROOT/packages/core/templates/shared/skill-context/aif-rules-check/SKILL.md" "$PROJECT_ROOT/.ai-factory/skill-context/aif-rules-check/SKILL.md"
+# Derive the skill-context copy set from SHIPPED_DOCS (single source — FQA P2 fix). Every
+# skill-context entry that is header-verified above is copied here; the two lists cannot drift.
+for _doc in "${SHIPPED_DOCS[@]}"; do
+  case "$_doc" in
+    packages/core/templates/shared/skill-context/*/SKILL.md)
+      _sc="${_doc#packages/core/templates/shared/skill-context/}"; _sc="${_sc%/SKILL.md}"
+      mkdir_safe "$PROJECT_ROOT/.ai-factory/skill-context/$_sc"
+      copy_safe "$PKG_ROOT/$_doc" "$PROJECT_ROOT/.ai-factory/skill-context/$_sc/SKILL.md" ;;
+  esac
+done
 
 if [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/ARCHITECTURE.react-next.md" "$PROJECT_ROOT/.ai-factory/ARCHITECTURE.react-next.md"
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/RULES.react-next.md" "$PROJECT_ROOT/.ai-factory/RULES.react-next.md"
-fi
-
-# ─── 3.5. Optional companion installs ───────────────────
-# Per Stage 2 v3 §4.6 — K-1 companion-install prompts (Superpowers, TaskMaster, OhMyOpencode).
-# Placement: after Phase 3 AIF templates (enforcement wiring complete), before Phase 4 Scripts.
-# All prompts default [y/N] (capital N = default no). No companion is mandatory.
-# Per Stage 2 v3 §4.4 — Non-interactive fallback: auto-default COMPANIONS=none when stdin is not a tty.
-if [ -z "${COMPANIONS:-}" ] && [ ! -t 0 ]; then
-  COMPANIONS="none"
-fi
-
-echo "▶ Optional companion installs"
-
-# ── Superpowers ──────────────────────────────────────────
-# Per Stage 2 v3 §4.2 + §4.4 — interactive prompt or COMPANIONS dispatch
-should_install_superpowers=""
-case "${COMPANIONS:-}" in
-  all)            should_install_superpowers="y" ;;
-  none)           should_install_superpowers="" ;;
-  *superpowers*)  should_install_superpowers="y" ;;
-  "")             # no env var set → interactive when stdin is a tty
-    if [ -t 0 ]; then
-      if [ "$DRY_RUN" = "--dry-run" ]; then
-        # Per Stage 2 v3 §4.4 — dry-run skips the prompt and prints "would prompt:"
-        echo "  [dry-run] would prompt: Install Superpowers? [y/N]"
-      else
-        read -rp "  Install Superpowers? (CC plugin — optional skills framework) [y/N]: " _sp_choice
-        case "$_sp_choice" in [yY]|[yY][eE][sS]) should_install_superpowers="y" ;; esac
-      fi
-    fi
-    ;;
-esac
-
-if [ "$should_install_superpowers" = "y" ]; then
-  # Per Stage 2 v3 §4.5 — idempotency detect-and-skip
-  if command -v claude >/dev/null 2>&1 && claude plugin list 2>/dev/null | grep -q superpowers; then
-    echo "  ⊝ Superpowers already installed — skipping"
-  elif [ "$DRY_RUN" = "--dry-run" ]; then
-    echo "  [dry-run] would install: claude plugin install superpowers@claude-plugins-official --scope user"
-  elif command -v claude >/dev/null 2>&1; then
-    # Per Stage 2 v3 §4.7 — warn-and-continue on failure
-    if ! claude plugin install superpowers@claude-plugins-official --scope user 2>&1; then
-      echo "  ⚠ Superpowers install failed — retry manually:"
-      echo "    claude plugin install superpowers@claude-plugins-official --scope user"
-    else
-      echo "  ✓ Superpowers installed"
-    fi
-  else
-    # `claude` CLI absent — print manual command per Stage 2 v3 D6 Option A
-    echo "  ⚠ claude CLI not on PATH — Superpowers not installed. Manual:"
-    echo "    claude plugin install superpowers@claude-plugins-official --scope user"
-  fi
-fi
-
-# ── TaskMaster ───────────────────────────────────────────
-# Per Stage 2 v3 §4.2 + §4.4 — interactive prompt or COMPANIONS dispatch
-should_install_taskmaster=""
-case "${COMPANIONS:-}" in
-  all)             should_install_taskmaster="y" ;;
-  none)            should_install_taskmaster="" ;;
-  *taskmaster*)    should_install_taskmaster="y" ;;
-  "")              # no env var → interactive when stdin is a tty
-    if [ -t 0 ]; then
-      if [ "$DRY_RUN" = "--dry-run" ]; then
-        echo "  [dry-run] would prompt: Install TaskMaster? [y/N]"
-      else
-        read -rp "  Install TaskMaster? (CC plugin — AI-driven task management) [y/N]: " _tm_choice
-        case "$_tm_choice" in [yY]|[yY][eE][sS]) should_install_taskmaster="y" ;; esac
-      fi
-    fi
-    ;;
-esac
-
-if [ "$should_install_taskmaster" = "y" ]; then
-  # Per Stage 2 v3 §4.5 — idempotency detect-and-skip
-  if command -v claude >/dev/null 2>&1 && claude plugin list 2>/dev/null | grep -q task-master; then
-    echo "  ⊝ TaskMaster already installed — skipping"
-  elif [ "$DRY_RUN" = "--dry-run" ]; then
-    echo "  [dry-run] would install: claude plugin install claude-task-master@claude-plugins-official --scope user"
-  elif command -v claude >/dev/null 2>&1; then
-    # Per Stage 2 v3 §4.7 — warn-and-continue on failure
-    if ! claude plugin install claude-task-master@claude-plugins-official --scope user 2>&1; then
-      echo "  ⚠ TaskMaster install failed — retry manually:"
-      echo "    claude plugin install claude-task-master@claude-plugins-official --scope user"
-    else
-      echo "  ✓ TaskMaster installed"
-    fi
-  else
-    # `claude` CLI absent — print manual command per Stage 2 v3 D6 Option A
-    echo "  ⚠ claude CLI not on PATH — TaskMaster not installed. Manual:"
-    echo "    claude plugin install claude-task-master@claude-plugins-official --scope user"
-  fi
-fi
-
-# ── OhMyOpencode ─────────────────────────────────────────
-# Per Stage 2 v3 §4.2 + D5 (Option A — print + instruct, do NOT invoke automatically)
-should_install_omo=""
-case "${COMPANIONS:-}" in
-  all)              should_install_omo="y" ;;
-  none)             should_install_omo="" ;;
-  *ohmyopencode*)   should_install_omo="y" ;;
-  "")               # no env var → interactive when stdin is a tty
-    if [ -t 0 ]; then
-      if [ "$DRY_RUN" = "--dry-run" ]; then
-        echo "  [dry-run] would prompt: Install OhMyOpencode? [y/N]"
-      else
-        read -rp "  Install OhMyOpencode? (OpenCode companion — requires bun) [y/N]: " _omo_choice
-        case "$_omo_choice" in [yY]|[yY][eE][sS]) should_install_omo="y" ;; esac
-      fi
-    fi
-    ;;
-esac
-
-if [ "$should_install_omo" = "y" ]; then
-  # Per Stage 2 v3 D5 Option A — print command + instruct; do NOT invoke bunx automatically
-  echo "  ▶ OhMyOpencode install (run AFTER install.sh completes):"
-  if command -v bun >/dev/null 2>&1; then
-    echo "    bunx oh-my-openagent install"
-  else
-    echo "    # First install bun (https://bun.sh); then:"
-    echo "    bunx oh-my-openagent install"
-  fi
-  # Per Stage 3 §4.2 — escape hatch for skill dup-tool-names
-  echo "    Note: if you see HTTP 400 'Duplicate tool names detected' in CC after install,"
-  echo "    set \"claude_code.skills\": false in OhMyOpencode config."
 fi
 
 # ── aif-handoff integration note ─────────────────────────
@@ -464,6 +388,16 @@ echo "▶ Scripts → scripts/"
 mkdir_safe "$PROJECT_ROOT/scripts"
 copy_safe "$PKG_ROOT/packages/core/audit-self/audit-ai-docs.sh" "$PROJECT_ROOT/scripts/audit-ai-docs.sh"
 chmod_safe +x "$PROJECT_ROOT/scripts/audit-ai-docs.sh" 2>/dev/null || true
+# R4 probe (ts-morph) invoked by audit-ai-docs.sh via `npx tsx scripts/audit-r4.ts`.
+copy_safe "$PKG_ROOT/packages/core/probes/audit-r4.ts" "$PROJECT_ROOT/scripts/audit-r4.ts"
+# cih-s3 F3 "+V": glob-liveness gate — fails if a custom rule matches zero source files
+# (silent-inertness alarm). Dependency-free bash; run pre-PR once the layout settles.
+copy_safe "$PKG_ROOT/packages/core/audit-self/check-rule-globs.sh" "$PROJECT_ROOT/scripts/check-rule-globs.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-globs.sh" 2>/dev/null || true
+# cih-s3 F14: lint-staged binary-resolution gate — fails if a .lintstagedrc command's binary
+# can't resolve from the cwd lint-staged would use (the ENOENT-before-commit alarm on monorepos).
+copy_safe "$PKG_ROOT/packages/core/audit-self/check-lintstaged-resolves.sh" "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh" 2>/dev/null || true
 if [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/audit-self/audit-ai-docs.react-next.sh" "$PROJECT_ROOT/scripts/audit-ai-docs.react-next.sh"
   chmod_safe +x "$PROJECT_ROOT/scripts/audit-ai-docs.react-next.sh" 2>/dev/null || true
@@ -473,6 +407,26 @@ fi
 echo "▶ Shared templates → project root"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/.nvmrc" "$PROJECT_ROOT/.nvmrc"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/.lintstagedrc.json" "$PROJECT_ROOT/.lintstagedrc.json"
+# cih-s3 F14 (M3): in a workspace, a single root .lintstagedrc runs `eslint` from git-root; in
+# a pnpm/isolated-node_modules monorepo the per-package eslint binary isn't at root → ENOENT
+# blocks the commit. Drop a per-package .lintstagedrc.json stub in each EXISTING package dir so
+# lint-staged runs with cwd=that package and resolves the local binary. PM-agnostic (no
+# `pnpm exec`). Best-effort — packages added later need the same stub; scripts/check-lintstaged-
+# resolves.sh is the alarm that catches an unstubbed package before its first blocked commit.
+if [ "$DRY_RUN" != "--dry-run" ] && { [ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ] || grep -q '"workspaces"' "$PROJECT_ROOT/package.json" 2>/dev/null; }; then
+  _ndrop=0
+  while IFS= read -r _pkgjson; do
+    _pkgdir=$(dirname "$_pkgjson")
+    [ "$_pkgdir" = "$PROJECT_ROOT" ] && continue
+    if [ ! -f "$_pkgdir/.lintstagedrc.json" ]; then
+      cp "$PROJECT_ROOT/.lintstagedrc.json" "$_pkgdir/.lintstagedrc.json" && _ndrop=$((_ndrop + 1))
+    fi
+  done < <(find "$PROJECT_ROOT" -name node_modules -prune -o -name .git -prune -o -name package.json -print 2>/dev/null)
+  echo "  ✓ workspace detected → dropped $_ndrop per-package .lintstagedrc.json stub(s) (F14 lint-staged cwd fix)"
+fi
+# cih-s3 F15: keep prettier off the generated RULES.md table region (rendered SSOT, not
+# format-stable) so a `*.md → prettier --write` lint-staged step can't reflow it.
+copy_safe "$PKG_ROOT/packages/core/templates/shared/.prettierignore" "$PROJECT_ROOT/.prettierignore"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/tsconfig.json" "$PROJECT_ROOT/tsconfig.json"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/AGENTS.md.template" "$PROJECT_ROOT/AGENTS.md"
 mkdir_safe "$PROJECT_ROOT/.husky"
@@ -481,8 +435,36 @@ copy_safe "$PKG_ROOT/packages/core/templates/shared/husky-pre-push.sh" "$PROJECT
 # Wave 10.5: also install the bash critical-only fallback so the dispatcher can find it.
 # The runtime dispatcher (husky-pre-push.sh) selects between TS-core and fallback at each push.
 copy_safe "$PKG_ROOT/packages/core/hooks/pre-push.fallback.sh" "$PROJECT_ROOT/packages/core/hooks/pre-push.fallback.sh"
+# cih-s1 F1: also ship the TS-core hook + its bounded static import closure so the
+# dispatcher's Node≥20 arm is reachable (without these, husky-pre-push.sh always
+# falls to the presence-only bash fallback). The relative layout under
+# packages/core/hooks/ is preserved so the dispatcher resolves $REPO_ROOT/packages/
+# core/hooks/pre-push.ts. Closure (static, re-derived to fixpoint): pre-push.ts →
+# {utils/run-check.ts, utils/git.ts, checks/prior-art.ts, checks/s17.ts}. NOT shipped:
+# checks/guard-liveness.ts is dynamically import()ed and degrades gracefully when absent.
+for ts_hook in \
+  pre-push.ts \
+  utils/run-check.ts \
+  utils/git.ts \
+  checks/prior-art.ts \
+  checks/s17.ts; do
+  copy_safe "$PKG_ROOT/packages/core/hooks/$ts_hook" "$PROJECT_ROOT/packages/core/hooks/$ts_hook"
+done
 chmod_safe +x "$PROJECT_ROOT/.husky/pre-commit" "$PROJECT_ROOT/.husky/pre-push" \
   "$PROJECT_ROOT/packages/core/hooks/pre-push.fallback.sh" 2>/dev/null || true
+
+# cih-s1 F2: activate the shipped hooks deterministically. Copying the files alone leaves them
+# inert — git never calls .husky/* until core.hooksPath points there. We set it directly instead
+# of `npx husky init` (which would CLOBBER the .husky/pre-commit + pre-push we just shipped).
+# Guarded on DRY_RUN and on PROJECT_ROOT being a git repo (no-op in non-git dirs, e.g. some tests).
+if [ -n "$DRY_RUN" ]; then
+  echo "▶ git hooks → [dry-run] would set core.hooksPath=.husky"
+elif git -C "$PROJECT_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  git -C "$PROJECT_ROOT" config core.hooksPath .husky
+  echo "▶ Activated git hooks → core.hooksPath=.husky"
+else
+  echo "  ⚠  not a git repo — skipped core.hooksPath activation (run: git config core.hooksPath .husky)"
+fi
 
 # ─── 5b. Custom ESLint rules plugin (used by eslint.config.mjs) ───
 echo "▶ Custom ESLint rules → eslint-rules-local/"
@@ -506,6 +488,40 @@ if [ "$STACK" = "react-next" ]; then
   done
 fi
 
+# Generate the barrel that eslint.config.mjs imports (`./eslint-rules-local/index.ts`).
+# FQA S1-A W1: install copied the rule FILES but the copy loop skips `*/index.ts`, so the
+# barrel never landed → eslint hit a missing-module error on config load → ALL custom rules
+# (and all linting) died. Generated from whatever rule files landed above, so it always matches
+# the shipped set (ts-server: 3 core; react-next: 3 core + 3 preset) with zero template-drift.
+# Convention (holds for all 6 rules): file `foo-bar.ts` exports `fooBar`; rule key = `foo-bar`.
+if [ -n "$DRY_RUN" ]; then
+  echo "  [dry-run] would generate: eslint-rules-local/index.ts (barrel over copied rule files)"
+else
+  _barrel="$PROJECT_ROOT/eslint-rules-local/index.ts"
+  {
+    echo "// AUTO-GENERATED by install.sh — re-exports the sibling rule files as one ESLint"
+    echo "// plugin. Regenerated each install to match the shipped rule set; do not hand-edit."
+    for _rf in "$PROJECT_ROOT"/eslint-rules-local/*.ts; do
+      _b=$(basename "$_rf" .ts); [ "$_b" = "index" ] && continue
+      _camel=$(echo "$_b" | awk -F- '{o=$1; for(i=2;i<=NF;i++) o=o toupper(substr($i,1,1)) substr($i,2); print o}')
+      echo "import { $_camel } from './$_b.ts';"
+    done
+    echo "const plugin = {"
+    echo "  meta: { name: '@rules-as-tests/local-eslint-rules', version: '0.1.0' },"
+    echo "  rules: {"
+    for _rf in "$PROJECT_ROOT"/eslint-rules-local/*.ts; do
+      _b=$(basename "$_rf" .ts); [ "$_b" = "index" ] && continue
+      _camel=$(echo "$_b" | awk -F- '{o=$1; for(i=2;i<=NF;i++) o=o toupper(substr($i,1,1)) substr($i,2); print o}')
+      echo "    '$_b': $_camel,"
+    done
+    echo "  },"
+    echo "};"
+    echo "export default plugin;"
+    echo "export const rules = plugin.rules;"
+  } > "$_barrel"
+  echo "  ✓ generated eslint-rules-local/index.ts ($(grep -c '^import ' "$_barrel") rules)"
+fi
+
 # ─── 6. Stack-specific templates ────────────────────────
 echo "▶ Stack-specific templates ($STACK) → project root"
 mkdir_safe "$PROJECT_ROOT/.github/workflows"
@@ -513,16 +529,102 @@ mkdir_safe "$PROJECT_ROOT/.github/workflows"
 if [ "$STACK" = "ts-server" ]; then
   copy_safe "$PKG_ROOT/templates/ts-server/eslint.config.mjs" "$PROJECT_ROOT/eslint.config.mjs"
   copy_safe "$PKG_ROOT/templates/ts-server/vitest.config.ts" "$PROJECT_ROOT/vitest.config.ts"
-  # .dependency-cruiser.cjs is generated by setup.sh via 'depcruise --init' (Phase 3)
+  # Ship the arch config directly (FQA S1-A W2: deferring to legacy setup.sh left arch:check
+  # with no config on the ./setup path — the template exists, just copy it).
+  copy_safe "$PKG_ROOT/templates/ts-server/dependency-cruiser.cjs" "$PROJECT_ROOT/.dependency-cruiser.cjs"
   copy_safe "$PKG_ROOT/templates/ts-server/stryker.config.json" "$PROJECT_ROOT/stryker.config.json"
+  patch_stryker_package_manager
   copy_safe "$PKG_ROOT/templates/ts-server/github-actions-ci.yml" "$PROJECT_ROOT/.github/workflows/ci.yml"
+  # R11 branch-protection self-assertion (the executable arm RULES.md#r11 names alongside ci-success).
+  copy_safe "$PKG_ROOT/templates/ts-server/github-actions-workflow-integrity.yml" "$PROJECT_ROOT/.github/workflows/workflow-integrity.yml"
 elif [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/eslint.config.react.mjs" "$PROJECT_ROOT/eslint.config.mjs"
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/vitest.config.ts" "$PROJECT_ROOT/vitest.config.ts"
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/playwright.config.ts" "$PROJECT_ROOT/playwright.config.ts"
-  # .dependency-cruiser.cjs is generated by setup.sh via 'depcruise --init' (Phase 3)
+  # Ship the arch config (FQA S1-A W2). The ts-server base (no-circular/no-orphans) is
+  # stack-agnostic; a react-tailored layering config is a follow-up (residual R-1).
+  copy_safe "$PKG_ROOT/templates/ts-server/dependency-cruiser.cjs" "$PROJECT_ROOT/.dependency-cruiser.cjs"
   copy_safe "$PKG_ROOT/templates/ts-server/stryker.config.json" "$PROJECT_ROOT/stryker.config.json"
+  patch_stryker_package_manager
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/github-actions-ci-ui.yml" "$PROJECT_ROOT/.github/workflows/ci.yml"
+  # R11 branch-protection self-assertion (stack-agnostic — asserts ci-success stays required).
+  copy_safe "$PKG_ROOT/templates/ts-server/github-actions-workflow-integrity.yml" "$PROJECT_ROOT/.github/workflows/workflow-integrity.yml"
+fi
+
+# ─── 7. package.json scripts (FQA S1-A W4) ──────────────
+# install.sh historically left scripts as a manual INSTALL.md §3 step, so consumers landed
+# `scripts: {}` while AGENTS.md + the shipped ci.yml call `npm run lint/typecheck/arch:check/
+# test:*` → every gate failed "Missing script". Inject the canonical block (non-destructive:
+# only adds keys the consumer lacks). The referenced devDependencies (eslint, dependency-cruiser,
+# stryker, npm-run-all2, vitest, prettier, husky) are NOT installed here — that is the consumer's
+# `npm install` + residual R-2 (devDeps manifest). Scripts present ≠ runnable until deps land,
+# but "Missing script" → "tool not installed" is the intended, INSTALL.md-documented path.
+if [ -f "$PROJECT_ROOT/package.json" ]; then
+  if [ -n "$DRY_RUN" ]; then
+    echo "▶ package.json scripts → [dry-run] would merge canonical block (non-destructive)"
+  elif command -v node >/dev/null 2>&1; then
+    echo "▶ Merging canonical scripts → package.json (non-destructive)"
+    AIF_PKG="$PROJECT_ROOT/package.json" node -e '
+      const fs = require("fs");
+      const p = process.env.AIF_PKG;
+      const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
+      pkg.scripts = pkg.scripts || {};
+      const want = {
+        "lint": "eslint . --max-warnings=0",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "test:integration": "vitest run -- --include 'src/**/*.integration.{ts,tsx}'",
+        "test:mutation": "stryker run",
+        "test:mutation:incremental": "stryker run --incremental",
+        "arch:check": "depcruise --config .dependency-cruiser.cjs src",
+        "audit:docs": "./scripts/audit-ai-docs.sh",
+        "validate": "npm-run-all2 --parallel typecheck lint format:check arch:check audit:docs test",
+        "prepare": "husky"
+      };
+      let added = 0;
+      for (const [k, v] of Object.entries(want)) if (!(k in pkg.scripts)) { pkg.scripts[k] = v; added++; }
+      // cih-s1 F2: also merge the devDeps the SHIPPED HOOKS need so they run, not just exist.
+      // .husky/pre-commit calls `npx lint-staged`; the canonical scripts call `husky` (prepare)
+      // and sort-package-json. Without these the hooks are dead even after `npm install`. Same
+      // non-destructive guard as scripts: only keys the consumer lacks; caret ranges (not in the
+      // framework root package.json — no range to mirror, per orchestrator note) so consumers get
+      // patches. devDependencies object created if absent.
+      pkg.devDependencies = pkg.devDependencies || {};
+      const wantDev = {
+        "husky": "^9.1.7",
+        "lint-staged": "^15.2.10",
+        "sort-package-json": "^2.10.1"
+      };
+      let addedDev = 0;
+      for (const [k, v] of Object.entries(wantDev)) if (!(k in pkg.devDependencies)) { pkg.devDependencies[k] = v; addedDev++; }
+      fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+      process.stderr.write("  ✓ added " + added + " script(s); " + (Object.keys(want).length - added) + " already present (kept)\n");
+      process.stderr.write("  ✓ added " + addedDev + " hook devDep(s); " + (Object.keys(wantDev).length - addedDev) + " already present (kept)\n");
+    '
+  else
+    echo "  ⚠  node not found — skipped scripts merge; add them manually per INSTALL.md §3"
+  fi
+fi
+
+# ─── cih-s3 V2: runtime-discipline arming WARN (consumer-side, deps-free) ───
+# R7/R8 (no-direct-time-randomness / require-otel-span) ship DEFERRED behind AIF_STRICT_RUNTIME=1
+# in the eslint config templates. If the consumer already depends on @opentelemetry/* yet has not
+# armed the runtime rules, R8 silently never fires — surface that. Greps the package.json TEXT
+# (deps may be uninstalled at install time → no module/require check). Non-fatal: WARN only,
+# exit stays 0 (a fresh skeleton legitimately defers). --dry-run-aware.
+if [ "$DRY_RUN" = "--dry-run" ]; then
+  echo "  [dry-run] would check @opentelemetry/* vs AIF_STRICT_RUNTIME for the R7/R8 arming WARN"
+elif [ -f "$PROJECT_ROOT/package.json" ] && \
+     grep -q '@opentelemetry/' "$PROJECT_ROOT/package.json" && \
+     [ "${AIF_STRICT_RUNTIME:-}" != "1" ]; then
+  echo ""
+  echo "⚠  Detected @opentelemetry/* but AIF_STRICT_RUNTIME is unset — R8 (require-otel-span) will not fire."
+  echo "   Set AIF_STRICT_RUNTIME=1 to arm runtime-discipline rules (R7/R8)."
 fi
 
 # ─── Done ───────────────────────────────────────────────
@@ -568,7 +670,7 @@ echo "       eslint-plugin-testing-library @playwright/test"
 fi
 echo ""
 echo "  5. Add scripts to package.json (see INSTALL.md §3)"
-echo "  6. npx husky init && verify hooks installed"
+echo "  6. Verify git hooks: 'git config core.hooksPath' should print .husky (install activated it; do NOT run 'npx husky init' — it would clobber the shipped .husky/pre-commit + pre-push)"
 echo "  7. Run: ./scripts/audit-ai-docs.sh — should PASS"
 echo "  8. Run: npm run validate"
 echo ""

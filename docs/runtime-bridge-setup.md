@@ -3,19 +3,25 @@
 > **Authoritative for:** consumer-facing setup of the runtime bridge (Phase 1, aif-handoff backend) — install/opt-out flow, required config env, cost-cap behaviour, port layout, and the auto-review escalation path.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../README.md#why-this-exists). The bridge architecture/interface — see [packages/runtime-bridge/DESIGN.md](../packages/runtime-bridge/DESIGN.md). amux backend — Phase 2 (not yet functional).
 
-The runtime bridge lets `/meta-orchestrator` kickoffs dispatch cross-session work to an aif-handoff runtime instead of manual copy-paste. It is **opt-in**: with nothing installed, `ManualBackend` (copy-paste) is always the default, and the bridge never degrades that experience — it only adds automation when aif-handoff is present and you opt in.
+The runtime bridge lets `/pipeline` kickoffs dispatch cross-session work to an aif-handoff runtime instead of manual copy-paste. It is **opt-in**: with nothing installed, `ManualBackend` (copy-paste) is always the default, and the bridge never degrades that experience — it only adds automation when aif-handoff is present and you opt in.
 
 ## Quick start
+
+**One-click path:** `./setup` (framework repo root) offers this setup as its final step. Its guided-detect layer (`setup.d/bridge-guided.sh`) keys on `/health`, so detection is **runtime-agnostic** — aif-handoff may run in docker OR natively; the installer never assumes docker. If the service is unreachable, it diagnoses the run mode and prints the matching bring-up instruction (docker daemon available → `docker compose up -d` in your aif-handoff checkout; native CLI on `PATH` → start it; neither → an install pointer to this doc) — bring the service up and re-run; detection re-probes `/health` and reports reachable / not reachable explicitly, never silently.
+
+**Direct path:**
 
 ```bash
 # run from your project root
 bash packages/runtime-bridge/scripts/setup-runtime-bridge.sh
 ```
 
-The script probes for a reachable aif-handoff coordinator, then asks whether to enable the bridge:
+The script probes `${RUNTIME_BRIDGE_AIF_URL:-http://localhost:3009}/health` for a reachable aif-handoff coordinator (docker or native — the signal is transport-agnostic) and reports the result explicitly, then asks whether to enable the bridge:
 
 - **yes** → it writes the required `RUNTIME_BRIDGE_*` env to your shell rc, copies the PostToolUse hook into `.claude/hooks/`, and **offers to auto-write** the PostToolUse entry to `.claude/settings.json` (idempotent — skips if the entry is already present; backs up to `settings.json.bak` before writing; JSON-validates before swapping; preserves all existing hooks). Pass `--no-write-settings` or decline the prompt to fall back to printing the snippet for manual pasting. Note: the *agent* (Claude Code) is deny-listed from editing `settings.json` via its `Edit(.claude/settings.json)` / `Write(.claude/settings.json)` tool permissions — that deny-list binds the agent's tool calls, not this human-run setup script, which is why the script may write safely with backup + validation + consent.
 - **no** → it prints the per-task opt-out marker and changes nothing.
+
+On **yes** the script prompts for your aif-handoff project UUID; leaving it empty triggers an **explicit warning** — the bridge will throw `dispatch_failed` and stay on `ManualBackend` until `RUNTIME_BRIDGE_AIF_PROJECT_ID` is set. No silent degrade at setup time (the silent fallback described under *Required config env* below is the runtime's behaviour when the env is missing, not the setup script's).
 
 The script **detects and instructs — it never installs aif-handoff for you** (`docker compose up`, MCP server bring-up, and the `transport: "cli"` profile change are yours to run).
 
@@ -120,12 +126,26 @@ aif-handoff exposes more than one surface; they do **not** share a port:
 
 > **Clean-worktree precondition (verify this before relying on autonomy):** aif-handoff refuses to advance a task to `plan_ready` while the target project worktree is dirty (a branch-isolation guard). A dirty tree surfaces as `dispatch_failed`; `dispatch()` then best-effort **deletes** the half-created task (rollback — no orphan) and the bridge falls back to `ManualBackend`. Commit/stash/gitignore the target tree, then re-run `verify-bridge.sh` to confirm a full `backlog → plan_ready` run. (The same guard applies to the MCP path — it is not REST-specific.) The REST dispatch HTTP mechanics + error mapping are unit- and live-verified; the end-to-end `plan_ready` + coordinator-pickup step is the operator's clean-worktree smoke-test check.
 
+## Auto-dispatch is opt-IN (per kickoff)
+
+The PostToolUse hook does **NOT** auto-dispatch by default (maintainer decision 2026-05-31 — auto-dispatch is real, metered autonomous work). To enable it for one kickoff, make its **first line** exactly:
+
+```text
+<!-- bridge: auto -->
+```
+
+Everything else stays manual — dispatch on demand with `tsx packages/runtime-bridge/src/cli/dispatch.ts <kickoff-path>`.
+
+The opt-in default also lives at the library layer: `buildKickoffSpec()` returns `null` without the `<!-- bridge: auto -->` marker unless the caller explicitly passes `requireAutoMarker: false` — `cli/dispatch.ts` (the manual on-demand path) is the one caller that does.
+
+> ⚠️ **Stale hook copy:** consumers who ran `setup-runtime-bridge.sh` **before** this flip hold an opt-OUT hook copy in `.claude/hooks/` that still auto-dispatches every kickoff — re-run the script to refresh it.
+
 ## Opt-out
 
 The bridge is fully optional and degrades gracefully:
 
 - **Session-wide:** `export RUNTIME_BRIDGE_MODE=manual` forces `ManualBackend` even when aif-handoff is installed.
-- **Per task:** make the **first line** of a kickoff `<!-- bridge: skip -->` → that one task uses `ManualBackend` (copy-paste) even when the bridge is active.
+- **Per task (manual path):** make the **first line** of a kickoff `<!-- bridge: skip -->` → that one task uses `ManualBackend` (copy-paste) even when `dispatch.ts` is invoked on it directly (e.g. via `/dispatcher`).
 - **Automatic:** on any backend exception — `quota_exceeded`, `unavailable`, a dropped WebSocket — the bridge auto-falls-back to `ManualBackend` and prints copy-paste instructions. This is expected behaviour, not a bug; the worst case is a return to the manual status quo.
 
 ## Cost cap (read before enabling)
@@ -162,6 +182,25 @@ reasonable default and keeps going. Use the PARK primitive ONLY for a genuine
 
 Never use `blockedReason` alone to stop the agent — the coordinator does not honor it
 (it filters on `paused`). The `aif-park.test.ts` GUARD enforces this.
+
+## Operator convenience: mount global skills
+
+By default the aif container only sees the repo clone. To give the aif agent access to
+your operator-side global skills (`~/.claude/skills/orchestrator/`, Superpowers plugins,
+etc.), add bind-mounts to your local `docker-compose.override.yml`:
+
+```yaml
+services:
+  agent:
+    volumes:
+      - ~/.claude/skills:/home/www/.claude/skills:ro
+      - ~/.claude/plugins:/home/www/.claude/plugins:ro
+      - ~/.claude-coordination:/home/www/.claude-coordination:ro
+```
+
+This is operator-axis only — consumers of the shipped framework are NOT required to have
+these paths. The shipped in-repo discipline (`agents/orchestrator-worker-discipline.md` +
+`skill-context/aif-orchestrator-discipline/SKILL.md`) works without the mount.
 
 ## See also
 

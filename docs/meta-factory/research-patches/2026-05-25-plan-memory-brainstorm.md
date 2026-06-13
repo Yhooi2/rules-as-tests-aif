@@ -2,11 +2,11 @@
 # Brainstorm — meta-orchestrator plan-memory feature
 
 > **Authoritative for:** brainstorm-phase output for the `meta-orchestrator-plan-memory` umbrella — maintainer intent restatement, feature decomposition, prior-art consult with T16 checks, two design directions, R-phase question list, falsifiers, §1.7 self-check. Pre-R-phase deliverable.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). R-phase verdict — this is brainstorm only (Status below). Implementation — not started.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). R-phase verdict — this is brainstorm only (Status below). Implementation — not started.
 
 > **Date:** 2026-05-25
 > **Status:** brainstorm phase (pre-R-phase)
-> **Origin:** Maintainer dialogue 2026-05-25. Kickoff: [.claude/orchestrator-prompts/meta-orchestrator-plan-memory/kickoff.md](../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory/kickoff.md). Worker dispatched via meta-orchestrator-plan-memory umbrella.
+> **Origin:** Maintainer dialogue 2026-05-25. Kickoff: [.claude/orchestrator-prompts/meta-orchestrator-plan-memory/kickoff.md](../../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory/kickoff.md). Worker dispatched via meta-orchestrator-plan-memory umbrella.
 
 ---
 
@@ -211,7 +211,7 @@ These are NOT ranked. R-phase picks between them.
 **Cons:**
 - Strategy-bearing file becomes write-destination for auto-updates — coupling «strategy layer» (ordering, scope decisions) with «factual cache» (PR merge status). The `kickoff §3.2` table already flagged this: «Public diffs for routine reconciles add noise; coupling strategy with factual.»
 - DRIFT from the auto-write itself: if two sessions run concurrently (parallel worktrees) and both try to edit §0, last-write-wins conflict.
-- `wave-sequencing-plan.md` is ~80 lines of carefully-worded strategy text; auto-edit risk is high (Edit tool on strategy-bearing prose = high blast radius per [CLAUDE.md «Artifact Ownership Contract»](../../CLAUDE.md)).
+- `wave-sequencing-plan.md` is ~80 lines of carefully-worded strategy text; auto-edit risk is high (Edit tool on strategy-bearing prose = high blast radius per [CLAUDE.md «Artifact Ownership Contract»](../../../CLAUDE.md)).
 
 ---
 
@@ -333,12 +333,12 @@ Does THIS umbrella's own plan-of-action live in the stored plan? The `meta-orche
 
 ## See also
 
-- [kickoff.md](../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory/kickoff.md) — brainstorm kickoff (origin of this patch)
-- [SKILL.md §1–§2](../../.claude/skills/meta-orchestrator/SKILL.md) — current plan-currency + priority sections (the read-only surface this feature extends)
-- [helpers/plan-currency-check.sh](../../.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh) — L2 detection (the write-back missing half)
+- [kickoff.md](../../../.claude/orchestrator-prompts/meta-orchestrator-plan-memory/kickoff.md) — brainstorm kickoff (origin of this patch)
+- [SKILL.md §1–§2](../../../.claude/skills/meta-orchestrator/SKILL.md) — current plan-currency + priority sections (the read-only surface this feature extends)
+- [helpers/plan-currency-check.sh](../../../.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh) — L2 detection (the write-back missing half)
 - [docs/meta-factory/wave-sequencing-plan.md §0](../wave-sequencing-plan.md) — current plan SSOT (Direction A write target)
 - [docs/meta-factory/research-patches/2026-05-25-planner-completeness-prior-art.md](2026-05-25-planner-completeness-prior-art.md) — L3/L4/L5 R-phase (predecessor; SSOT rows #72-#76 registered there)
 - [docs/meta-factory/research-patches/2026-05-23-meta-orchestrator-prior-art.md](2026-05-23-meta-orchestrator-prior-art.md) — original /meta-orchestrator BUILD verdict (SSOT rows #66-#70)
-- [.claude/rules/memory-codification.md §3](../../.claude/rules/memory-codification.md) — write-time discipline for durable conventions
-- [.claude/rules/dual-implementation-discipline.md §7](../../.claude/rules/dual-implementation-discipline.md) — SSOT pointer requirement for Direction B
-- [.claude/rules/reviewer-discipline.md §2](../../.claude/rules/reviewer-discipline.md) — strategy-vs-factual boundary (§4 strategy-vs-factual table)
+- [.claude/rules/memory-codification.md §3](../../../.claude/rules/memory-codification.md) — write-time discipline for durable conventions
+- [.claude/rules/dual-implementation-discipline.md §7](../../../.claude/rules/dual-implementation-discipline.md) — SSOT pointer requirement for Direction B
+- [.claude/rules/reviewer-discipline.md §2](../../../.claude/rules/reviewer-discipline.md) — strategy-vs-factual boundary (§4 strategy-vs-factual table)

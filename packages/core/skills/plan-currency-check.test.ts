@@ -37,7 +37,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT_REAL = resolve(HERE, '../../..');
 const SCRIPT = resolve(
   REPO_ROOT_REAL,
-  '.claude/skills/meta-orchestrator/helpers/plan-currency-check.sh',
+  '.claude/skills/pipeline/helpers/plan-currency-check.sh',
 );
 
 // ── Fixture state shared across each test ────────────────────────────────────
@@ -81,9 +81,10 @@ function write(filePath: string, content: string): void {
   writeFileSync(filePath, content, 'utf8');
 }
 
-/** Run plan-currency-check.sh with all fixture env vars injected. */
-function runScript(extraEnv: Record<string, string> = {}): string {
-  return execFileSync('bash', [SCRIPT], {
+/** Run plan-currency-check.sh with optional umbrella arg + fixture env vars. */
+function runScript(extraEnv: Record<string, string> = {}, umbrella?: string): string {
+  const args = umbrella ? [SCRIPT, umbrella] : [SCRIPT];
+  return execFileSync('bash', args, {
     encoding: 'utf8',
     // plan-currency-check.sh may exit non-zero on git errors; capture stderr too
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -123,9 +124,11 @@ beforeEach(() => {
   write(wavePlanPath, WAVE_PLAN_WITH_ITEMS);
 
   // mock-gh binary: returns two merged PRs — #100 (in plan) and #200 (not in plan)
-  // Both use mergedAt = "1970-01-01T00:00:00Z" which will be >= cutoff 0 (guaranteed recent-ish for test)
-  // We use a very old date AND pass cutoff=0 via the argjson in jq to ensure both pass the filter.
-  // The mock returns current-ish dates to pass the 30d filter (use a fixed recent date).
+  // mergedAt is computed dynamically (5 days ago) so it always falls within the script's
+  // 30-day cutoff window regardless of wall-clock date. A hard-coded date (was 2026-05-01)
+  // bit-rots: once `now` advances >30d past it, both PRs get filtered out and the positive
+  // UNTRACKED-N tests silently fail. The date math mirrors the script's own portable
+  // darwin (`-v`) → GNU (`-d`) fallback (plan-currency-check.sh:82,136).
   const mockGhDir = join(tmpRoot, 'bin');
   mkdirSync(mockGhDir, { recursive: true });
   mockGhBin = join(mockGhDir, 'mock-gh');
@@ -134,11 +137,11 @@ beforeEach(() => {
     [
       '#!/usr/bin/env bash',
       '# Mock gh — returns two merged PRs; #100 is in the wave plan, #200 is not.',
-      '# mergedAt is set to 2026-05-01 (within 30d from 2026-05-25) to pass the cutoff filter.',
-      'echo \'[',
-      '  {"number":100,"title":"feat: some feature already in plan","mergedAt":"2026-05-01T00:00:00Z"},',
-      '  {"number":200,"title":"feat: untracked feature not in plan","mergedAt":"2026-05-01T00:00:00Z"}',
-      ']\'',
+      "RECENT=\"$(date -u -v-5d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)\"",
+      'echo "[',
+      '  {\\"number\\":100,\\"title\\":\\"feat: some feature already in plan\\",\\"mergedAt\\":\\"${RECENT}\\"},',
+      '  {\\"number\\":200,\\"title\\":\\"feat: untracked feature not in plan\\",\\"mergedAt\\":\\"${RECENT}\\"}',
+      ']"',
     ].join('\n'),
   );
   chmodSync(mockGhBin, 0o755);
@@ -279,8 +282,9 @@ describe('plan-currency-check.sh — T15 self-application + structural verificat
     expect(existsSync(SCRIPT)).toBe(true);
     const src = readFileSync(SCRIPT, 'utf8');
 
-    // Seam overrides (T13 reuse from L1)
-    expect(src).toContain('REPO_ROOT="${REPO_ROOT:-');
+    // Seam overrides (T13 reuse from L1). REPO_ROOT is now resolved by the shared
+    // lib/common.sh sourced at the top (Stage 4 dedup) rather than an inline assignment.
+    expect(src).toContain('lib/common.sh');
     expect(src).toContain('MO_GH_BIN="${MO_GH_BIN:-');
     expect(src).toContain('MO_WAVE_PLAN="${MO_WAVE_PLAN:-');
 
@@ -290,5 +294,34 @@ describe('plan-currency-check.sh — T15 self-application + structural verificat
 
     // Existing T17 marker (pre-L2 behaviour preserved)
     expect(src).toContain('@cc-only-rationale');
+    // pipeline-ux P1: named-mode guard present in script (not prose-only)
+    expect(src).toContain('named-mode');
+  });
+});
+
+// ── Named-mode compact output tests (pipeline-ux Stage 1) ────────────────────
+describe('plan-currency-check.sh — named-mode compact (pipeline-ux P1)', () => {
+  it('named-mode: exits with compact header (not the full 47KB scan)', () => {
+    const out = runScript({}, 'some-umbrella');
+    expect(out).toContain("umbrella='some-umbrella' named-mode");
+  });
+  it('named-mode: kickoff EXISTS reported when dir present', () => {
+    // Create a kickoff.md fixture for 'some-umbrella'
+    const promptsDir2 = join(tmpRoot, '.claude', 'orchestrator-prompts', 'some-umbrella');
+    mkdirSync(promptsDir2, { recursive: true });
+    writeFileSync(join(promptsDir2, 'kickoff.md'), '# kickoff\n');
+    const out = runScript({}, 'some-umbrella');
+    expect(out).toContain('kickoff: EXISTS');
+    expect(out).not.toContain('MISSING');
+  });
+  it('named-mode: kickoff MISSING reported when dir absent', () => {
+    const out = runScript({}, 'nonexistent-umbrella');
+    expect(out).toContain('kickoff: MISSING');
+  });
+  it('named-mode: output is compact (no raw JSON blobs or merged-PR listings)', () => {
+    const out = runScript({}, 'some-umbrella');
+    expect(out).not.toContain('"number"');    // no JSON PR dump
+    expect(out).not.toContain('merged PRs');  // no full merged-PR section
+    expect(out.split('\n').length).toBeLessThan(10); // ≤10 lines
   });
 });

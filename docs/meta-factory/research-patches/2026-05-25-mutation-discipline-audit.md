@@ -249,4 +249,4 @@ This audit's own claims are subject to the discipline it recommends extending:
 - [`packages/core/stryker.audit-ai-docs.mjs`](../../../packages/core/stryker.audit-ai-docs.mjs) — secondary Stryker config.
 - M.4 umbrella kickoff at `.claude/orchestrator-prompts/m4-bash-hook-tests/kickoff.md` — paired-negative test pattern reference.
 - [.claude/rules/ai-laziness-traps.md §2 T-MUT-A / T-MUT-B](../../../.claude/rules/ai-laziness-traps.md) — domain-specific traps active for this umbrella.
-- [docs/meta-factory/prior-art-evaluations.md](../../prior-art-evaluations.md) — SSOT register for any Stage 2 B.1 verdicts.
+- [docs/meta-factory/prior-art-evaluations.md](../prior-art-evaluations.md) — SSOT register for any Stage 2 B.1 verdicts.

@@ -1,0 +1,7 @@
+# Companion manifest — TAB-delimited: name<TAB>detect_cmd<TAB>install_cmd<TAB>kind
+# Fields are separated by a SINGLE tab, NO padding spaces around fields (this is the S3 parser contract).
+# Tab (not pipe) delimiter: detect_cmd may contain inner pipes (per kickoff §4 T-OCI-A).
+# Companions install via THEIR official installer, detect-first, no version pin.
+# kind=cc-plugin → install_cmd is run on consent. kind=external-service → routed to bridge guided-detect (setup-runtime-bridge.sh), install_cmd ignored.
+superpowers	claude plugin list 2>/dev/null | grep -q superpowers	claude plugin install superpowers@claude-plugins-official --scope user	cc-plugin
+runtime-bridge	curl -sf "${RUNTIME_BRIDGE_AIF_URL:-http://localhost:3009}/health"	(bridge)	external-service

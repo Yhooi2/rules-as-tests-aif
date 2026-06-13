@@ -1,4 +1,13 @@
+---
+paths:
+  - ".github/workflows/**"
+  - ".github/actions/**"
+---
+
 # No paid LLM in CI — discipline rule
+
+<!-- globs: .github/workflows/**, .github/actions/** -->
+<!-- inject: No paid LLM in CI. API-billed calls in .github/workflows/ violate policy. See §4 escape hatch for authorized override. -->
 
 > **Class:** A — companion principle test shipped at [packages/core/principles/17-no-paid-llm-in-ci.test.ts](../../packages/core/principles/17-no-paid-llm-in-ci.test.ts) (#132/#133, 2026-05-22); deterministic grep over `.github/workflows/*.yml` for paid-API-LLM usage (Track 3 §3.4 mechanism, DN-6).
 > **Authoritative for:** no-paid-LLM-in-CI policy rationale, scope (CI/GH Actions surface), escape-hatch process (explicit operator override per session with rationale), AI-agnostic sub-agent fallback pattern.

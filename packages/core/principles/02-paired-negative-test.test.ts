@@ -16,16 +16,24 @@
  *   See principles-as-tests.md §Known limitations.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { execSync, spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(HERE, '../../..');
 const MANIFEST_PATH = resolve(HERE, '../manifest/rules-manifest.json');
 const SYNTH_FIXTURE_PATH = resolve(
   HERE,
   '../synthesizer/expected-fixture-synth.json',
 );
+
+// Stage 3C — content-level gate paths
+const HOOKS_DIR = resolve(HERE, '../hooks');
+const AUDIT_SELF_DIR = resolve(HERE, '../audit-self');
+const BASH_MUTATOR = resolve(HERE, '../audit-self/run-bash-mutation.sh');
+const HOOK_MARKER_SH = resolve(REPO_ROOT, '.claude/hooks/check-hook-marker.sh');
 
 interface RuleEntry {
   title: string;
@@ -33,12 +41,13 @@ interface RuleEntry {
   check: { type: string; [key: string]: unknown };
   examples: { bad: string; good: string };
   policy?: string;
+  'negative-test'?: { input: string[]; 'expect-violation': string; eslintRuleConfig?: unknown };
   [key: string]: unknown;
 }
 
 interface SynthesizedRuleEntry extends RuleEntry {
   id: string;
-  'negative-test'?: { input: string; 'expect-violation': string };
+  'negative-test'?: { input: string[]; 'expect-violation': string; eslintRuleConfig?: unknown };
 }
 
 interface SynthFixture {
@@ -57,6 +66,108 @@ function loadSynthFixture(): SynthFixture {
 
 /** Minimum meaningful content length (not just whitespace or a comment marker) */
 const MIN_EXAMPLE_LENGTH = 5;
+
+// ── Stage 3C — content-level paired-negative gate ────────────────────────────
+
+/**
+ * Detects test files that have the ❌+✅ paired-negative contract shape.
+ * Presence of the "Paired-negative contract:" block or an ❌/PAIRED-NEGATIVE
+ * marker counts as the mutation-sanity docstring required by Stage 3C:
+ * the block documents what violation was tried and what was expected.
+ * (source: packages/core/hooks/check-hook-marker.test.ts:10-15)
+ */
+const PAIRED_NEGATIVE_RE = /❌|Paired-negative contract|PAIRED-NEGATIVE/;
+
+/**
+ * Content-level assertion patterns — at least one must be present in a
+ * file with the ❌+✅ shape to pass the Stage 3C gate.
+ *
+ * Evidence (verified against real hook test files, T3):
+ *   - .toBe(N) exit-code assertions: hooks/check-hook-marker.test.ts:69,74,79
+ *   - .toMatch( pattern checks:      hooks/end-of-turn-reminder.test.ts (many)
+ *   - .toContain( string checks:     hooks/deps-hash-check.test.ts (many)
+ *   - expect(r.status):              hooks/deps-hash-check.test.ts:80+
+ *   - expect(r.stdout/.stderr):      hooks/end-of-turn-reminder.test.ts (many)
+ */
+const CONTENT_ASSERTION_RE =
+  /\.toBe\(\s*\d+\s*\)|\.toMatch\(|\.toContain\(|\.toThrow\(|expect\([^)]*\.(status|stdout|stderr|code)\b/;
+
+/**
+ * Stage 3C content-level gate: a test file with the ❌+✅ paired-negative
+ * contract shape MUST have at least one content-level assertion (exit code,
+ * stdout, or stderr content) — not merely .toBeDefined() / shape-only.
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ file with only .toBeDefined() → throws "content-level assertion" error
+ *   ✅ file with .toBe(N) / .toMatch(/ .toContain(/ status|stdout|stderr → no throw
+ */
+function assertContentLevel(id: string, content: string): void {
+  if (!PAIRED_NEGATIVE_RE.test(content)) {
+    return; // not a paired-negative test file — out of scope for this gate
+  }
+  if (!CONTENT_ASSERTION_RE.test(content)) {
+    throw new Error(
+      `${id}: has ❌/✅ paired-negative contract but no content-level assertion ` +
+        '(exit code, stdout, or stderr check). Replace shape-only .toBeDefined() ' +
+        'with e.g. expect(r.status).toBe(1) or expect(out).toMatch(/pattern/).',
+    );
+  }
+}
+
+/** Returns true when universalmutator (the Stage 2 B bash mutator) is on PATH. */
+function hasUniversalMutator(): boolean {
+  try {
+    execSync('command -v mutate', { stdio: 'ignore' });
+    execSync('command -v analyze_mutants', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+const HAS_UM = hasUniversalMutator();
+
+/**
+ * Run the Stage 2 B bash-mutation wrapper
+ * (packages/core/audit-self/run-bash-mutation.sh).
+ * Output format verified against run-bash-mutation.test.ts:91-101 (T16).
+ */
+function runBashMutator(hookPath: string, testCmd: string, floor = '60') {
+  return spawnSync('bash', [BASH_MUTATOR, hookPath, testCmd, floor], {
+    encoding: 'utf8',
+    cwd: REPO_ROOT,
+  });
+}
+
+/**
+ * Assert liveness corpus constraints for an ESLint rule's negative-test field.
+ * Accumulates violations rather than throwing, so the caller can batch all rules.
+ *
+ * Constraints (parallel to assertPrinciple2's tautology arm):
+ *   1. input array is non-empty
+ *   2. each entry is non-trivial (≥ MIN_EXAMPLE_LENGTH chars)
+ *   3. no entry is identical to examples.good
+ *   4. all entries are distinct (no duplicate bypass variants)
+ */
+function assertNegativeTestLiveness(id: string, rule: RuleEntry, violations: string[]): void {
+  const nt = rule['negative-test'];
+  if (!nt) return; // no negative-test present — structural absence checked elsewhere
+  if (!Array.isArray(nt.input) || nt.input.length === 0) {
+    violations.push(`${id}: negative-test.input must be a non-empty array`);
+    return;
+  }
+  for (const inp of nt.input) {
+    if (!inp || inp.trim().length < MIN_EXAMPLE_LENGTH) {
+      violations.push(`${id}: negative-test.input entry is empty or trivial`);
+    }
+    if (inp.trim() === rule.examples.good.trim()) {
+      violations.push(`${id}: negative-test.input entry is identical to examples.good — tautology`);
+    }
+  }
+  const distinct = new Set(nt.input.map((s) => s.trim()));
+  if (distinct.size < nt.input.length) {
+    violations.push(`${id}: negative-test.input has duplicate entries — variants must be distinct`);
+  }
+}
 
 function assertPrinciple2(id: string, rule: RuleEntry): void {
   const bad = rule.examples?.bad;
@@ -84,6 +195,117 @@ function assertPrinciple2(id: string, rule: RuleEntry): void {
     );
   }
 }
+
+describe(
+  'Principle 2 Stage 3C — content-level paired-negative gate (hook test files)',
+  () => {
+    /**
+     * mutation-sanity-checked (write-time):
+     *   ❌ file with ❌+✅ shape but only .toBeDefined() → assertContentLevel throws
+     *   ✅ file with .toBe(N) exit-code assertion → no throw
+     *
+     * Paired-negative contract:
+     *   ❌ shape-only (only .toBeDefined()) → content-level gate FAILS
+     *   ✅ content assertion present → content-level gate PASSES
+     */
+    it(
+      'mutation: file with ❌/✅ shape but only .toBeDefined() fails content gate [M3]',
+      () => {
+        const shapeOnly = `
+/**
+ * Paired-negative contract:
+ *   ❌ hook missing marker → fails
+ *   ✅ hook has marker → passes
+ */
+it('PAIRED-NEGATIVE: hook with no marker → fails', () => {
+  const r = runHook('Write', abs);
+  expect(r).toBeDefined();
+});`;
+        expect(() => assertContentLevel('shape-only.test.ts', shapeOnly)).toThrow(
+          /content-level assertion/,
+        );
+      },
+    );
+
+    it(
+      'mutation: file with exit-code assertion passes content gate [M3]',
+      () => {
+        const real = `
+/**
+ * Paired-negative contract:
+ *   ❌ hook missing marker → exit 1
+ *   ✅ hook has marker → exit 0
+ */
+it('PAIRED-NEGATIVE: hook with no marker → exit 1', () => {
+  const r = runHook('Write', abs);
+  expect(r.status).toBe(1);
+});`;
+        expect(() => assertContentLevel('real.test.ts', real)).not.toThrow();
+      },
+    );
+
+    it(
+      'all hook/audit-self test files with paired-negative contracts have content-level assertions [M3]',
+      () => {
+        const violations: string[] = [];
+        for (const dir of [HOOKS_DIR, AUDIT_SELF_DIR]) {
+          const files = readdirSync(dir).filter((f) => f.endsWith('.test.ts'));
+          for (const file of files) {
+            const content = readFileSync(resolve(dir, file), 'utf8');
+            try {
+              assertContentLevel(file, content);
+            } catch (err) {
+              violations.push((err as Error).message);
+            }
+          }
+        }
+        expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+      },
+    );
+  },
+);
+
+describe.skipIf(!HAS_UM)(
+  'Principle 2 Stage 3C — bash mutation kill-rate gate (local/on-demand, ≥60% floor)',
+  () => {
+    /**
+     * Wires the Stage 2 B bash mutator (universalmutator ADAPT, SSOT #91) to
+     * register a kill-rate assertion within principle 02. Skipped in CI (no
+     * universalmutator — matches Stryker devDep-only delivery). Run locally:
+     *   packages/core/audit-self/run-bash-mutation.sh \
+     *     .claude/hooks/check-hook-marker.sh \
+     *     "npx vitest run hooks/check-hook-marker.test.ts" 60
+     *
+     * Output format verified against run-bash-mutation.test.ts:91-101 (T16):
+     *   "kill rate: XX%  (killed N / survived M of P)"
+     *   "PASS — XX% ≥ YY% floor" or "FAIL — XX% < YY% floor", exit 0/1.
+     *
+     * mutation-sanity-checked: asserts stdout content (kill rate line) AND
+     * exit code — not merely .toBeDefined() (Stage 3C self-application).
+     *
+     * Paired-negative contract:
+     *   ❌ hook test kills < 60% of mutants → wrapper exits 1 (FAIL)
+     *   ✅ hook test kills ≥ 60% of mutants → wrapper exits 0 (PASS)
+     */
+    it(
+      'check-hook-marker.sh kills ≥60% of bash mutants (content-strength evidence) [M3-bash]',
+      () => {
+        const r = runBashMutator(
+          HOOK_MARKER_SH,
+          'npx vitest run hooks/check-hook-marker.test.ts',
+        );
+        const out = (r.stdout ?? '') + (r.stderr ?? '');
+        expect(out).toMatch(/kill rate: \d+%/);
+        expect(r.status).toBe(0); // ≥ 60% floor — content-level assertion on exit code
+      },
+      // The bash mutator spawns `npx vitest` once per mutant — inherently slow
+      // (~9.5s observed on a loaded host). The default 5000ms vitest timeout
+      // false-fails this local/on-demand gate (HAS_UM only). Mirrors the Stryker
+      // precedent (principle 11 testTimeout 5s→30s); 60s margin covers host load.
+      60_000,
+    );
+  },
+);
 
 describe('Principle 2 — Paired negative test (examples.bad + examples.good)', () => {
   it('all rules have non-trivial paired bad/good examples', () => {
@@ -139,7 +361,7 @@ describe('Principle 2 — Paired negative test (examples.bad + examples.good)', 
     expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
   });
 
-  it('every eslint-checked synthesized rule has a non-empty negative-test.input distinct from examples.good [M2]', () => {
+  it('every eslint-checked synthesized rule has a non-empty negative-test.input array with distinct variants [M2]', () => {
     const fixture = loadSynthFixture();
     const violations: string[] = [];
     for (const rule of fixture.rules) {
@@ -149,20 +371,412 @@ describe('Principle 2 — Paired negative test (examples.bad + examples.good)', 
         violations.push(`${rule.id}: eslint rule has no negative-test`);
         continue;
       }
-      if (!nt.input || nt.input.trim().length < MIN_EXAMPLE_LENGTH) {
-        violations.push(`${rule.id}: negative-test.input is empty or trivial`);
+      if (!Array.isArray(nt.input) || nt.input.length === 0) {
+        violations.push(`${rule.id}: negative-test.input must be a non-empty array`);
         continue;
       }
       if (!nt['expect-violation'] || nt['expect-violation'].trim().length === 0) {
         violations.push(`${rule.id}: negative-test.expect-violation is empty`);
         continue;
       }
-      if (nt.input.trim() === rule.examples.good.trim()) {
-        violations.push(
-          `${rule.id}: negative-test.input is identical to examples.good — tautology (input must violate the rule)`,
-        );
+      for (const inp of nt.input) {
+        if (!inp || inp.trim().length < MIN_EXAMPLE_LENGTH) {
+          violations.push(`${rule.id}: negative-test.input entry is empty or trivial`);
+        }
+        if (inp.trim() === rule.examples.good.trim()) {
+          violations.push(
+            `${rule.id}: negative-test.input entry is identical to examples.good — tautology`,
+          );
+        }
+      }
+      const distinct = new Set(nt.input.map((s) => s.trim()));
+      if (distinct.size < nt.input.length) {
+        violations.push(`${rule.id}: negative-test.input has duplicate entries — variants must be distinct`);
       }
     }
     expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+});
+
+describe('Principle 2 — Liveness corpus (manifest ESLint rules)', () => {
+  /**
+   * Extension of the structural paired-negative check to the manifest layer.
+   * For ESLint rules that carry a negative-test field, assert:
+   *   1. input array is non-empty (≥1 entry)
+   *   2. all entries are distinct (anti-tautology — no duplicate bypass variants)
+   *   3. no entry is identical to examples.good (existing paired-negative invariant)
+   *
+   * mutation-sanity-checked (write-time):
+   *   ❌ ESLint rule with duplicate negative-test inputs → "duplicate entries" violation
+   *   ✅ ESLint rule with distinct negative-test inputs → no violation
+   *
+   * Paired-negative contract:
+   *   ❌ duplicate inputs in negative-test.input → duplicate-entries error thrown
+   *   ✅ distinct inputs, non-trivial → no error
+   */
+  it('mutation: ESLint rule with duplicate negative-test inputs fails liveness assertion [M4]', () => {
+    const dupRule: RuleEntry = {
+      title: 'test rule',
+      stack: ['ts-server'],
+      check: { type: 'eslint', rule: 'test/rule' },
+      examples: { bad: 'bad code', good: 'good code' },
+      'negative-test': { input: ['bad code', 'bad code'], 'expect-violation': 'test/rule' },
+    };
+    const violations: string[] = [];
+    assertNegativeTestLiveness('TEST', dupRule, violations);
+    expect(violations.join('')).toMatch(/duplicate/);
+  });
+
+  it('mutation: ESLint rule with distinct negative-test inputs passes liveness assertion [M4]', () => {
+    const goodRule: RuleEntry = {
+      title: 'test rule',
+      stack: ['ts-server'],
+      check: { type: 'eslint', rule: 'test/rule' },
+      examples: { bad: 'bad code', good: 'good code' },
+      'negative-test': { input: ['bad code v1', 'bad code v2'], 'expect-violation': 'test/rule' },
+    };
+    const violations: string[] = [];
+    assertNegativeTestLiveness('TEST', goodRule, violations);
+    expect(violations).toHaveLength(0);
+  });
+
+  it('all manifest ESLint rules with negative-test have non-empty distinct input arrays [M4]', () => {
+    const manifest = loadManifest();
+    const violations: string[] = [];
+    for (const [id, rule] of Object.entries(manifest)) {
+      if (rule.check.type !== 'eslint') continue;
+      assertNegativeTestLiveness(id, rule, violations);
+    }
+    expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+});
+
+// Liveness field shapes — mirrors types.ts Fixture and PressureScenario (line 2-4 contract)
+interface Fixture {
+  'setup-script': string;
+  'cleanup-script'?: string;
+  cwd?: string;
+}
+
+// Mirrors types.ts PressureType (line 26) — single source for the valid-set.
+type PressureType = 'time' | 'authority' | 'sunk-cost' | 'scope-creep';
+const VALID_PRESSURES: readonly PressureType[] = ['time', 'authority', 'sunk-cost', 'scope-creep'];
+
+interface PressureScenario {
+  'baseline-prompt': string;
+  'observable-failure': string;
+  'observable-compliance': string;
+  pressure: PressureType[];
+}
+
+
+// ── Stage 2a prelude — liveness field well-formedness (fixture + pressure-scenario) ──────────
+
+/**
+ * Trivial force-fail patterns that produce exit-non-zero without exercising
+ * the rule's own check surface (MAJOR-2 anti-tautology axis for cmd/script).
+ * Comparand: does the setup-script represent the violation? NOT: is it ≠ examples.good
+ * (code-string vs FS-state comparison is a no-op).
+ */
+const TRIVIAL_SETUP_RE = /^(false|exit\s+\d+)\s*$/;
+
+/**
+ * Asserts fixture is well-formed IF present (presence-optional — v1.5 flips to required).
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ trivial force-fail setup-script → throws "trivial force-fail"
+ *   ❌ empty setup-script → throws "too short"
+ *   ❌ empty cwd (when present) → throws "cwd.*empty"
+ *   ✅ non-trivial setup-script → no throw
+ *
+ * Paired-negative contract:
+ *   ❌ fixture.setup-script = "exit 1" → assertFixtureLiveness throws (trivial force-fail)
+ *   ✅ fixture.setup-script = "touch /tmp/missing-lock-file" → no throw
+ */
+function assertFixtureLiveness(id: string, fixture: Fixture): void {
+  if (!fixture['setup-script'] || fixture['setup-script'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: fixture.setup-script is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars). ` +
+        'A meaningful setup script is required to represent the violating state.',
+    );
+  }
+  if (TRIVIAL_SETUP_RE.test(fixture['setup-script'].trim())) {
+    throw new Error(
+      `Rule ${id}: fixture.setup-script is a trivial force-fail ("${fixture['setup-script'].trim()}"). ` +
+        "The setup script must represent the rule's actual violation scenario, not just force exit-1.",
+    );
+  }
+  if (fixture.cwd !== undefined && fixture.cwd.trim().length === 0) {
+    throw new Error(
+      `Rule ${id}: fixture.cwd is present but empty. Either omit it or provide a non-empty path.`,
+    );
+  }
+}
+
+interface CmdScriptRuleLike {
+  check: { type: string };
+  fixture?: Fixture;
+  'liveness-mode'?: string;
+}
+
+/**
+ * v1.5: fixture is REQUIRED ONLY for the liveness modes that actually execute it —
+ * run-and-assert (check.type="command", or liveness-mode="run") and resolve-and-run
+ * (check.type="script"). It is NOT required for the modes that never run a fixture:
+ * "workflow-exists", "config-presence", and "exempt" — a required setup-script there
+ * would be inert dead data (operator rework 2026-06-13, MINOR fix). Mirrors the
+ * schema's conditional-required `if/then`. When present, the fixture must still be
+ * well-formed (assertFixtureLiveness).
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ command/script run/resolve rule with NO fixture → throws "missing a required fixture"
+ *   ✅ command/script run/resolve rule with a well-formed fixture → no throw
+ *   ✅ workflow-exists / config-presence / exempt rule with NO fixture → no throw
+ */
+const FIXTURE_OPTIONAL_MODES = new Set(['workflow-exists', 'config-presence', 'exempt']);
+
+function assertFixtureRequired(id: string, rule: CmdScriptRuleLike): void {
+  const t = rule.check.type;
+  if (t !== 'command' && t !== 'script') return;
+  // Modes that never execute a fixture do not require one (avoids inert dead data).
+  if (rule['liveness-mode'] && FIXTURE_OPTIONAL_MODES.has(rule['liveness-mode'])) return;
+  if (!rule.fixture) {
+    throw new Error(
+      `Rule ${id}: command/script rule (liveness mode run-and-assert/resolve-and-run) is missing a required fixture (v1.5). ` +
+        "Add a fixture.setup-script that embodies the rule's violation, " +
+        'or set a non-executing liveness-mode ("workflow-exists" / "config-presence" / "exempt") with a per-rule rationale.',
+    );
+  }
+  assertFixtureLiveness(id, rule.fixture);
+}
+
+/**
+ * Asserts pressure-scenario is well-formed (call only on a present scenario).
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ identical observable-failure and observable-compliance → throws "tautology"
+ *   ❌ empty observable-failure → throws "too short"
+ *   ❌ empty pressure array → throws "≥1 forcing pressure" (T-V3-A)
+ *   ❌ invalid pressure type → throws "invalid type"
+ *   ✅ distinct non-empty fields + ≥1 valid pressure → no throw
+ *
+ * Paired-negative contract:
+ *   ❌ observable-failure === observable-compliance → assertPressureScenarioLiveness throws (tautology)
+ *   ❌ pressure: [] → throws (no forcing pressure declared)
+ *   ✅ distinct, non-empty observable fields + ≥1 valid pressure → no throw
+ */
+function assertPressureScenarioLiveness(id: string, ps: PressureScenario): void {
+  if (!ps['baseline-prompt'] || ps['baseline-prompt'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.baseline-prompt is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars).`,
+    );
+  }
+  if (!ps['observable-failure'] || ps['observable-failure'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.observable-failure is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars).`,
+    );
+  }
+  if (!ps['observable-compliance'] || ps['observable-compliance'].trim().length < MIN_EXAMPLE_LENGTH) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.observable-compliance is absent or too short (< ${MIN_EXAMPLE_LENGTH} chars).`,
+    );
+  }
+  if (ps['observable-failure'].trim() === ps['observable-compliance'].trim()) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.observable-failure and observable-compliance are identical — tautology. ` +
+        'They must document distinct observable behaviors (RED vs GREEN state).',
+    );
+  }
+  // T-V3-A — pressure must declare ≥1 forcing pressure, each a known type.
+  if (!Array.isArray(ps.pressure) || ps.pressure.length === 0) {
+    throw new Error(
+      `Rule ${id}: pressure-scenario.pressure must declare ≥1 forcing pressure (T-V3-A).`,
+    );
+  }
+  for (const p of ps.pressure) {
+    if (!VALID_PRESSURES.includes(p as PressureType)) {
+      throw new Error(
+        `Rule ${id}: pressure-scenario.pressure contains an invalid type: ${p}. ` +
+          `Valid types: ${VALID_PRESSURES.join(', ')}.`,
+      );
+    }
+  }
+}
+
+/**
+ * Asserts a manual-typed rule HAS a pressure-scenario (v3 — every manual rule
+ * must be proven LIVE). Pure helper so the required-arm predicate is
+ * unit-testable independently of the manifest loop.
+ *
+ * mutation-sanity-checked (write-time):
+ *   ❌ manual rule with no pressure-scenario → throws "requires a pressure-scenario"
+ *   ✅ manual rule with a pressure-scenario object → no throw (well-formedness
+ *      is then checked separately by assertPressureScenarioLiveness)
+ *
+ * Paired-negative contract:
+ *   ❌ check.type === 'manual' && no pressure-scenario → throws (gate fires)
+ *   ✅ check.type === 'manual' && pressure-scenario present → no throw
+ */
+function assertManualHasPressureScenario(id: string, rule: RuleEntry): void {
+  const ps = rule['pressure-scenario'] as PressureScenario | undefined;
+  if (!ps) {
+    throw new Error(
+      `Rule ${id}: check.type === 'manual' requires a pressure-scenario ` +
+        '(v3 — every manual rule must be proven LIVE).',
+    );
+  }
+}
+
+describe('Principle 2 — Liveness fixture well-formedness (command/script rules) [M4]', () => {
+  it('all manifest command/script rules (except exempt) have a required, well-formed fixture [M4]', () => {
+    const manifest = loadManifest();
+    const violations: string[] = [];
+    for (const [id, rule] of Object.entries(manifest)) {
+      const checkType = (rule.check as { type: string }).type;
+      if (checkType !== 'command' && checkType !== 'script') continue;
+      try {
+        assertFixtureRequired(id, rule as unknown as CmdScriptRuleLike);
+      } catch (err) {
+        violations.push((err as Error).message);
+      }
+    }
+    expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+
+  it('mutation: command/script rule with NO fixture (not exempt) fails the required-presence assertion [M4]', () => {
+    const noFixtureRule: CmdScriptRuleLike = { check: { type: 'command' } };
+    expect(() => assertFixtureRequired('R-test', noFixtureRule)).toThrow(/missing a required fixture/);
+  });
+
+  it('mutation: command/script rule WITH a well-formed fixture passes the required-presence assertion [M4]', () => {
+    const okRule: CmdScriptRuleLike = {
+      check: { type: 'command' },
+      fixture: { 'setup-script': 'mkdir -p src && printf "as any" > src/bad.ts' },
+    };
+    expect(() => assertFixtureRequired('R-test', okRule)).not.toThrow();
+  });
+
+  it('mutation: exempt command/script rule with NO fixture passes (exempt from the flip) [M4]', () => {
+    const exemptRule: CmdScriptRuleLike = { check: { type: 'command' }, 'liveness-mode': 'exempt' };
+    expect(() => assertFixtureRequired('IR-test', exemptRule)).not.toThrow();
+  });
+
+  it('mutation: workflow-exists rule with NO fixture passes (mode never executes a fixture) [M4]', () => {
+    const wfRule: CmdScriptRuleLike = { check: { type: 'command' }, 'liveness-mode': 'workflow-exists' };
+    expect(() => assertFixtureRequired('R11-test', wfRule)).not.toThrow();
+  });
+
+  it('mutation: config-presence rule with NO fixture passes (mode never executes a fixture) [M4]', () => {
+    const cfgRule: CmdScriptRuleLike = { check: { type: 'command' }, 'liveness-mode': 'config-presence' };
+    expect(() => assertFixtureRequired('R3-test', cfgRule)).not.toThrow();
+  });
+
+  it('mutation: liveness-mode="run" rule with NO fixture still fails (run-and-assert executes it) [M4]', () => {
+    const runRule: CmdScriptRuleLike = { check: { type: 'script' }, 'liveness-mode': 'run' };
+    expect(() => assertFixtureRequired('R-run-test', runRule)).toThrow(/missing a required fixture/);
+  });
+
+  it('mutation: fixture with trivial force-fail setup-script causes assertion to fail [M4]', () => {
+    const trivialFixture: Fixture = { 'setup-script': 'exit 1' };
+    expect(() => assertFixtureLiveness('R-test', trivialFixture)).toThrow(/trivial force-fail/);
+  });
+
+  it('mutation: fixture with empty setup-script causes assertion to fail [M4]', () => {
+    const emptyFixture: Fixture = { 'setup-script': '   ' };
+    expect(() => assertFixtureLiveness('R-test', emptyFixture)).toThrow(/too short/);
+  });
+
+  it('mutation: fixture with empty cwd causes assertion to fail [M4]', () => {
+    const emptyCwdFixture: Fixture = { 'setup-script': 'touch /tmp/test-violation-file', cwd: '' };
+    expect(() => assertFixtureLiveness('R-test', emptyCwdFixture)).toThrow(/cwd.*empty/);
+  });
+});
+
+describe('Principle 2 — Liveness pressure-scenario well-formedness (manual rules) [M4]', () => {
+  it('all manifest manual rules HAVE a well-formed pressure-scenario [M4]', () => {
+    const manifest = loadManifest();
+    const violations: string[] = [];
+    let manualCount = 0;
+    for (const [id, rule] of Object.entries(manifest)) {
+      if ((rule.check as { type: string }).type !== 'manual') {
+        // non-manual: presence-optional — validate the scenario only if present.
+        const ps = rule['pressure-scenario'] as PressureScenario | undefined;
+        if (!ps) continue;
+        try {
+          assertPressureScenarioLiveness(id, ps);
+        } catch (err) {
+          violations.push((err as Error).message);
+        }
+        continue;
+      }
+      // manual: REQUIRED — a missing pressure-scenario is a FAILURE (v3).
+      manualCount++;
+      try {
+        assertManualHasPressureScenario(id, rule);
+        const ps = rule['pressure-scenario'] as PressureScenario;
+        assertPressureScenarioLiveness(id, ps);
+      } catch (err) {
+        violations.push((err as Error).message);
+      }
+    }
+    // Population sentinel (T10): a manifest with zero/too-few manual rules would
+    // pass this loop vacuously. The known manual rules are R10/R13/R18/IR5/IR6.
+    expect(
+      manualCount,
+      'expected ≥5 manual rules in manifest (R10/R13/R18/IR5/IR6) — guards against a vacuous pass',
+    ).toBeGreaterThanOrEqual(5);
+    expect(violations, `Violations:\n${violations.join('\n')}`).toHaveLength(0);
+  });
+
+  it('mutation: manual rule with NO pressure-scenario fails the required arm [M4]', () => {
+    const manualNoPs: RuleEntry = {
+      title: 'test manual rule',
+      stack: ['ts-server'],
+      check: { type: 'manual' },
+      examples: { bad: 'bad code', good: 'good code' },
+    };
+    expect(() => assertManualHasPressureScenario('R-test', manualNoPs)).toThrow(
+      /requires a pressure-scenario/,
+    );
+  });
+
+  it('mutation: pressure-scenario with empty pressure array causes assertion to fail [M4]', () => {
+    const emptyPressurePs: PressureScenario = {
+      'baseline-prompt': 'Refactor this function and add test coverage',
+      'observable-failure': 'Code is committed without any tests',
+      'observable-compliance': 'Tests are added before commit and CI passes',
+      pressure: [],
+    };
+    expect(() => assertPressureScenarioLiveness('R-test', emptyPressurePs)).toThrow(/pressure/);
+  });
+
+  it('mutation: pressure-scenario with an invalid pressure type causes assertion to fail [M4]', () => {
+    const bogusPressurePs: PressureScenario = {
+      'baseline-prompt': 'Refactor this function and add test coverage',
+      'observable-failure': 'Code is committed without any tests',
+      'observable-compliance': 'Tests are added before commit and CI passes',
+      pressure: ['bogus' as PressureType],
+    };
+    expect(() => assertPressureScenarioLiveness('R-test', bogusPressurePs)).toThrow(/invalid/);
+  });
+
+  it('mutation: pressure-scenario with identical failure/compliance causes assertion to fail [M4]', () => {
+    const tautologicalPs: PressureScenario = {
+      'baseline-prompt': 'Refactor this function and add test coverage',
+      'observable-failure': 'Code is committed without any tests',
+      'observable-compliance': 'Code is committed without any tests',
+      pressure: ['time'],
+    };
+    expect(() => assertPressureScenarioLiveness('R-test', tautologicalPs)).toThrow(/tautology/);
+  });
+
+  it('mutation: pressure-scenario with empty observable-failure causes assertion to fail [M4]', () => {
+    const emptyFailurePs: PressureScenario = {
+      'baseline-prompt': 'Refactor this function and add test coverage',
+      'observable-failure': '   ',
+      'observable-compliance': 'Tests are added before commit and CI passes',
+      pressure: ['time'],
+    };
+    expect(() => assertPressureScenarioLiveness('R-test', emptyFailurePs)).toThrow(/too short/);
   });
 });

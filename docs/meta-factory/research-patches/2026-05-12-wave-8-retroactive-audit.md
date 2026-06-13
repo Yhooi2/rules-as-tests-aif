@@ -3,7 +3,7 @@
 # Wave 8 retroactive audit — pre-Wave-8 PRs vs substance gate
 
 > **Authoritative for:** retroactive §1.7 substance-gate audit of merged PRs #25-#43 (Waves 5-8); `#discipline-theatre` evidence corpus; HISTORICAL_CUTOFF rationale; D5 dead-exemption removal record; calibration-window decision.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 
 ## §1 Problem
 
@@ -99,10 +99,10 @@ early flip (observed FP rate = 0 across ≥7 days of push activity) has not been
 
 ## §8 §1.7 Forward-check applied
 
-Per [`.claude/rules/phase-research-coverage.md §1.7`](../../.claude/rules/phase-research-coverage.md):
+Per [`.claude/rules/phase-research-coverage.md §1.7`](../../../.claude/rules/phase-research-coverage.md):
 
-- **Principle 09** ([`09-doc-authority-hierarchy.test.ts`](../../packages/core/principles/09-doc-authority-hierarchy.test.ts)) — this doc is under `docs/meta-factory/research-patches/`; folder-level authority per `doc-authority-hierarchy.md §5` (README.md in folder carries authority header). Per-file `Authoritative-for:` block above included as belt-and-suspenders.
-- **D5 probe** ([`packages/core/audit-self/audit-ai-docs.sh:245`](../../packages/core/audit-self/audit-ai-docs.sh)) — removal of `D5_FALSE_POSITIVE_PATTERNS` verified safe: `bash audit-ai-docs.sh` → D5 PASS.
+- **Principle 09** ([`09-doc-authority-hierarchy.test.ts`](../../../packages/core/principles/09-doc-authority-hierarchy.test.ts)) — this doc is under `docs/meta-factory/research-patches/`; folder-level authority per `doc-authority-hierarchy.md §5` (README.md in folder carries authority header). Per-file `Authoritative-for:` block above included as belt-and-suspenders.
+- **D5 probe** ([`packages/core/audit-self/audit-ai-docs.sh:245`](../../../packages/core/audit-self/audit-ai-docs.sh)) — removal of `D5_FALSE_POSITIVE_PATTERNS` verified safe: `bash audit-ai-docs.sh` → D5 PASS.
 - **Artifact Ownership Contract** (`CLAUDE.md`) — this doc is a new research-patch; no existing owner override. Appended to append-only accumulator per `doc-authority-hierarchy.md §5`.
 - **Trigger sweep §1.6** — §13.29 status updated to `closed`; §13.30 + §13.31 armed in same commit.
 - **`#discipline-theatre` propagation** — anti-pattern entry added to `phase-research-coverage.md §4` in same commit, cross-referencing this doc as retroactive evidence corpus.

@@ -3,7 +3,7 @@
 
 > **Class C** — research-patch (markdown, no executable artifact).
 > **Authoritative for:** best-practices evidence for two decision classes — (a) permission-boundary calibration for CC skills with bash helpers (`allowed-tools` glob scope, DN-1 family), (b) ship-vs-gate / hygiene-vs-functional / N6b portability (`$umbrella` empty-arg gap, DN-4 family); companion-projects survey on both classes; CC primitive verification results.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). I-phase implementation of F.3 or F.6 — deferred to separate umbrella per kickoff §3.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). I-phase implementation of F.3 or F.6 — deferred to separate umbrella per kickoff §3.
 
 ---
 
@@ -443,9 +443,9 @@ The maintainer principle says «think about N6b already now». The defer verdict
 ## See also
 
 - [PR #261 — `meta-orch-no-arg-laziness` R-phase](https://github.com/Yhooi2/rules-as-tests-aif/pull/261) — prerequisite; DN-1/DN-4 framing source
-- [`.claude/rules/dual-implementation-discipline.md §3`](../../.claude/rules/dual-implementation-discipline.md) — Internal vs Consumer-facing triage (DN-4 N6b angle); authoritative for CC-native default decision
-- [`.claude/rules/phase-research-coverage.md §1`](../../.claude/rules/phase-research-coverage.md) — 6-item checklist binding
-- [`.claude/rules/build-first-reuse-default.md §3`](../../.claude/rules/build-first-reuse-default.md) — 6-layer search mechanism applied in §1
+- [`.claude/rules/dual-implementation-discipline.md §3`](../../../.claude/rules/dual-implementation-discipline.md) — Internal vs Consumer-facing triage (DN-4 N6b angle); authoritative for CC-native default decision
+- [`.claude/rules/phase-research-coverage.md §1`](../../../.claude/rules/phase-research-coverage.md) — 6-item checklist binding
+- [`.claude/rules/build-first-reuse-default.md §3`](../../../.claude/rules/build-first-reuse-default.md) — 6-layer search mechanism applied in §1
 - [CC Docs — Configure permissions](https://code.claude.com/docs/en/permissions) — primary source for `allowed-tools` syntax (§1.5a)
 - [CC Docs — Skills frontmatter reference](https://code.claude.com/docs/en/skills) — `arguments`, `$name` substitution (§1.5c)
 - [CC GitHub Issue #14956](https://github.com/anthropics/claude-code/issues/14956) — open bug: skill-level `allowed-tools` may not grant permission

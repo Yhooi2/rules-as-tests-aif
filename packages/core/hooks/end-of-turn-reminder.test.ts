@@ -97,12 +97,29 @@ function assistantToolUseOnly(toolName: string) {
   };
 }
 
-function runHook(stdin: Record<string, unknown>): { status: number; stdout: string; stderr: string } {
+function runHook(
+  stdin: Record<string, unknown>,
+  env?: Record<string, string>,
+): { status: number; stdout: string; stderr: string } {
   const r = spawnSync('bash', [HOOK], {
     input: JSON.stringify(stdin),
     encoding: 'utf8',
+    // Default to the Russian pack: the assertions below check Russian payload
+    // content and the transcripts embed the Russian recap marker. AIF_HOOK_LANG
+    // selects the lang pack (default en); these cases are the RU-pack contract.
+    // A test may override via env: { AIF_HOOK_LANG: 'en' } (see en-pack smoke).
+    env: { ...process.env, AIF_HOOK_LANG: 'ru', ...env },
   });
   return { status: r.status ?? -1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
+}
+
+/** Write a fresh orchestration-mode marker file; returns its path. */
+function writeMarker(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'm4-5-marker-'));
+  tmpDirs.push(dir);
+  const p = join(dir, 'orchestration-mode');
+  writeFileSync(p, '');
+  return p;
 }
 
 /** Build a long markdown-shaped text (>500 chars) that triggers long_text=true. */
@@ -153,6 +170,89 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     expect(payload.reason).toMatch(/рекомендовал|жду твоего решения|перекладывай/i);
   });
 
+  // ── orchestration-mode (marker-gated; normal mode byte-for-byte) ──────────────
+  describe('orchestration-mode — Bug A: decision-mention no longer false-fires in-mode', () => {
+    it('IN-MODE — short "я выбрал Option A." (decision mention, no ?) → silent', () => {
+      const tr = writeTranscript([
+        aiTitle('Цель'),
+        userTurn('задание'),
+        assistantText('Ок, я выбрал Option A и поехал дальше.'),
+      ]);
+      const r = runHook(
+        { transcript_path: tr, stop_hook_active: false },
+        { ORCHESTRATION_MODE_MARKER: writeMarker() },
+      );
+      expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+      expect(r.stdout, 'decision-mention in-mode must NOT fire').toBe('');
+    });
+
+    it('IN-MODE — short text ending in "… A или B?" → still fires (trailing ? kept)', () => {
+      const tr = writeTranscript([aiTitle('Цель'), userTurn('задание'), assistantText('Что берём — A или B?')]);
+      const r = runHook(
+        { transcript_path: tr, stop_hook_active: false },
+        { ORCHESTRATION_MODE_MARKER: writeMarker() },
+      );
+      expect(r.stdout, 'real question in-mode must fire').not.toBe('');
+      expect(JSON.parse(r.stdout).decision).toBe('block');
+    });
+
+    it('NORMAL-MODE — same "я выбрал Option A." STILL fires (byte-for-byte regression guard)', () => {
+      const tr = writeTranscript([
+        aiTitle('Цель'),
+        userTurn('задание'),
+        assistantText('Ок, я выбрал Option A и поехал дальше.'),
+      ]);
+      const r = runHook({ transcript_path: tr, stop_hook_active: false }); // no marker
+      expect(r.stdout, 'normal mode must be unchanged — regex still active').not.toBe('');
+    });
+  });
+
+  describe('orchestration-mode — recap (b): fires on short structured status in-mode', () => {
+    // Realistic dense orchestration status: >200 (in-mode recap_min) but <500
+    // (normal-mode threshold) — so it fires in-mode and stays silent normally.
+    const shortStructured =
+      '## Статус aif-задачи\n' +
+      '- запарковал task d7585d71 на форке isParked vs retarget\n' +
+      '- жду ответа оператора, нужно решение по плану egress\n' +
+      '- следующий шаг — harvest после ответа, потом PR в staging\n' +
+      '- риск: rework-путь не коммитит, чиним на нашей стороне';
+
+    it('IN-MODE — short STRUCTURED status (<500, markdown) → recap fires', () => {
+      const tr = writeTranscript([aiTitle('Цель'), userTurn('задание'), assistantText(shortStructured)]);
+      const r = runHook(
+        { transcript_path: tr, stop_hook_active: false },
+        { ORCHESTRATION_MODE_MARKER: writeMarker() },
+      );
+      expect(r.stdout, 'short structured status in-mode must fire recap').not.toBe('');
+      expect(JSON.parse(r.stdout).decision).toBe('block');
+    });
+
+    it('IN-MODE — short UNSTRUCTURED chatter "ок, удалил" → silent (markdown gate holds)', () => {
+      const tr = writeTranscript([aiTitle('Цель'), userTurn('задание'), assistantText('ок, удалил')]);
+      const r = runHook(
+        { transcript_path: tr, stop_hook_active: false },
+        { ORCHESTRATION_MODE_MARKER: writeMarker() },
+      );
+      expect(r.stdout, 'unstructured chatter must stay silent').toBe('');
+    });
+
+    it('NORMAL-MODE — short structured status → silent (threshold unchanged)', () => {
+      const tr = writeTranscript([aiTitle('Цель'), userTurn('задание'), assistantText(shortStructured)]);
+      const r = runHook({ transcript_path: tr, stop_hook_active: false }); // no marker
+      expect(r.stdout, 'normal mode keeps 500-char threshold').toBe('');
+    });
+
+    it('STALE marker (mtime past TTL) → behaves as normal mode', () => {
+      const tr = writeTranscript([aiTitle('Цель'), userTurn('задание'), assistantText(shortStructured)]);
+      const m = writeMarker();
+      execSync(
+        `touch -t $(date -v-7H +%Y%m%d%H%M 2>/dev/null || date -d '7 hours ago' +%Y%m%d%H%M) "${m}"`,
+      );
+      const r = runHook({ transcript_path: tr, stop_hook_active: false }, { ORCHESTRATION_MODE_MARKER: m });
+      expect(r.stdout, 'stale marker must not enable in-mode').toBe('');
+    });
+  });
+
   it('Branch B (short text ending in ?, no claim) → emits JSON; reason mentions fork-challenge', () => {
     const tr = writeTranscript([
       aiTitle('Цель сессии B'),
@@ -188,23 +288,20 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     expect(payload.systemMessage).toMatch(/^🎯 /);
   });
 
-  it('Branch D (short text with file:line claim) → emits JSON; systemMessage counts the fact', () => {
-    // Claim regex at hook:78: [a-zA-Z0-9_./-]+\.(ts|tsx|js|jsx|md|sh|json|ya?ml):[0-9]+
+  // NOTE: the former "Branch D" (short turn with a factual claim → claim-only
+  // re-verify) was REMOVED 2026-06-01 with the claim-scan detector itself
+  // (recall ≈0.43 / precision ≈0.20-0.25, cry-wolf). A short factual-report turn
+  // with no question now stays silent — see the "short turn … → exit 0 silent"
+  // case below. Rationale: research-patches/2026-06-01-remove-claim-detector.md.
+  it('short turn with a file:line citation but no question → exit 0 silent (claim-scan removed)', () => {
     const tr = writeTranscript([
       aiTitle('Цель сессии D'),
       userTurn('первое задание'),
       assistantText('Готово. Поправил packages/core/hooks/foo.ts:42 как просил.'),
     ]);
     const r = runHook({ transcript_path: tr, stop_hook_active: false });
-    expect(r.status).toBe(0);
-    expect(r.stdout, 'short turn with file:line claim must fire Branch D').not.toBe('');
-    const payload = JSON.parse(r.stdout);
-    expect(payload.decision).toBe('block');
-    // Branch D reminder is the claim-only re-verify variant (hook:236-240).
-    expect(payload.reason).toMatch(/перепроверь|источник/i);
-    expect(payload.reason).toContain('packages/core/hooks/foo.ts:42');
-    // systemMessage glance-line includes the claim count (hook:154-158).
-    expect(payload.systemMessage).toMatch(/^🎯 .* · 1 факт/);
+    expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+    expect(r.stdout, 'short claim-bearing turn with no question must now stay silent').toBe('');
   });
 
   it('Branch B via AskUserQuestion tool_use (no text) → emits JSON; has_askuserquestion path', () => {
@@ -221,6 +318,24 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     const payload = JSON.parse(r.stdout);
     expect(payload.decision).toBe('block');
     expect(payload.systemMessage).toMatch(/^🎯 /);
+  });
+
+  it('PAIRED-NEGATIVE: a bare NON-question tool call (no text) → exit 0 silent (hook:53-54)', () => {
+    // Companion to the AskUserQuestion case above. A tool-use-only turn whose
+    // tool is NOT AskUserQuestion has empty text AND has_askuserquestion=false,
+    // so hook:53-54 must exit 0 silent — a bare Bash/Read call is not a recap
+    // moment. The mutation tool (B.2) showed this hook:54 `exit 0` was uncovered.
+    const tr = writeTranscript([
+      aiTitle('Цель сессии'),
+      userTurn('первое задание'),
+      assistantToolUseOnly('Bash'),
+    ]);
+    const r = runHook({ transcript_path: tr, stop_hook_active: false });
+    expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+    expect(
+      r.stdout,
+      'a bare non-question tool call (empty text, not AskUserQuestion) must stay silent',
+    ).toBe('');
   });
 
   // ---------------------------------------------------------------------------
@@ -266,27 +381,6 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     const r = runHook({ transcript_path: tr, stop_hook_active: false });
     expect(r.status).toBe(0);
     expect(r.stdout, 'short factual report with no fork should not fire a recap').toBe('');
-  });
-
-  // ---------------------------------------------------------------------------
-  // BOUNDARY — precision guards: scenarios that LOOK like triggers but must
-  // NOT fire (false-positive suppression).
-  // ---------------------------------------------------------------------------
-
-  it('file:line citation INSIDE a fenced code block → does NOT count as claim → exit 0 silent (hook:71-74 precision fix)', () => {
-    // hook:71-74 strips fenced ```...``` blocks before claim-scan to avoid
-    // false-firing on drafted code/prompts. A short turn whose only file:line
-    // lives inside a fence must therefore NOT trigger Branch D.
-    const tr = writeTranscript([
-      aiTitle('cel'),
-      userTurn('первое задание'),
-      assistantText(
-        'Привожу черновик команды:\n```\npackages/core/hooks/foo.ts:42 something\n```\nКак закончу — пришлю.',
-      ),
-    ]);
-    const r = runHook({ transcript_path: tr, stop_hook_active: false });
-    expect(r.status).toBe(0);
-    expect(r.stdout, 'claim inside code fence is a false-positive guard, must not fire').toBe('');
   });
 
   // ---------------------------------------------------------------------------
@@ -339,6 +433,127 @@ describe.skipIf(!JQ)('end-of-turn-reminder.sh — Stop hook JSON contract & pair
     ).not.toBe('');
     const payload = JSON.parse(r.stdout);
     expect(payload.decision).toBe('block');
+  });
+
+  // ---------------------------------------------------------------------------
+  //  idle-suppress — the MAJOR-1 re-ping guard (hook:135-156). Suppresses a
+  //  short question turn ONLY when the PREVIOUS assistant turn already emitted a
+  //  "## 🟢" recap AND the current turn's first 120 chars appear verbatim in it
+  //  (an idle re-ping of the same question). A genuinely new question, or a long
+  //  answer, must still fire. This block was surfaced as fully un-covered by the
+  //  bash mutation tool (B.2): the &&/|| operators on hook:135/145 and the
+  //  idle_suppress `exit 0` survived. These cases pin the divergent behaviour.
+  // ---------------------------------------------------------------------------
+  describe('idle-suppress re-ping guard (hook:135-156)', () => {
+    const RECAP = '## 🟢 Простыми словами';
+
+    it('re-ping: short question repeated verbatim after a "## 🟢" recap → exit 0 silent', () => {
+      const question = 'Так продолжать ли с шагом Y?';
+      const tr = writeTranscript([
+        aiTitle('Цель сессии'),
+        userTurn('первое задание'),
+        // previous assistant turn: a recap that CONTAINS the question text
+        assistantText(`${RECAP}\n\nЗакрыл шаг X. ${question}`),
+        // current assistant turn: the SAME short question re-pinged (asked, short)
+        assistantText(question),
+      ]);
+      const r = runHook({ transcript_path: tr, stop_hook_active: false });
+      expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+      expect(
+        r.stdout,
+        'an idle re-ping of the same question after a recap must be suppressed (silent)',
+      ).toBe('');
+    });
+
+    it('PAIRED-NEGATIVE: a NEW short question after a recap → still FIRES (decision:block)', () => {
+      const tr = writeTranscript([
+        aiTitle('Цель сессии'),
+        userTurn('первое задание'),
+        assistantText(`${RECAP}\n\nЗакрыл шаг X.`),
+        // genuinely new question — its text does NOT appear in the prev recap
+        assistantText('А что насчёт совсем другого вопроса Z?'),
+      ]);
+      const r = runHook({ transcript_path: tr, stop_hook_active: false });
+      expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+      expect(
+        r.stdout,
+        'a genuinely new question after a recap must NOT be suppressed — it must fire',
+      ).not.toBe('');
+      expect(JSON.parse(r.stdout).decision).toBe('block');
+    });
+
+    it('long answer that re-pings a recap → long_text wins, Branch C still FIRES', () => {
+      // Single-LINE long text: hook:145 compares `current_short` (first 120 bytes,
+      // newlines→spaces) against prev_text via `grep -qF`. A single-line prefix
+      // matches prev verbatim, so the idle-suppress inner condition WOULD be met —
+      // making the entry guard (asked && long_text=false) the sole thing keeping
+      // a long answer firing. This is what kills the hook:135 &&→|| mutant.
+      const longLine =
+        'Длинный однострочный ответ с **акцентом** ' +
+        'и продолжением мысли которое тянется дальше '.repeat(12) +
+        'итого какой подход выбрать — X или Y?';
+      const tr = writeTranscript([
+        aiTitle('Цель сессии'),
+        userTurn('первое задание'),
+        // prev recap CONTAINS the long line verbatim (so current_short ⊂ prev_text)…
+        assistantText(`${RECAP}\n\n${longLine}`),
+        // …but the current turn is itself long (>500) + ends in '?' → long_text=true,
+        // so the idle-suppress entry condition (asked && long_text=false) is false.
+        assistantText(longLine),
+      ]);
+      const r = runHook({ transcript_path: tr, stop_hook_active: false });
+      expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+      expect(
+        r.stdout,
+        'a long answer must fire (Branch C) even if its prefix re-pings a recap — long_text overrides idle-suppress',
+      ).not.toBe('');
+      expect(JSON.parse(r.stdout).decision).toBe('block');
+    });
+
+    it('B2 contract: an AskUserQuestion turn that re-pings a recap → must FIRE (never idle-suppress)', () => {
+      // hook:137 short-circuits idle-suppress when has_askuserquestion=true — an
+      // AskUserQuestion turn is ALWAYS a live decision, even if its text echoes a
+      // prior recap. Without this the operator question would be silently eaten.
+      const question = 'Так продолжать ли с шагом Y?';
+      const tr = writeTranscript([
+        aiTitle('Цель сессии'),
+        userTurn('первое задание'),
+        assistantText(`${RECAP}\n\nЗакрыл шаг X. ${question}`),
+        // current turn: same text BUT carries an AskUserQuestion tool_use → asked
+        // via has_askuserquestion=true, and hook:137 must veto suppression.
+        assistantTextAndToolUse(question, 'AskUserQuestion'),
+      ]);
+      const r = runHook({ transcript_path: tr, stop_hook_active: false });
+      expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+      expect(
+        r.stdout,
+        'an AskUserQuestion turn must fire even when its text re-pings a recap (B2 guard, hook:137)',
+      ).not.toBe('');
+      expect(JSON.parse(r.stdout).decision).toBe('block');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // en-pack smoke — AIF_HOOK_LANG=en (canonical default). Confirms the language
+  // pack is wired and emits English payload + the English recap marker, with no
+  // Russian leakage. The RU-pack contract is covered by every other case above
+  // (suite default AIF_HOOK_LANG=ru). Spec: docs/superpowers/specs/
+  // 2026-06-01-hook-lang-i18n-design.md.
+  // ---------------------------------------------------------------------------
+  it('en pack: Branch C with AIF_HOOK_LANG=en → English reason + English recap marker', () => {
+    const tr = writeTranscript([
+      aiTitle('Session goal EN'),
+      userTurn('first task'),
+      assistantText(longMarkdownText() + '\n\nWhich approach do you prefer — X or Y?'),
+    ]);
+    const r = runHook({ transcript_path: tr, stop_hook_active: false }, { AIF_HOOK_LANG: 'en' });
+    expect(r.status, `stderr: ${r.stderr}`).toBe(0);
+    expect(r.stdout, 'en pack must fire Branch C on long markdown + trailing question').not.toBe('');
+    const payload = JSON.parse(r.stdout);
+    expect(payload.decision).toBe('block');
+    expect(payload.reason).toContain('## 🟢 In plain words');
+    expect(payload.reason).toMatch(/long answer|fork-question/i);
+    expect(payload.reason, 'en pack must not leak Russian payload').not.toMatch(/Стоп|развилк/);
   });
 
   it('B2 fix: AskUserQuestion-only turn after prior "## 🟢" recap → must FIRE (not suppressed)', () => {

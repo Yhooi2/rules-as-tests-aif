@@ -3,7 +3,7 @@
 
 > **Class:** C — research patch (R-phase output); mechanism is Stage 3 I-phase (conditional on Stage 2 benchmark GO).
 > **Authoritative for:** Stage 1 R-phase prior-art survey, mechanism design proposal, and phrase catalog for the defer-reflex-detection umbrella.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../../README.md#why-this-exists). Stage 2 benchmark verdict — see `2026-05-25-defer-reflex-benchmark.md` (not yet created). Stage 3 I-phase rule + hook implementation — follows this patch.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Stage 2 benchmark verdict — see `2026-05-25-defer-reflex-benchmark.md` (not yet created). Stage 3 I-phase rule + hook implementation — follows this patch.
 
 > **Origin:** 2026-05-25. Three documented recurrences of the defer-tell anti-pattern under memory load (2026-05-21, 2026-05-22, 2026-05-25) — each with a loaded memory entry documenting the prior incident, each with a different surface justification. Memory recurrence falsifies text-recall as sufficient. Full incident log: `~/.claude/projects/-Users-art-code-rules-as-tests-aif/memory/feedback_no_human_verification_ai_self_verifies.md`. Kickoff: `.claude/orchestrator-prompts/defer-reflex-detection/kickoff.md` (single source of truth).
 
@@ -366,7 +366,7 @@ Required paired-negative arms:
 ```markdown
 > **Class:** B — compensating mechanism shipped (hook implementation + paired-negative tests); no principle test yet. Promotion criterion in §N.
 > **Authoritative for:** defer-reflex-detection discipline rule — §1 the detection problem, §2 phrase catalog, §3 mechanism design, §4 falsifiers, §5 promotion/retirement.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Recommendation-laziness discipline (sibling problem class) — see [recommendation-laziness-discipline.md](recommendation-laziness-discipline.md).
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Recommendation-laziness discipline (sibling problem class) — see [recommendation-laziness-discipline.md](recommendation-laziness-discipline.md).
 ```
 
 ---

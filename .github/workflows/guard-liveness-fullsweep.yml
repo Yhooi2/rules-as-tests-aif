@@ -1,0 +1,71 @@
+name: guard-liveness-fullsweep
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Periodic FULL-SWEEP guard-liveness gate (Wave guard-liveness v2).
+#
+# Channel basis (rule-enforcement-channel-selection.md §3): CI is the LAST-RESORT
+# gate, not the primary one (README#why-this-exists). v1 / v1.5 / v3 already enforce
+# guard-liveness at the EARLIEST reachable channel — pre-push, CHANGE-SCOPED (only the
+# rules a PR touches). This workflow is deliberately the last-resort backstop: it
+# re-runs all three mechanisms over the ENTIRE manifest (no git-diff scoping) to catch
+# guard-ROT in rules that were NOT touched in the rotting PR — the regression hole the
+# change-scoped gates structurally cannot see.
+#
+# Trigger: PRs into `main` ONLY. `main` is prod (manual promote from staging); the
+# full-sweep guards the staging→main promotion — the last channel before prod. It does
+# NOT run on `staging` PRs / pushes (the change-scoped pre-push gates already cover
+# those) — avoiding the double-fire flagged in the v2 kickoff §2.5.
+#
+# Aggregation (kickoff §2.2/§2.3 resolution): GitHub Actions cannot `needs:`-aggregate
+# across workflow files (see workflow-integrity.yml + audit-self.yml `ci-success`
+# comments), and `ci-success` is the staging aggregator — a different branch context.
+# This workflow therefore SELF-AGGREGATES: it has NO path filter, so the single
+# `guard-liveness-fullsweep` job ALWAYS runs on every `main` PR and is safe to require
+# directly as a status check (consistent with #130 — the no-path-filtered-required-check
+# rule; #130 forbids requiring a PATH-FILTERED check, which this is not).
+#
+# MAINTAINER POST-MERGE ACTION (kickoff §2.4): add `guard-liveness-fullsweep` to the
+# `main` branch-protection required status checks (Settings → Branches → main → Require
+# status checks). This is a click, not a code change.
+#
+# Runtime budget (kickoff §2.2): ≤5 min, enforced mechanically by `timeout-minutes: 5`.
+# Measured locally at ~15-20s over the full 26-rule manifest (≫15× headroom). If a
+# future manifest growth breaches the budget the job is killed with a CI diagnostic —
+# split into a matrix of parallel arms at that point (do NOT silently slow-walk).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guard-liveness-fullsweep-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard-liveness-fullsweep:
+    name: guard-liveness-fullsweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+      # Root workspace install — the v1 ESLint arm imports the preset eslint-rules
+      # package via the workspace symlink, which only exists after a root-level install
+      # (see guard-liveness.ts header). `npm ci` is exact + reproducible from the lockfile.
+      - name: Install workspace deps (root)
+        run: npm ci
+      # Single consolidated backstop: v1 ESLint arm + v1.5 cmd/script arm (in-process,
+      # pure) + v3 deterministic structural arm (principle 02 subprocess). The driver
+      # emits a human report + a FULLSWEEP_JSON= line and exits non-zero on any guard-rot.
+      - name: Run guard-liveness full-sweep over the entire manifest
+        run: npm --prefix packages/core run guard-liveness:fullsweep

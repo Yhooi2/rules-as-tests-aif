@@ -3,7 +3,7 @@
 
 > **Class:** R-phase deliverable (research-patch). No code changes; no hook files written; verdict only.
 > **Authoritative for:** BFR §3 prior-art survey + falsifier outcomes + composite verdict for the `scripts/create-worktree.sh` (BUILD portable bash) + Superpowers `using-git-worktrees` (REFERENCE) dual-channel proposal. Also documents the `origin/HEAD` staleness bug root-cause + minimum-surface fix sketch for the I-phase.
-> **NOT authoritative for:** project goal (see [README.md#why-this-exists](../../README.md)); the eventual `scripts/create-worktree.sh` implementation (I-phase); `worktree-setup.sh` fix (I-phase); dual-implementation-discipline §3 triage (final channel assignment — I-phase).
+> **NOT authoritative for:** project goal (see [README.md#why-this-exists](../../../README.md)); the eventual `scripts/create-worktree.sh` implementation (I-phase); `worktree-setup.sh` fix (I-phase); dual-implementation-discipline §3 triage (final channel assignment — I-phase).
 > **Origin:** 2026-05-30. Maintainer pre-verdict: combo (b) BUILD `scripts/create-worktree.sh` + (c) REFERENCE Superpowers `using-git-worktrees`. This R-phase falsifier-checks that pre-verdict and satisfies BFR §3 ≥2 alt-targets per `#vendor-lock-by-convenience` guard. Bug 1 was paused pending the Superset survey verdict (PR #292/SSOT #86, merged 2026-05-30, verdict REJECT/KEEP-NARROW/REFERENCE) which did not moot Bug 1.
 > **Tags:** `#worktree-isolation` · `#dual-implementation` · `#build-vs-reuse` · `#base-ref-staleness`
 

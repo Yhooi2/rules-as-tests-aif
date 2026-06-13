@@ -1,14 +1,14 @@
 <!-- scope:n4b-recommendation-gate-design -->
 # Research-patch — N4b recommendation-moment gate: design consolidation
 
-> **Inherits authority from** [research-patches/README.md](README.md) folder-level Authoritative-for header. Scope-bound to: Wave **N4b** of [2026-05-21-niche-strategy-and-growth-roadmap.md §4](2026-05-21-niche-strategy-and-growth-roadmap.md) — the *design* of the recommendation-moment enforcement gate, consolidating the iterative rounds 1–5 + a fresh prior-art re-verification. **NOT authoritative for** project goal (see [README.md#why-this-exists](../../../README.md#why-this-exists)); **NOT re-opening D6** — the maintainer decision (H1 SHIPPED, H2 REJECTED, H10 DEFERRED/trigger-gated) at [open-questions.md §13.39](../../open-questions.md) stands. This patch advances N4b *within* D6 by surfacing two not-yet-shipped low-cost mechanisms; it does not decide to build H10.
+> **Inherits authority from** [research-patches/README.md](README.md) folder-level Authoritative-for header. Scope-bound to: Wave **N4b** of [2026-05-21-niche-strategy-and-growth-roadmap.md §4](2026-05-21-niche-strategy-and-growth-roadmap.md) — the *design* of the recommendation-moment enforcement gate, consolidating the iterative rounds 1–5 + a fresh prior-art re-verification. **NOT authoritative for** project goal (see [README.md#why-this-exists](../../../README.md#why-this-exists)); **NOT re-opening D6** — the maintainer decision (H1 SHIPPED, H2 REJECTED, H10 DEFERRED/trigger-gated) at [open-questions.md §13.39](../open-questions.md) stands. This patch advances N4b *within* D6 by surfacing two not-yet-shipped low-cost mechanisms; it does not decide to build H10.
 > **Date:** 2026-05-22 · **Author session:** Opus 4.7, N4b research (read-only). No code edited, no SSOT row written. Research deliverable only.
 
 ---
 
 ## §1 — What is already decided (do not re-open)
 
-The five iterative rounds ([2026-05-21-recommendation-gate-iterative*.md](2026-05-21-recommendation-gate-iterative.md), on `main`) resolved D6 ([open-questions.md §13.39](../../open-questions.md)):
+The five iterative rounds ([2026-05-21-recommendation-gate-iterative*.md](2026-05-21-recommendation-gate-iterative.md), on `main`) resolved D6 ([open-questions.md §13.39](../open-questions.md)):
 
 - **H1 (UserPromptSubmit reminder)** — SHIPPED (#117). ADOPT, SSOT #20. A *reminder injected pre-turn* ([session-bootstrap digest](../../../.claude/session-bootstrap.md)), not an enforcing gate.
 - **H2 (Stop-hook keyword scanner)** — REJECTED. 67% false-positive rate (round-5 table) — keyword detection on prose cannot separate a verdict *act* from a topical *noun*.
@@ -48,7 +48,7 @@ This is why H10 is the only HOT-class *gate* (vs reminder/scanner): it converts 
 
 1. **W1 — tighten the §1.7 allowlist (≤5 LOC, recommended, surfaced not applied).** `packages/core/hooks/checks/s17.ts` ALLOWLIST currently exempts `docs(research-patches):` commits — so a verdict committed inside a research-patch (e.g. these N7/N4b patches themselves) bypasses the §1.7 substance trailer. W1 = make research-patch commits whose body carries a `## Verdict:`/`## Recommendation:` header require the §1.7 trailer. This closes the «double zero-gate» ([2026-05-16-§17-think-time-gate.md:80]). Code change to a maintainer-owned enforcement file → **surfaced as recommended follow-up, not applied here**.
 2. **Option B — extend `agents/compliance-verifier.md`** with a recommendation-discipline audit section (AI-agnostic, no paid API). Cheapest HOT-channel semantic coverage; reuses the existing two-AI-review pattern. `agents/*` is consumer-facing/maintainer-owned per the [Artifact Ownership Contract](../../../CLAUDE.md) → **surfaced, separate PR**.
-3. **H10 — build only when the D6 trigger fires** («maintainer commits to a HOT structural gate beyond H1; OR H1 + #98 longitudinal data shows the reminder is insufficient», [open-questions.md §13.39](../../open-questions.md)). Do **not** pre-build (per [build-first-reuse-default.md §5](../../../.claude/rules/build-first-reuse-default.md) — promote on evidence, not anticipation).
+3. **H10 — build only when the D6 trigger fires** («maintainer commits to a HOT structural gate beyond H1; OR H1 + #98 longitudinal data shows the reminder is insufficient», [open-questions.md §13.39](../open-questions.md)). Do **not** pre-build (per [build-first-reuse-default.md §5](../../../.claude/rules/build-first-reuse-default.md) — promote on evidence, not anticipation).
 
 **Why not A as primary:** H2-revised's keyword-bypass is structural (≈5/11 cases uncatchable by regex); Option B gets better semantic coverage at similar cost. Falsification of this recommendation: if the #98 longitudinal scorer accrues ≥50 fired instances showing recommendation-class groundedness already ≥+15pp from H1 alone, Option B/H10 become unnecessary; OR if Option B reproduces H2's FP problem in research sessions, restrict it to explicit invocation.
 
@@ -70,6 +70,6 @@ Re-use the #97 scorer ([2026-05-21-instruction-compliance-empirical.scorer.py](2
 
 - [2026-05-21-niche-strategy-and-growth-roadmap.md §4 Wave N4](2026-05-21-niche-strategy-and-growth-roadmap.md) — parent roadmap (N4a detector v2 DONE #98; N4b = this design).
 - [2026-05-21-recommendation-gate-iterative.md](2026-05-21-recommendation-gate-iterative.md) + rounds 3/4/5 — the iterative research this consolidates.
-- [open-questions.md §13.39](../../open-questions.md) — D6 maintainer decision (the authority not re-opened here).
+- [open-questions.md §13.39](../open-questions.md) — D6 maintainer decision (the authority not re-opened here).
 - [2026-05-21-instruction-compliance-empirical.md](2026-05-21-instruction-compliance-empirical.md) — #97/#98 detector + scorer + pre-registered effect size.
 - [.claude/rules/phase-research-coverage.md §1.7](../../../.claude/rules/phase-research-coverage.md) — the recommendation-discipline (H1) home.

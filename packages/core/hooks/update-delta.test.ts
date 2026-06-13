@@ -1,6 +1,6 @@
 /**
  * Functional meta-tests for the meta-orchestrator master-backlog-delta writer
- * (.claude/skills/meta-orchestrator/helpers/update-delta.sh) — paired-negative
+ * (.claude/skills/pipeline/helpers/update-delta.sh) — paired-negative
  * contract for Stage 2B of the meta-orchestrator-mode-triage-and-planner umbrella.
  *
  * Channel: in-session helper invoked via Bash tool from SKILL.md §2.5 (Stage 2C).
@@ -32,6 +32,9 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import {
   mkdtempSync,
+  mkdirSync,
+  symlinkSync,
+  lstatSync,
   writeFileSync,
   readFileSync,
   rmSync,
@@ -46,7 +49,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 const HELPER = resolve(
   REPO_ROOT,
-  '.claude/skills/meta-orchestrator/helpers/update-delta.sh',
+  '.claude/skills/pipeline/helpers/update-delta.sh',
 );
 
 const FIXED_TS = '2026-05-26T12:00:00Z';
@@ -84,6 +87,23 @@ function runHelper(
 }
 
 describe('update-delta.sh — master-backlog-delta writer (paired-negative contract)', () => {
+  it('SYMLINK-AWARE: delta symlinked into CANON survives metadata update — share preserved (would FAIL on plain mv)', () => {
+    const sandbox = makeSandbox();
+    const canonDir = join(sandbox, 'canon');
+    const wtDir = join(sandbox, 'wt');
+    mkdirSync(canonDir, { recursive: true });
+    mkdirSync(wtDir, { recursive: true });
+    const canonDelta = join(canonDir, '_master-backlog-delta.json');
+    runHelper(canonDelta, ['seed', 'seed']); // fresh template into canon
+    const wtDelta = join(wtDir, '_master-backlog-delta.json');
+    symlinkSync(canonDelta, wtDelta);
+
+    const r = runHelper(wtDelta, ['umbrella-x', 'outcome-y']);
+    expect(r.status).toBe(0);
+    expect(lstatSync(wtDelta).isSymbolicLink()).toBe(true); // symlink preserved
+    expect(() => JSON.parse(readFileSync(canonDelta, 'utf8'))).not.toThrow(); // canon valid JSON
+  });
+
   it('FRESH-DELTA: missing file → exit 0, template written with all 4 schema keys + empty arrays + correct metadata', () => {
     // Targets helper §write_initial_template + decision-tree branch `if [ ! -f ... ]`
     // (update-delta.sh lines ~68-72: write_initial_template + exit 0).

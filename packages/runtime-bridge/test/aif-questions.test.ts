@@ -18,9 +18,11 @@ import {
   selectParked,
   isParked,
   parkedReason,
+  extractOpenQuestion,
   formatHuman,
   parseQuestionsArgs,
 } from '../src/cli/questions.js';
+import { OPEN_QUESTION_ANCHOR } from '../src/cli/openQuestion.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -89,6 +91,49 @@ describe('POSITIVE — a manualReviewRequired task is selected and printed', () 
   });
 });
 
+// ── Finding E: mid-flight park whose blockedReason was wiped — recover the
+// question from the plan's OPEN QUESTION anchor instead of "(no reason recorded)". ──
+describe('extractOpenQuestion — recover the question text from the plan anchor', () => {
+  it('returns the text after the anchor line (dropping the " (awaiting operator)" suffix)', () => {
+    const plan = `# Plan\n\nsteps\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nOption A vs B — which default?\n`;
+    expect(extractOpenQuestion(plan)).toBe('Option A vs B — which default?');
+  });
+  it('returns the LAST anchor block when several are present (most recent park)', () => {
+    const plan = `${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nfirst\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nsecond\n`;
+    expect(extractOpenQuestion(plan)).toBe('second');
+  });
+  it('returns null when the plan has no anchor or no body', () => {
+    expect(extractOpenQuestion('# Plan\n\njust steps')).toBeNull();
+    expect(extractOpenQuestion(null)).toBeNull();
+  });
+});
+
+describe('parkedReason — Finding E: mid-flight park surfaces the question, not "(no reason recorded)"', () => {
+  it('recovers the question from the plan when blockedReason is empty', () => {
+    const reason = parkedReason({
+      id: 'm',
+      title: 'mid-flight',
+      status: 'review',
+      blockedReason: null,
+      plan: `# Plan\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nWait forever or auto-default?\n`,
+    });
+    expect(reason).toBe('Wait forever or auto-default?');
+  });
+
+  // Negative guard: green now; RED if the plan-fallback regresses and the mid-flight
+  // park falls through to the literal "(no reason recorded)" again (the Finding-E bug).
+  it('GUARD: a mid-flight park does NOT render "(no reason recorded)"', () => {
+    const reason = parkedReason({
+      id: 'm',
+      title: 'mid-flight',
+      status: 'review',
+      blockedReason: null,
+      plan: `# Plan\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nQ?\n`,
+    });
+    expect(reason).not.toBe('(no reason recorded)');
+  });
+});
+
 // ── NEGATIVE ──────────────────────────────────────────────────────────────────
 describe('NEGATIVE — all tasks done with no block flags → No parked questions.', () => {
   it('selectParked is empty and formatHuman returns the empty sentinel', async () => {
@@ -138,6 +183,82 @@ describe('FILTER — projectId mismatch excludes the task', () => {
     } as NodeJS.ProcessEnv);
     expect(args.projectId).toBe('env-proj');
     expect(args.json).toBe(true);
+  });
+});
+
+// ── MID-FLIGHT PARK (Option A fix) ──────────────────────────────────────────────
+// Paired positive/negative for the reader-side fix: a genuinely-parked task whose
+// blockedReason was wiped by implementing→review still surfaces via the durable
+// signals (paused === true AND the OPEN_QUESTION_ANCHOR in the plan). The
+// conjunction is required — neither paused alone nor the anchor alone may match.
+describe('MID-FLIGHT PARK — paused + OPEN QUESTION anchor surfaces; paused-alone / non-paused do NOT', () => {
+  // Mirrors a task after park.ts ran then implementing→review cleared blockedReason.
+  const midFlightParked = {
+    id: 'mf-1',
+    title: 'Parked on a hard fork',
+    status: 'review', // NOT blocked_external
+    manualReviewRequired: false, // stayed false
+    blockedReason: null, // cleared by the transition
+    paused: true, // the durable stop
+    plan: `# Plan\n\nsome steps\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nOption A or B?\n`,
+  };
+
+  it('POSITIVE — a paused task carrying the OPEN QUESTION anchor IS surfaced (fails before the fix)', async () => {
+    expect(isParked(midFlightParked)).toBe(true);
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([midFlightParked]));
+    const parked = selectParked(await fetchTasks('http://localhost:3009'));
+    expect(parked).toHaveLength(1);
+    expect(parked[0].id).toBe('mf-1');
+    expect(formatHuman(parked)).not.toBe('No parked questions.');
+  });
+
+  it('NEGATIVE — paused WITHOUT the anchor is NOT parked (no over-match on a manual pause)', () => {
+    expect(
+      isParked({
+        id: 'mf-2',
+        title: 'Manually paused, unrelated',
+        status: 'review',
+        manualReviewRequired: false,
+        blockedReason: null,
+        paused: true,
+        plan: '# Plan\n\njust ordinary steps, no open question\n',
+      }),
+    ).toBe(false);
+  });
+
+  it('NEGATIVE — the anchor present but NOT paused is NOT parked (conjunction required)', () => {
+    expect(
+      isParked({
+        id: 'mf-3',
+        title: 'Answered + resumed, anchor lingers in plan',
+        status: 'review',
+        manualReviewRequired: false,
+        blockedReason: null,
+        paused: false,
+        plan: `# Plan\n\n${OPEN_QUESTION_ANCHOR} (awaiting operator)\n\nstale block\n`,
+      }),
+    ).toBe(false);
+  });
+});
+
+// ── BRAINSTORM FOOTER (design spec §3.4) ────────────────────────────────────────
+// formatHuman appends the brainstorm-first nudge on a NON-EMPTY parked list (the
+// aif-pull-channel companion to ask-question-reminder.sh §3.3); the empty case
+// stays the bare sentinel.
+describe('BRAINSTORM FOOTER — appended on a non-empty list, absent on the empty case', () => {
+  it('POSITIVE — non-empty list carries the superpowers:brainstorming footer', () => {
+    const out = formatHuman([
+      { id: 'f-1', title: 'A fork', status: 'blocked_external', blockedReason: 'A or B?' },
+    ]);
+    expect(out).toMatch(/superpowers:brainstorming/);
+    expect(out).toContain('id:     f-1'); // the card body is still present
+  });
+
+  it('NEGATIVE — empty list returns the bare sentinel, no footer', () => {
+    const out = formatHuman([]);
+    expect(out).toBe('No parked questions.');
+    expect(out).not.toMatch(/brainstorming/);
   });
 });
 

@@ -159,7 +159,7 @@ Zero lines in the new K-1 block lack a `# Per Stage 2 v3` reference. ✓
 
 **Does this I-phase comply with all currently-active layers?**
 
-- **No paid LLM in CI** ([no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md)): `claude plugin install ... --scope user` is VERIFIED-FREE per Stage 2 v3 §4.8 (administrative subcommand, no LLM call, no API billing — `claude --help` scopes `--max-budget-usd` to `--print`/`-p` only). No CI change made. ✓
+- **No paid LLM in CI** ([no-paid-llm-in-ci.md](../../../.claude/rules/no-paid-llm-in-ci.md)): `claude plugin install ... --scope user` is VERIFIED-FREE per Stage 2 v3 §4.8 (administrative subcommand, no LLM call, no API billing — `claude --help` scopes `--max-budget-usd` to `--print`/`-p` only). No CI change made. ✓
 - **BFR (build-first-reuse-default.md §1)**: SSOT row #84 registered (ADOPT verdict). `claude plugin install` mechanism is ADOPTED from CC marketplace. No new BUILD capability introduced for companion install itself; the interactive prompt mechanism is ADOPT VOCABULARY from own `read -rp` precedent at install.sh:145. ✓
 - **Universal-satellite vision (no mandatory companion)**: All 3 new prompts default `[y/N]`. `COMPANIONS=none` or non-tty auto-default produces zero companion prompts. aif-handoff note is informational only. ✓
 - **T-Stage2-A (zero `[Y/n]`)**: `grep -E "\[Y/n\]" install.sh` → EMPTY. ✓
@@ -213,5 +213,5 @@ Zero lines in the new K-1 block lack a `# Per Stage 2 v3` reference. ✓
 - [2026-05-27-living-doc-neutral-injection.md](2026-05-27-living-doc-neutral-injection.md) — Stage 3 R-phase collision audit (PR #256)
 - [../../../install.sh](../../../install.sh) — artefact edited in this stage
 - [../prior-art-evaluations.md](../prior-art-evaluations.md) — SSOT row #84 added
-- [../../.claude/rules/build-first-reuse-default.md](../../.claude/rules/build-first-reuse-default.md) — BFR rule; ADOPT verdict for `claude plugin install` mechanism
-- [../../.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) — confirmed `claude plugin install` is VERIFIED-FREE
+- [../../../.claude/rules/build-first-reuse-default.md](../../../.claude/rules/build-first-reuse-default.md) — BFR rule; ADOPT verdict for `claude plugin install` mechanism
+- [../../../.claude/rules/no-paid-llm-in-ci.md](../../../.claude/rules/no-paid-llm-in-ci.md) — confirmed `claude plugin install` is VERIFIED-FREE

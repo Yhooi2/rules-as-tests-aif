@@ -1,6 +1,12 @@
-.PHONY: self-audit pre-commit-check pre-push-check install-hooks principles-meta-tests validate-prompts
+.PHONY: self-audit pre-commit-check pre-push-check install-hooks principles-meta-tests validate-prompts full-sweep
 
 self-audit: pre-commit-check pre-push-check principles-meta-tests
+
+# guard-liveness v2 — periodic FULL-SWEEP over the entire manifest (last-resort
+# backstop; the change-scoped pre-push gates cover the per-PR delta). Run before
+# landing the v2 workflow to confirm the ≤5-min budget (kickoff §3.2 / §4).
+full-sweep: ## Run guard-liveness full-sweep over all manifest rules (v1 + v1.5 + v3 structural)
+	@npm --prefix packages/core run guard-liveness:fullsweep
 
 pre-commit-check:
 	@.husky/pre-commit

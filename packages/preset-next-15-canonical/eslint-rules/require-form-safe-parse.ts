@@ -3,7 +3,7 @@ import type { TSESTree } from '@typescript-eslint/utils';
 
 const createRule = ESLintUtils.RuleCreator(
   () =>
-    `https://github.com/Yhooi2/rules-as-tests-aif/blob/main/factory/RULES.react-next.md#r14-forms`,
+    `https://github.com/Yhooi2/rules-as-tests-aif/blob/main/packages/preset-next-15-canonical/RULES.react-next.md#r14--forms`,
 );
 
 type FunctionLike =

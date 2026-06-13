@@ -5,7 +5,7 @@
 > **Date:** 2026-05-25
 >
 > **Authoritative for:** triage of pre-push slow tests (≥3s) — per-test option recommendation (1/2/3/4) with measured durations + trade-offs + maintainer decision-needed list.
-> **NOT authoritative for:** I-phase implementation — maintainer verdicts on DN-X items determine next session scope; project goal — see [README.md#why-this-exists](../../README.md#why-this-exists).
+> **NOT authoritative for:** I-phase implementation — maintainer verdicts on DN-X items determine next session scope; project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 
 ## §0.1 Cold-start verify
 
@@ -349,13 +349,13 @@ Countermeasure: explicitly reported BOTH warm-cache (1.3s) and cold-cache (~24s,
 
 ## §7 See also
 
-- [`.claude/orchestrator-prompts/slow-test-triage/kickoff.md`](../../.claude/orchestrator-prompts/slow-test-triage/kickoff.md) — kickoff this patch fulfils
-- [`packages/core/audit-self/audit-ai-docs.test.ts:344`](../../packages/core/audit-self/audit-ai-docs.test.ts) — origin slow test (WARN(skip) R4 probeR4 cold-cache)
-- [`packages/core/audit-self/audit-ai-docs.ts:155-176`](../../packages/core/audit-self/audit-ai-docs.ts) — probeR4 implementation (execSync call sites)
-- [`packages/core/hooks/pre-push.ts:253-289`](../../packages/core/hooks/pre-push.ts) — pre-push test invocations (Sections 3 and 5)
-- [`packages/core/principles/11-build-first-reuse-default.test.ts`](../../packages/core/principles/11-build-first-reuse-default.test.ts) — slow principle test (git-log scan, 2.0–2.2s)
-- [`vitest.config.ts`](../../vitest.config.ts) — root config with `testTimeout: 60_000` and the «longer-term fix» comment pointing here
-- [`packages/core/vitest.config.ts`](../../packages/core/vitest.config.ts) — inner config (no testTimeout set at this level)
-- [`.claude/rules/no-paid-llm-in-ci.md`](../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint (measurements are deterministic-only)
-- [`.claude/rules/dual-implementation-discipline.md §2(i)`](../../.claude/rules/dual-implementation-discipline.md) — markdown-only exemption (this patch)
-- [`.claude/rules/phase-research-coverage.md`](../../.claude/rules/phase-research-coverage.md) — §1.11 verify-before-claim, §1.12 recommendation discipline
+- [`.claude/orchestrator-prompts/slow-test-triage/kickoff.md`](../../../.claude/orchestrator-prompts/slow-test-triage/kickoff.md) — kickoff this patch fulfils
+- [`packages/core/audit-self/audit-ai-docs.test.ts:344`](../../../packages/core/audit-self/audit-ai-docs.test.ts) — origin slow test (WARN(skip) R4 probeR4 cold-cache)
+- [`packages/core/audit-self/audit-ai-docs.ts:155-176`](../../../packages/core/audit-self/audit-ai-docs.ts) — probeR4 implementation (execSync call sites)
+- [`packages/core/hooks/pre-push.ts:253-289`](../../../packages/core/hooks/pre-push.ts) — pre-push test invocations (Sections 3 and 5)
+- [`packages/core/principles/11-build-first-reuse-default.test.ts`](../../../packages/core/principles/11-build-first-reuse-default.test.ts) — slow principle test (git-log scan, 2.0–2.2s)
+- [`vitest.config.ts`](../../../vitest.config.ts) — root config with `testTimeout: 60_000` and the «longer-term fix» comment pointing here
+- [`packages/core/vitest.config.ts`](../../../packages/core/vitest.config.ts) — inner config (no testTimeout set at this level)
+- [`.claude/rules/no-paid-llm-in-ci.md`](../../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint (measurements are deterministic-only)
+- [`.claude/rules/dual-implementation-discipline.md §2(i)`](../../../.claude/rules/dual-implementation-discipline.md) — markdown-only exemption (this patch)
+- [`.claude/rules/phase-research-coverage.md`](../../../.claude/rules/phase-research-coverage.md) — §1.11 verify-before-claim, §1.12 recommendation discipline

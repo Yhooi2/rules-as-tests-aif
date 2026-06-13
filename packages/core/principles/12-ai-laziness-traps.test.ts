@@ -5,8 +5,10 @@
  *         docs/meta-factory/research-patches/2026-05-16-prose-rules-audit-research.md §3.1
  *         (Track 3 evidence-based probe confirming BUILD verdict; principle 10 precedent)
  *
- * Invariant: every kickoff.md file under .claude/orchestrator-prompts/<dir>/
- * (excluding pre-rule exempt dirs) must satisfy the COMPOUND CITATION CHECK:
+ * Invariant: every REAL (non-symlink) kickoff.md file under
+ * .claude/orchestrator-prompts/<dir>/ (excluding pre-rule exempt dirs AND
+ * coordination mirrors — symlinks into $CANON authored in another worktree, see
+ * isCoordinationMirror) must satisfy the COMPOUND CITATION CHECK:
  * at least ONE of the following must be present —
  *   (a) string "ai-laziness-traps" anywhere in the file (explicit rule citation)
  *   (b) pattern **T\d+** (bold Markdown T-number reference)
@@ -22,7 +24,7 @@
  * maintained as an explicit list rather than a date filter.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, lstatSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,9 +33,13 @@ const REPO_ROOT = resolve(HERE, '../../..');
 const KICKOFFS_DIR = resolve(REPO_ROOT, '.claude/orchestrator-prompts');
 
 /**
- * Pre-rule kickoffs (created before 2026-05-12, when ai-laziness-traps.md was added).
- * These dirs have inline T-refs but lack an explicit rule citation — pre-dates the
- * obligation. Maintained as an allowlist; must grow only with documented rationale.
+ * Exempt kickoff dirs (allowlist; must grow only with documented rationale):
+ *  - 'aif-ssot-corrections' — pre-rule kickoff (created before 2026-05-12, when
+ *    ai-laziness-traps.md was added); has inline T-refs but no explicit rule citation.
+ *
+ * ('qloop-ux-probe' was exempted 2026-06-01 as a question-loop test fixture, then
+ *  removed 2026-06-02 once the fixture dir was gone — a stale exempt entry that the
+ *  §positive-guard test correctly flagged.)
  */
 const EXEMPT_LIST: readonly string[] = ['aif-ssot-corrections'];
 
@@ -69,13 +75,46 @@ function getKickoffEntries(): KickoffEntry[] {
     .sort((a, b) => a.dir.localeCompare(b.dir));
 }
 
+/**
+ * A "coordination mirror" is an umbrella whose kickoff.md is a SYMLINK into the
+ * shared coordination store ($CANON), materialised locally by channel G
+ * (.husky/post-checkout → scripts/link-coordination.sh). Such an umbrella was
+ * authored in some other worktree and adopted into $CANON; its citation was (or
+ * should have been) checked AT ITS AUTHORING worktree while its kickoff.md was a
+ * real file. Re-checking every mirror in every worktree made this gate fail on
+ * historical umbrellas the current worktree never wrote — the principle-12-vs-G
+ * conflict. The citation check therefore runs only on REAL (non-symlink) kickoffs
+ * = the ones locally authored / not-yet-adopted. The population sentinel, by
+ * contrast, deliberately counts the FULL set (mirrors included) as a "mirror
+ * present" guard. (maintainer-directed 2026-06-02)
+ */
+function isCoordinationMirror(path: string): boolean {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
 function getNonExemptEntries(): KickoffEntry[] {
-  return getKickoffEntries().filter((e) => !EXEMPT_LIST.includes(e.dir));
+  return getKickoffEntries()
+    .filter((e) => !EXEMPT_LIST.includes(e.dir))
+    .filter((e) => !isCoordinationMirror(e.path));
 }
 
 // KICKOFFS_DIR is gitignored — only present in local dev, absent in CI.
 // Tests that require actual kickoff files skip in CI; pure-logic tests always run.
 const KICKOFFS_AVAILABLE = existsSync(KICKOFFS_DIR) && getKickoffEntries().length > 0;
+
+// After the coordination symlink migration (#346 + post-checkout link-coordination.sh),
+// every local kickoff.md can be a SYMLINK into $CANON (a coordination mirror), which
+// getNonExemptEntries() deliberately excludes (see isCoordinationMirror). When ALL
+// kickoffs are mirrors, getNonExemptEntries() is empty — there is no REAL kickoff to
+// mutate. The anti-tautology mutation test below requires ≥1 real compliant kickoff;
+// the #376 mirror-exclusion fix updated the main check + sentinel but missed this guard.
+// Detector correctness is independently covered by the pure-logic anti-tautology tests
+// (blank file / each pattern), which need no real files — so skipping here loses nothing.
+const HAS_REAL_NONEXEMPT_KICKOFF = KICKOFFS_AVAILABLE && getNonExemptEntries().length > 0;
 
 describe('Principle 12 — every kickoff.md cites ai-laziness-traps rule', () => {
   it.skipIf(!KICKOFFS_AVAILABLE)(
@@ -111,7 +150,7 @@ describe('Principle 12 — every kickoff.md cites ai-laziness-traps rule', () =>
     },
   );
 
-  it.skipIf(!KICKOFFS_AVAILABLE)(
+  it.skipIf(!HAS_REAL_NONEXEMPT_KICKOFF)(
     'anti-tautology: compliant kickoff stripped of citations fails the check',
     () => {
       // Pick the first compliant kickoff and strip all citation markers.
@@ -154,10 +193,13 @@ describe('Principle 12 — every kickoff.md cites ai-laziness-traps rule', () =>
     'population sentinel — catches accidental empty-out or explosion of kickoff dirs',
     () => {
       const all = getKickoffEntries();
-      // Loose bounds: at least 10 kickoffs, at most 100.
-      // If count drops to 0, the main test would pass vacuously — sentinel prevents it.
-      expect(all.length).toBeGreaterThanOrEqual(10);
-      expect(all.length).toBeLessThanOrEqual(100);
+      // Bounds: ≥100 / ≤300. Raised 2026-06-02 (maintainer-directed) — the project
+      // legitimately accumulated >100 umbrellas of history, mirrored locally by the
+      // coordination-persistence channel (G), so the old ≤100 was a stale guess that
+      // tripped every push. ≥100 doubles as a "mirror is present" guard; ≤300 still
+      // catches a runaway glob. (If count drops to 0, the main test passes vacuously.)
+      expect(all.length).toBeGreaterThanOrEqual(100);
+      expect(all.length).toBeLessThanOrEqual(300);
     },
   );
 });

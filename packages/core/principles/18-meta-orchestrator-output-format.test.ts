@@ -1,31 +1,31 @@
 /**
  * Principle 18 — meta-orchestrator output-format structural check
  *
- * Source: .claude/skills/meta-orchestrator/SKILL.md §10 + references/output-format.md
+ * Source: .claude/skills/pipeline/SKILL.md §10 + references/output-format.md
  *         docs/meta-factory/research-patches/2026-05-24-meta-orchestrator-refactor-f3-scope.md §1.5 Item 8
  *
- * Invariant: the /meta-orchestrator slash-command emits a 3-layer inline session
+ * Invariant: the /pipeline slash-command emits a 3-layer inline session
  * report — Dependency graph + Action queue + 1-liner blocks. The skill body
  * communicates the 3 substructures literally, and the full grammar + 4 worked
  * examples live in references/output-format.md (per kickoff §4 #10 — split when
  * SKILL.md would exceed 500-line gate).
  *
- * **2026-05-25 update (Item 12 closure):** consumer mirror at `skills/meta-orchestrator/`
- * was deleted; install.sh now ships from authoring `.claude/skills/meta-orchestrator/`
+ * **2026-05-25 update (Item 12 closure):** consumer mirror at `skills/pipeline/`
+ * was deleted; install.sh now ships from authoring `.claude/skills/pipeline/`
  * directly (single source of truth per `.claude/rules/dual-implementation-discipline.md §7`).
  * The two mirror SURFACES entries were removed because the files no longer exist —
  * keeping them would assert against a structure that the project intentionally
  * abandoned. The remaining authoring surfaces still enforce the structural invariant.
  *
  * Mechanical check: for each of the 2 surface files
- *   - .claude/skills/meta-orchestrator/SKILL.md §10
- *   - .claude/skills/meta-orchestrator/references/output-format.md
+ *   - .claude/skills/pipeline/SKILL.md §10
+ *   - .claude/skills/pipeline/references/output-format.md
  * assert the 6 required substrings appear:
  *   (1) '## Dependency graph'
  *   (2) '↓'                       — inter-stage edge symbol
  *   (3) '## Action queue'
- *   (4) 'Paste в новый CC tab'   — action-queue column header
- *   (5) 'Можно параллельно с'   — action-queue column header
+ *   (4) 'Paste into a new CC tab' — action-queue column header
+ *   (5) 'Can parallel with'       — action-queue column header
  *   (6) '### Stage'              — 1-liner heading prefix
  *
  * Slot 18 rationale: slots 01-17 occupied as of 2026-05-24 (`ls packages/core/principles/`).
@@ -47,8 +47,8 @@ const REQUIRED_SUBSTRINGS = [
   '## Dependency graph',
   '↓',
   '## Action queue',
-  'Paste в новый CC tab',
-  'Можно параллельно с',
+  'Paste into a new CC tab',
+  'Can parallel with',
   '### Stage',
 ] as const;
 
@@ -65,12 +65,12 @@ interface Surface {
 const SURFACES: readonly Surface[] = [
   {
     label: 'authoring SKILL.md §10',
-    path: '.claude/skills/meta-orchestrator/SKILL.md',
+    path: '.claude/skills/pipeline/SKILL.md',
     scope: 'section-10',
   },
   {
     label: 'authoring references/output-format.md',
-    path: '.claude/skills/meta-orchestrator/references/output-format.md',
+    path: '.claude/skills/pipeline/references/output-format.md',
     scope: 'whole-file',
   },
 ];
@@ -149,7 +149,7 @@ describe('Principle 18 — meta-orchestrator output-format structural check', ()
       'Some prose without dependency graph heading.',
       'But it does mention ↓ arrow.',
       '## Action queue',
-      '| Paste в новый CC tab | Когда | Ждёшь | Можно параллельно с |',
+      '| Paste into a new CC tab | When | Waiting on | Can parallel with |',
       '### Stage 1',
       '',
       '## §11 Failures',
@@ -162,19 +162,26 @@ describe('Principle 18 — meta-orchestrator output-format structural check', ()
     expect(missing).toContain('## Dependency graph');
   });
 
-  it('paired-negative: synthetic §10 missing "Paste в новый CC tab" column fails the check', () => {
+  it('paired-negative: synthetic §10 missing "Paste into a new CC tab" column fails the check', () => {
     const fakeSectionTen = [
       '## §10 Output artifacts',
       '## Dependency graph',
       'Stage 1: ├── A   └── B   ↓',
       '## Action queue',
-      '| # | Action | Когда | Ждёшь | Можно параллельно с |',
+      '| # | Action | When | Waiting on | Can parallel with |',
       '### Stage 1',
     ].join('\n');
     const missing: string[] = [];
     for (const sub of REQUIRED_SUBSTRINGS) {
       if (!fakeSectionTen.includes(sub)) missing.push(sub);
     }
-    expect(missing).toContain('Paste в новый CC tab');
+    expect(missing).toContain('Paste into a new CC tab');
+  });
+
+  it('RU lang pack carries the Russian emitted tokens (operator contract)', () => {
+    const ru = readFileSync(resolve(REPO_ROOT, '.claude/skills/pipeline/lang/ru.sh'), 'utf8');
+    expect(ru).toContain('Paste в новый CC tab');
+    expect(ru).toContain('Можно параллельно с');
+    expect(ru).toContain('## 🟢 Простыми словами');
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Paired-negative contract tests for parse-override-flags.sh — the CLI override
- * flag parser for /meta-orchestrator (Stage 4 of meta-orchestrator-mode-triage-
+ * flag parser for /pipeline (Stage 4 of meta-orchestrator-mode-triage-
  * and-planner umbrella).
  *
  * Channel: in-session helper invoked via !shell block from SKILL.md §0 preamble
@@ -35,7 +35,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 const HELPER = resolve(
   REPO_ROOT,
-  '.claude/skills/meta-orchestrator/helpers/parse-override-flags.sh',
+  '.claude/skills/pipeline/helpers/parse-override-flags.sh',
 );
 
 /** Invoke the helper with a single umbrella string (mirrors SKILL.md §0 calling convention). */

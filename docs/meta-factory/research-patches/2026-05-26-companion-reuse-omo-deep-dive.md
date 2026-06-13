@@ -357,6 +357,6 @@ Before committing, walk each cold-QA item from kickoff §5:
 - [docs/meta-factory/prior-art-evaluations.md rows #68 and #81](../prior-art-evaluations.md) — SSOT rows being amended.
 - [docs/meta-factory/research-patches/2026-05-23-meta-orchestrator-prior-art.md](./2026-05-23-meta-orchestrator-prior-art.md) — source patch for #68.
 - [docs/meta-factory/research-patches/2026-05-26-meta-orchestrator-mode-triage-prior-art.md](./2026-05-26-meta-orchestrator-mode-triage-prior-art.md) — source patch for #81.
-- [.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md](../../.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md) — umbrella kickoff driving this Sub-wave.
+- [.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md](../../../.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md) — umbrella kickoff driving this Sub-wave.
 - [.claude/rules/build-first-reuse-default.md](../../../.claude/rules/build-first-reuse-default.md) — verdict ladder applied in §4.
 - [.claude/rules/ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md) — the trap class motivating this umbrella.

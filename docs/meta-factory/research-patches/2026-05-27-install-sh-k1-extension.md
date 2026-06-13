@@ -454,7 +454,7 @@ Probe sequence executed (2026-05-27): `claude plugin install --help` → `claude
 - [2026-05-27-universal-satellite-integration-matrix.md](2026-05-27-universal-satellite-integration-matrix.md) — PRIMARY input: companion install/integration findings (PR #252)
 - [2026-05-27-orchestrator-skill-audit.md](2026-05-27-orchestrator-skill-audit.md) — Stage 1 R-phase output (PR #254); context
 - [install.sh](../../../install.sh) — artefact under design; NOT edited in this stage
-- [.claude/rules/build-first-reuse-default.md](../../.claude/rules/build-first-reuse-default.md) — BFR verdict ladder governing K-1 design choices
-- [.claude/rules/dual-implementation-discipline.md §3](../../.claude/rules/dual-implementation-discipline.md) — triage framework for Cline/Cursor/OpenCode deliverable decisions (D1/D2/D3)
-- [.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) — all research methods comply
+- [.claude/rules/build-first-reuse-default.md](../../../.claude/rules/build-first-reuse-default.md) — BFR verdict ladder governing K-1 design choices
+- [.claude/rules/dual-implementation-discipline.md §3](../../../.claude/rules/dual-implementation-discipline.md) — triage framework for Cline/Cursor/OpenCode deliverable decisions (D1/D2/D3)
+- [.claude/rules/no-paid-llm-in-ci.md](../../../.claude/rules/no-paid-llm-in-ci.md) — all research methods comply
 - DeepWiki probes 2026-05-27: `obra/superpowers` (install mechanisms), `code-yeongyu/oh-my-openagent` (install + idempotency)

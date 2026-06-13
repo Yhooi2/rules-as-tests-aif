@@ -29,6 +29,11 @@ import { fileURLToPath } from 'node:url';
 import { runCheck, type CheckResult } from './utils/run-check.ts';
 import { runPriorArtCheck, loadSsotIds } from './checks/prior-art.ts';
 import { runS17Check } from './checks/s17.ts';
+// NOTE: checks/guard-liveness.ts is intentionally NOT imported statically — see
+// guardLivenessSection. Its import chain (eslint → @typescript-eslint/parser →
+// core+preset plugins → @typescript-eslint/utils) only resolves after a
+// root-level workspace install, and this orchestrator must stay loadable in
+// ESLint-stack-free topologies (CI principles job installs packages/core only).
 import {
   getCommits,
   getChangedFiles,
@@ -308,7 +313,117 @@ function s17Section(rb: ResolvedBase): void {
   }
 }
 
-function main(): void {
+/**
+ * Guard-liveness section: change-scoped ESLint roundtrip gate.
+ * For each ESLint manifest rule changed in this push, proves that every
+ * negative-test.input entry trips the rule and examples.good stays clean.
+ * Lives beside §7 (prior-art) and §1.7 (s17) in the base-scoped gate family.
+ */
+async function guardLivenessSection(rb: ResolvedBase): Promise<void> {
+  if (rb.base === null) {
+    warnSkip('guard-liveness', 'no resolvable base for change-scoped liveness diff');
+    return;
+  }
+  // Lazy-load the gate: keeps PREPUSH_ONLY=prior-art / =s17 seams and the CI
+  // principles job (packages/core-only install) free of the ESLint stack. A
+  // resolution failure here is a loud die, never a silent pass — the gate only
+  // loads on the path where it must actually run.
+  let gate: typeof import('./checks/guard-liveness.ts');
+  try {
+    gate = await import('./checks/guard-liveness.ts');
+  } catch (err) {
+    die(
+      '❌ guard-liveness: failed to load the ESLint stack — the gate requires a\n' +
+        '   root-level workspace install (run `npm install` at the repo root).\n' +
+        `   ${(err as Error).message}`,
+    );
+  }
+  const report = gate.runGuardLivenessGate(rb.base);
+
+  for (const s of report.skipped) {
+    process.stdout.write(`ℹ guard-liveness: SKIP ${s}\n`);
+  }
+  for (const id of report.noData) {
+    process.stdout.write(`⚠ guard-liveness: ${id} has no negative-test data — add negative-test.input to enable liveness check\n`);
+  }
+
+  if (report.failures.length === 0) {
+    if (report.passed.length > 0) {
+      process.stdout.write(`✅ guard-liveness: ${report.passed.length} ESLint rule(s) passed liveness check\n`);
+    }
+    return;
+  }
+
+  process.stdout.write('\n❌ Guard-liveness: ESLint rule negative-test failures on changed rules:\n');
+  for (const f of report.failures) {
+    process.stdout.write(`  ${f.ruleId}:\n`);
+    for (const msg of f.failures) {
+      process.stdout.write(`    - ${msg}\n`);
+    }
+  }
+  process.stdout.write(
+    '\nFix: ensure each negative-test.input entry actually triggers the ESLint rule,\n' +
+      'and that examples.good produces no violation.\n' +
+      'See packages/core/manifest/rules-manifest.json — the negative-test block.\n\n',
+  );
+  process.exit(1);
+}
+
+/**
+ * Cmd/script liveness section: change-scoped command/script guard-liveness gate
+ * (Wave guard-liveness v1.5). For each command/script manifest rule changed in
+ * this push, runs the rule's check against its violating fixture (branching on
+ * the per-rule liveness mode) and asserts the guard catches its own violation.
+ * SKIP/EXEMPT statuses emit visible lines — never a silent pass.
+ */
+async function cmdScriptLivenessSection(rb: ResolvedBase): Promise<void> {
+  if (rb.base === null) {
+    warnSkip('cmd-script-liveness', 'no resolvable base for change-scoped liveness diff');
+    return;
+  }
+  // Lazy-load — keeps the orchestrator loadable in topologies that do not run
+  // this gate. A resolution failure is a loud die, never a silent pass.
+  let gate: typeof import('./checks/cmd-script-liveness.ts');
+  try {
+    gate = await import('./checks/cmd-script-liveness.ts');
+  } catch (err) {
+    die(
+      '❌ cmd-script-liveness: failed to load the liveness runner.\n' +
+        `   ${(err as Error).message}`,
+    );
+  }
+  const report = gate.runCmdScriptLivenessGate(rb.base);
+
+  for (const s of report.skipped) {
+    process.stdout.write(`ℹ cmd-script-liveness: SKIP ${s}\n`);
+  }
+  for (const e of report.exempt) {
+    process.stdout.write(`ℹ cmd-script-liveness: EXEMPT ${e}\n`);
+  }
+  for (const nd of report.noData) {
+    process.stdout.write(`⚠ cmd-script-liveness: ${nd}\n`);
+  }
+
+  if (report.failures.length === 0) {
+    if (report.passed.length > 0) {
+      process.stdout.write(`✅ cmd-script-liveness: ${report.passed.length} command/script rule(s) passed liveness check\n`);
+    }
+    return;
+  }
+
+  process.stdout.write('\n❌ Cmd/script-liveness: rule check failed to catch its violation on changed rules:\n');
+  for (const f of report.failures) {
+    process.stdout.write(`  ${f.ruleId} [${f.mode ?? 'unknown'}]:\n`);
+    for (const msg of f.failures) process.stdout.write(`    - ${msg}\n`);
+  }
+  process.stdout.write(
+    "\nFix: ensure each fixture.setup-script creates the rule's REAL violating state\n" +
+      'so the check exits non-zero. See packages/core/manifest/rules-manifest.json (fixture block).\n\n',
+  );
+  process.exit(1);
+}
+
+async function main(): Promise<void> {
   // Resolve the diff base ONCE, up front — this consumes git's pre-push stdin
   // (which must be read before any other use). All base-scoped sections (6, 7,
   // §1.7, 8) thread the same ResolvedBase.
@@ -323,6 +438,14 @@ function main(): void {
   }
   if (process.env['PREPUSH_ONLY'] === 's17') {
     s17Section(rb);
+    process.exit(0);
+  }
+  if (process.env['PREPUSH_ONLY'] === 'guard-liveness') {
+    await guardLivenessSection(rb);
+    process.exit(0);
+  }
+  if (process.env['PREPUSH_ONLY'] === 'cmd-script-liveness') {
+    await cmdScriptLivenessSection(rb);
     process.exit(0);
   }
 
@@ -417,6 +540,17 @@ function main(): void {
   // enforce (blocking) by default since 2026-05-21; S17_WARN_ONLY=true downgrades.
   s17Section(rb);
 
+  // ── guard-liveness. Change-scoped ESLint liveness gate (Wave guard-liveness v1) ─
+  // For each ESLint manifest rule changed in this push, proves negative-test.input
+  // trips the rule and examples.good stays clean. Skips when no base is resolvable.
+  await guardLivenessSection(rb);
+
+  // ── cmd-script-liveness. Change-scoped command/script liveness gate (v1.5) ────
+  // For each command/script manifest rule changed in this push, runs the rule's
+  // check against its violating fixture and asserts it exits non-zero. Skips when
+  // no base is resolvable or the check binary/workflow/script is unavailable.
+  await cmdScriptLivenessSection(rb);
+
   // ── 8. lychee offline link check on changed *.md ─────────────────────────────
   if (rb.base !== null) {
     const changedMd = getChangedFiles(rb.base).filter((f) => f.endsWith('.md'));
@@ -439,9 +573,7 @@ function main(): void {
   process.exit(0);
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   process.stderr.write(`❌ pre-push hook crashed: ${(err as Error).message}\n`);
   process.exit(1);
-}
+});

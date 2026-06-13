@@ -13,8 +13,13 @@
 # Path filter: matches .claude/orchestrator-prompts/<anything>-meta-launch/kickoff.md
 #   (the *-meta-launch/kickoff.md glob). Other file writes are silently ignored.
 #
-# Per-task opt-out: if first line of file_path is `<!-- bridge: skip -->` the
-#   dispatch entrypoint exits 0 silently (ManualBackend copy-paste UX preserved).
+# Per-task opt-IN (kickoff §7, maintainer decision 2026-05-31): auto-dispatch
+#   is real, metered autonomous work — the hook fires ONLY when the first line
+#   of file_path is exactly `<!-- bridge: auto -->` (trimmed match). Default =
+#   no auto-dispatch; manual flow stays
+#   `tsx packages/runtime-bridge/src/cli/dispatch.ts <kickoff>` on demand.
+#   The `<!-- bridge: skip -->` marker in kickoff.ts keeps serving the manual
+#   dispatch.ts path (/dispatcher, /pipeline) unchanged.
 #
 # Fallback: on quota_exceeded / unavailable → dispatch.ts auto-falls-back to
 #   ManualBackend and emits copy-paste instructions to stderr.
@@ -49,18 +54,30 @@ esac
 
 [[ -z "$FILE_PATH" ]] && exit 0
 
-# ── Path filter: *-meta-launch/kickoff.md ────────────────────────────────────
-# Matches: .claude/orchestrator-prompts/<umbrella>-meta-launch/kickoff.md
-# Does NOT match: arbitrary source files, other kickoff.md files.
+# ── Path filter ──────────────────────────────────────────────────────────────
+# *-meta-launch/kickoff.md: SKIP (pipeline-ux P4). These are /pipeline dispatch
+#   records written by the SKILL, not umbrella kickoffs to send to aif. Auto-
+#   dispatch here creates a spurious aif task that must be hand-parked on every
+#   /pipeline invocation. Dispatch happens explicitly via /dispatcher instead.
+# */kickoff.md (other): active — umbrella kickoffs written directly by an agent
+#   or operator should dispatch to aif.
 # Bash glob note: the [[ == ]] pattern uses bash extglob (not regex); we use
 # a case statement for broader compatibility.
 case "$FILE_PATH" in
-  *-meta-launch/kickoff.md) ;;
+  *-meta-launch/kickoff.md) exit 0 ;;  # pipeline-ux P4: skip /pipeline dispatch records
+  */kickoff.md) ;;
   *) exit 0 ;;
 esac
 
 # ── File must exist (Write may fire before flush on some CC versions) ────────
 [[ -f "$FILE_PATH" ]] || exit 0
+
+# ── Opt-IN gate (kickoff §7, maintainer decision 2026-05-31) ──────────────────
+# Only a kickoff whose FIRST line is exactly `<!-- bridge: auto -->` may
+# auto-dispatch. Trimmed-exact match mirrors the kickoff.ts skip-marker
+# precedent (covers CRLF / trailing whitespace).
+first=$(head -n1 "$FILE_PATH" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+[ "$first" = '<!-- bridge: auto -->' ] || exit 0
 
 # ── Locate repo root + entrypoint ────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

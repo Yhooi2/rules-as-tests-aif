@@ -3,8 +3,8 @@
 
 > **Class:** R-phase deliverable (research-patch). No code changes; no hook/skill files written; verdict only (T5).
 > **Authoritative for:** the build-vs-reuse verdict on adopting `superset-sh/superset` (Superset) as this project's worktree-dispatch / env-setup substrate, the T16 problem-class analysis, the per-aspect comparison vs 2 alt-targets + the PR #279 baseline, and the I-phase / re-evaluation sketch.
-> **NOT authoritative for:** project goal (see [README.md#why-this-exists](../../README.md#why-this-exists)); whether the **maintainer personally** uses Superset as a terminal/GUI (a personal-workflow choice, not a project capability commit); the eventual disposition of Bug 1 (worktree-create-dual-channel) — this patch only establishes whether Superset ADOPT moots it.
-> **Origin:** 2026-05-30. Trigger fired: `dispatch-worktree-automation` umbrella merged ([PR #279](https://github.com/Yhooi2/rules-as-tests-aif/pull/279) + [#282](https://github.com/Yhooi2/rules-as-tests-aif/pull/282) + [#284](https://github.com/Yhooi2/rules-as-tests-aif/pull/284) + retro #285), satisfying the gate condition recorded in memory `superset-adopt-survey-deferred`. Maintainer 2026-05-30 framing on queued Bug 1: «А это вообще нужно если я буду работать из superset-sh/superset?». Predecessor coverage-gap: [PR #271](https://github.com/Yhooi2/rules-as-tests-aif/pull/271) R-phase did not include Superset (legitimate reopen per [phase-research-coverage.md §1.6](../../.claude/rules/phase-research-coverage.md)).
+> **NOT authoritative for:** project goal (see [README.md#why-this-exists](../../../README.md#why-this-exists)); whether the **maintainer personally** uses Superset as a terminal/GUI (a personal-workflow choice, not a project capability commit); the eventual disposition of Bug 1 (worktree-create-dual-channel) — this patch only establishes whether Superset ADOPT moots it.
+> **Origin:** 2026-05-30. Trigger fired: `dispatch-worktree-automation` umbrella merged ([PR #279](https://github.com/Yhooi2/rules-as-tests-aif/pull/279) + [#282](https://github.com/Yhooi2/rules-as-tests-aif/pull/282) + [#284](https://github.com/Yhooi2/rules-as-tests-aif/pull/284) + retro #285), satisfying the gate condition recorded in memory `superset-adopt-survey-deferred`. Maintainer 2026-05-30 framing on queued Bug 1: «А это вообще нужно если я буду работать из superset-sh/superset?». Predecessor coverage-gap: [PR #271](https://github.com/Yhooi2/rules-as-tests-aif/pull/271) R-phase did not include Superset (legitimate reopen per [phase-research-coverage.md §1.6](../../../.claude/rules/phase-research-coverage.md)).
 > **Tags:** `#superset` · `#swarm-orchestration` · `#build-vs-reuse` · `#worktree-substrate`
 
 ---
@@ -52,7 +52,7 @@ Each claim carries a DeepWiki excerpt, a WebSearch URL, or a file:line (T3).
 - **#43** aif-handoff `@aif/runtime` RuntimeAdapter (ADOPT-VOCABULARY, `prior-art-evaluations.md:111`) — provider-neutral runtime abstraction; orthogonal layer (runtime adapter, not worktree/GUI). Superset neither extends nor replaces it.
 - **Conclusion:** Superset **overlaps** #65 (worktree isolation — already covered) and **partially overlaps** #20 (env-setup delivery — already covered, better). It **replaces nothing** load-bearing.
 
-### Layer 5 — channel-delivery analysis ([rule-enforcement-channel-selection.md §4](../../.claude/rules/rule-enforcement-channel-selection.md))
+### Layer 5 — channel-delivery analysis ([rule-enforcement-channel-selection.md §4](../../../.claude/rules/rule-enforcement-channel-selection.md))
 
 The worktree-env-setup capability's **delivery reliability** under each option:
 
@@ -63,7 +63,7 @@ The worktree-env-setup capability's **delivery reliability** under each option:
 
 Adopting Superset's setup-script as the canonical mechanism would **downgrade** the capability from "fires in any CC session" to "fires only on a Superset-equipped macOS+Bun machine". For an AI-agnostic substrate shipped to consumers via `install.sh`, that is a regression in reachability.
 
-### Layer 6 — no-paid-LLM-in-CI ([no-paid-llm-in-ci.md §1-§2](../../.claude/rules/no-paid-llm-in-ci.md)) — **T-SS-B**
+### Layer 6 — no-paid-LLM-in-CI ([no-paid-llm-in-ci.md §1-§2](../../../.claude/rules/no-paid-llm-in-ci.md)) — **T-SS-B**
 
 **PASS.** Superset launches agents **interactively in a terminal pane** using the operator's own subscription `claude` (DeepWiki P4) and **does not proxy API calls or supply keys** (P2/P4). This is the §2 "out of scope: session-bound LLM use (operator running `claude` CLI)" case — subscription-bundled, not paid-API. **Nuance:** because Superset uses interactive terminal launch (not `claude -p`/SDK headless), the **June 15 2026 metered-credit-pool** change for headless usage surfaced in [PR #286](https://github.com/Yhooi2/rules-as-tests-aif/pull/286) §1 does **not** attach to Superset's normal agent-launch path. (Were Superset to spawn via `claude -p` it would inherit that metering — it does not.)
 
@@ -87,7 +87,7 @@ Adopting Superset's setup-script as the canonical mechanism would **downgrade** 
 
 ## §4 T16 problem-class match analysis
 
-Per [ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md) — verify *function*, not the "orchestrator" name.
+Per [ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md) — verify *function*, not the "orchestrator" name.
 
 - **Upstream problem class (Superset):** give a developer a **desktop GUI + CLI + MCP** to run *many* (the marketing says "100+") CLI coding agents **in parallel**, each in an isolated worktree, with per-project env-setup scripts and visual diff/session management. Target user: a developer scaling parallel agent throughput, managed visually.
 - **Our problem class:** a single-maintainer **meta-discipline framework** whose deliverable is **executable enforcement of conventions** (lint rules, principle tests, hooks, pre-push gates) that **ships to consumers** as harness-agnostic files. Worktree+env-setup is a *minor supporting capability* for dispatching Worker/Reviewer sub-agents — not the product.
@@ -111,7 +111,7 @@ Per [ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md) —
 
 ## §6 Verdict
 
-**REJECT** — as a *project-substrate adoption target* — with a **KEEP-NARROW** positioning and a **REFERENCE** to one schema idea. (Per [build-first-reuse-default.md §1](../../.claude/rules/build-first-reuse-default.md) seven-verdict taxonomy.)
+**REJECT** — as a *project-substrate adoption target* — with a **KEEP-NARROW** positioning and a **REFERENCE** to one schema idea. (Per [build-first-reuse-default.md §1](../../../.claude/rules/build-first-reuse-default.md) seven-verdict taxonomy.)
 
 **Why REJECT (not ADOPT):** Adopting Superset as the project's worktree/dispatch substrate would add a **non-OSI (ELv2)** dependency + **Bun + Electron + macOS-primary** runtime coupling to a substrate whose *defining property* is being **harness-, OS-, and license-agnostic files+hooks shipped to consumers** (a non-OSI dependency imposes a license-vetting obligation on open-source-only/regulated consumers — §5). It would solve only the **least load-bearing** slice (worktree env-setup) — a slice **already covered natively** by `claude -w` + the `WorktreeCreate` hook (PR #279/#282/#284) with **strictly better delivery reliability** (Layer 5) and **zero dependency**. That is the BFR REJECT shape: an upstream candidate that would *actively harm* the setup's core property while duplicating an existing-and-better capability.
 
@@ -147,18 +147,18 @@ No I-phase sketch (verdict is REJECT/KEEP-NARROW, nothing to build/adopt). Re-op
 
 ---
 
-## §8 §1.7 self-reflexive check ([phase-research-coverage.md §1.7](../../.claude/rules/phase-research-coverage.md))
+## §8 §1.7 self-reflexive check ([phase-research-coverage.md §1.7](../../../.claude/rules/phase-research-coverage.md))
 
 **Forward-check (this patch complies with active disciplines):**
-1. [build-first-reuse-default.md §3](../../.claude/rules/build-first-reuse-default.md) — full 6-layer BFR executed (§2 above: SSOT + DeepWiki ×4 + WebSearch ×4 + adjacent-SSOT + channel-delivery + no-paid-LLM), ≥2 alt-targets compared (§3). ✅
-2. [no-paid-llm-in-ci.md §1-§2](../../.claude/rules/no-paid-llm-in-ci.md) — survey used DeepWiki (free tier) + WebSearch, session-bound, no CI LLM; the *subject* (Superset) also verified no-paid-LLM-clean (Layer 6). ✅
-3. [doc-authority-hierarchy.md §2-§3](../../.claude/rules/doc-authority-hierarchy.md) — Authoritative-for / NOT-authoritative-for header present (top of file). ✅
-4. [reviewer-discipline.md §2](../../.claude/rules/reviewer-discipline.md) — the Bug 1 disposition is surfaced as a *reasoned recommendation* (RESUME, with evidence), and is explicitly flagged as "out of this patch's authority" — the maintainer/orchestrator owns the actual scheduling. ✅
+1. [build-first-reuse-default.md §3](../../../.claude/rules/build-first-reuse-default.md) — full 6-layer BFR executed (§2 above: SSOT + DeepWiki ×4 + WebSearch ×4 + adjacent-SSOT + channel-delivery + no-paid-LLM), ≥2 alt-targets compared (§3). ✅
+2. [no-paid-llm-in-ci.md §1-§2](../../../.claude/rules/no-paid-llm-in-ci.md) — survey used DeepWiki (free tier) + WebSearch, session-bound, no CI LLM; the *subject* (Superset) also verified no-paid-LLM-clean (Layer 6). ✅
+3. [doc-authority-hierarchy.md §2-§3](../../../.claude/rules/doc-authority-hierarchy.md) — Authoritative-for / NOT-authoritative-for header present (top of file). ✅
+4. [reviewer-discipline.md §2](../../../.claude/rules/reviewer-discipline.md) — the Bug 1 disposition is surfaced as a *reasoned recommendation* (RESUME, with evidence), and is explicitly flagged as "out of this patch's authority" — the maintainer/orchestrator owns the actual scheduling. ✅
 5. Principle 10 — first line is `<!-- scope:superset-adopt-survey -->` (machine-parseable annotation). ✅
-6. [phase-research-coverage.md §1.7/§1.12](../../.claude/rules/phase-research-coverage.md) — leads with a reasoned verdict (§6), backs it with file:line/DeepWiki/URL evidence (§2), states a falsifier (§9). ✅
+6. [phase-research-coverage.md §1.7/§1.12](../../../.claude/rules/phase-research-coverage.md) — leads with a reasoned verdict (§6), backs it with file:line/DeepWiki/URL evidence (§2), states a falsifier (§9). ✅
 
 **Backward-check (scope sweep):**
-1. Memory `superset-adopt-survey-deferred` — this patch is its codified resolution; per [memory-codification.md §3](../../.claude/rules/memory-codification.md), that memory entry should be reduced to a pointer to this patch (orchestrator follow-up).
+1. Memory `superset-adopt-survey-deferred` — this patch is its codified resolution; per [memory-codification.md §3](../../../.claude/rules/memory-codification.md), that memory entry should be reduced to a pointer to this patch (orchestrator follow-up).
 2. No SSOT row superseded — §10 *adds* row #86 (Superset was absent). The 2026-05-29 "Linux untested" claim in memory is **refined** here (P3: Linux AppImage tested), not silently overwritten — noted explicitly.
 3. No other research-patch covers Superset (grep `superset` → only this file). No prior verdict re-litigated; SSOT #20/#43/#65 cited as context, not re-decided.
 
@@ -180,7 +180,7 @@ Append to [prior-art-evaluations.md](../prior-art-evaluations.md) as row **#86**
 
 | # | Tool/Pattern | Capability area | First seen | Evaluated | Verdict | Rationale | Trigger to revisit |
 |---|---|---|---|---|---|---|---|
-| 86 | `superset-sh/superset` (Superset) — desktop GUI + CLI + MCP for orchestrating swarms of CLI coding agents across isolated git worktrees, with `.superset/config.json` setup/teardown scripts | Worktree-dispatch + per-project env-setup substrate for parallel CLI agents | 2026-05-29 | 2026-05-30 | **REJECT** (as project substrate); **KEEP-NARROW** (our enforcement-substrate scope is narrower/orthogonal); **REFERENCE** the `.superset/config.json` layered-override schema | T16 PARTIAL — overlaps only the non-load-bearing worktree-env-setup slice, **already covered natively** by CC `claude -w` (v2.1.50+, SSOT-adjacent #20) + `WorktreeCreate` hook (PR #279/#282/#284) with better delivery reliability ([rule-enforcement-channel-selection §4](../../.claude/rules/rule-enforcement-channel-selection.md)). Adopting adds a **non-OSI (ELv2, source-available)** dependency — imposing a license-vetting obligation on open-source-only/regulated consumers (not the managed-service clause, which self-install does not trigger) — plus **Bun + Electron + macOS-primary** coupling to an AI-/OS-/license-agnostic files+hooks substrate that ships to consumers. No-paid-LLM **clean** (interactive terminal launch, operator's own keys — DeepWiki P2/P4). v1.2.0, canary/12 h, Linux AppImage tested / Windows untested. Maintainer **may** use Superset as a personal terminal (does not moot Bug 1). | §7 triggers: goal→ship-a-GUI; Superset→OSI-open + headless-portable core; Linux/Windows consumer needs env-setup CC-native can't serve; CC removes `--worktree`/`WorktreeCreate`; project enriches the hook with committed-config layer (→ REFERENCE the schema) |
+| 86 | `superset-sh/superset` (Superset) — desktop GUI + CLI + MCP for orchestrating swarms of CLI coding agents across isolated git worktrees, with `.superset/config.json` setup/teardown scripts | Worktree-dispatch + per-project env-setup substrate for parallel CLI agents | 2026-05-29 | 2026-05-30 | **REJECT** (as project substrate); **KEEP-NARROW** (our enforcement-substrate scope is narrower/orthogonal); **REFERENCE** the `.superset/config.json` layered-override schema | T16 PARTIAL — overlaps only the non-load-bearing worktree-env-setup slice, **already covered natively** by CC `claude -w` (v2.1.50+, SSOT-adjacent #20) + `WorktreeCreate` hook (PR #279/#282/#284) with better delivery reliability ([rule-enforcement-channel-selection §4](../../../.claude/rules/rule-enforcement-channel-selection.md)). Adopting adds a **non-OSI (ELv2, source-available)** dependency — imposing a license-vetting obligation on open-source-only/regulated consumers (not the managed-service clause, which self-install does not trigger) — plus **Bun + Electron + macOS-primary** coupling to an AI-/OS-/license-agnostic files+hooks substrate that ships to consumers. No-paid-LLM **clean** (interactive terminal launch, operator's own keys — DeepWiki P2/P4). v1.2.0, canary/12 h, Linux AppImage tested / Windows untested. Maintainer **may** use Superset as a personal terminal (does not moot Bug 1). | §7 triggers: goal→ship-a-GUI; Superset→OSI-open + headless-portable core; Linux/Windows consumer needs env-setup CC-native can't serve; CC removes `--worktree`/`WorktreeCreate`; project enriches the hook with committed-config layer (→ REFERENCE the schema) |
 
 ---
 

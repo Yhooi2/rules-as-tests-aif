@@ -1,25 +1,27 @@
 /**
- * Paired-negative tests for the J5 orchestrator-prompts hydration step
- * in BOTH the CC WorktreeCreate hook (.claude/hooks/worktree-setup.sh)
- * and the portable script (scripts/create-worktree.sh).
+ * Paired-negative tests for the coordination-sync step in BOTH the CC
+ * WorktreeCreate hook (.claude/hooks/worktree-setup.sh) and the portable
+ * script (scripts/create-worktree.sh).
  *
- * The load-bearing claim (kickoff §3): after the hook/script runs, a fresh
- * worktree contains the gitignored orchestrator-prompt content from the
- * primary checkout. Removing the hydration block re-breaks this (T-J5-A).
+ * After the J5 → symlink-to-canonical migration (SSOT #110), both helpers
+ * call `scripts/link-coordination.sh` instead of running rsync directly.
+ * The positive test checks that kickoff.md is reachable AS A SYMLINK pointing
+ * into $CANON; the paired-negative test strips the link-coordination.sh call
+ * and asserts the kickoff is absent (proving the wiring is load-bearing).
  *
- * Tests:
- *   positive      — kickoff.md present in worktree after creation
- *   negative      — kickoff.md ABSENT when hydration block is removed (T-J5-A)
- *   non-destructive — tracked done.md is NOT overwritten by source version
- *   hook parity   — worktree-setup.sh and create-worktree.sh behave identically
+ * The former rsync NON-DESTRUCTIVE test has been removed — its premise (rsync
+ * in the hook) is gone; done.md non-destructive behaviour is covered by
+ * link-coordination.test.ts (b) which tests the symlink helper directly.
  *
  * Runs against temporary git repos (no network, no real-repo side-effects).
- * Skips gracefully when `rsync` or `jq` (hook only) is unavailable.
+ * Sets CLAUDE_COORDINATION_DIR to a temp dir in every test — never touches $HOME.
+ * Skips gracefully when `jq` (hook only) is unavailable.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { execFileSync, execSync } from 'node:child_process';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -34,17 +36,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 const HOOK = resolve(REPO_ROOT, '.claude/hooks/worktree-setup.sh');
 const SCRIPT = resolve(REPO_ROOT, 'scripts/create-worktree.sh');
+const LINK_COORDINATION = resolve(REPO_ROOT, 'scripts/link-coordination.sh');
 
 // ── Availability checks ──────────────────────────────────────────────────────
 
-function hasRsync(): boolean {
-  try {
-    execSync('command -v rsync', { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
 function hasJq(): boolean {
   try {
     execSync('command -v jq', { stdio: 'ignore' });
@@ -53,7 +48,6 @@ function hasJq(): boolean {
     return false;
   }
 }
-const RSYNC = hasRsync();
 const JQ = hasJq();
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,7 +109,7 @@ function setupRepoWithKickoffs(): string {
   writeFileSync(resolve(dir, 'packages/core/.keep'), '');
 
   // .gitignore mirroring production (.claude/orchestrator-prompts/* gitignored;
-  // subdir skeleton + done.md tracked)
+  // subdir skeleton and done.md tracked)
   const gitignore = [
     'node_modules',
     '.claude/orchestrator-prompts/*',
@@ -143,6 +137,12 @@ function setupRepoWithKickoffs(): string {
   // Primary node_modules symlink target
   mkdirSync(resolve(dir, 'node_modules'), { recursive: true });
   writeFileSync(resolve(dir, 'node_modules/.keep'), '');
+
+  // Provide link-coordination.sh in the temp repo so the wiring call
+  // `bash "$PROJECT_DIR/scripts/link-coordination.sh"` resolves correctly
+  // when the real SCRIPT / HOOK sets PROJECT_DIR to this temp dir.
+  mkdirSync(resolve(dir, 'scripts'), { recursive: true });
+  execSync(`ln -sf "${LINK_COORDINATION}" "${resolve(dir, 'scripts/link-coordination.sh')}"`);
 
   return dir;
 }
@@ -176,63 +176,44 @@ function teardown(dir: string): void {
 
 // ── Hook tests (CC WorktreeCreate) ───────────────────────────────────────────
 
-describe.skipIf(!RSYNC || !JQ)(
-  'worktree-setup.sh — J5 hydration (hook)',
+describe.skipIf(!JQ)(
+  'worktree-setup.sh — coordination-sync via link-coordination.sh (hook)',
   () => {
     let repo: string;
+    let canon: string;
 
-    beforeEach(() => { repo = setupRepoWithKickoffs(); });
-    afterEach(() => { teardown(repo); });
+    beforeEach(() => {
+      repo = setupRepoWithKickoffs();
+      canon = mkdtempSync(resolve(tmpdir(), 'j5-hyd-canon-'));
+    });
+    afterEach(() => {
+      teardown(repo);
+      try { rmSync(canon, { recursive: true, force: true }); } catch { /* ignore */ }
+    });
 
-    it('POSITIVE: kickoff.md present in worktree after creation', () => {
-      const r = runHook(hookPayload('hyd-pos', repo), { CLAUDE_PROJECT_DIR: repo });
+    it('POSITIVE: kickoff.md present AS A SYMLINK in worktree after creation', () => {
+      const r = runHook(hookPayload('hyd-pos', repo), {
+        CLAUDE_PROJECT_DIR: repo,
+        CLAUDE_COORDINATION_DIR: canon,
+      });
       expect(r.status).toBe(0);
       const wt = `${repo}/.claude/worktrees/hyd-pos`;
-      expect(existsSync(`${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`)).toBe(true);
-      const content = readFileSync(
-        `${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`,
-        'utf8',
-      );
+      const kickoffPath = `${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`;
+      expect(existsSync(kickoffPath), 'kickoff.md must exist').toBe(true);
+      // With symlink-to-canonical, kickoff.md is a symlink (adopted from primary seed)
+      expect(lstatSync(kickoffPath).isSymbolicLink(), 'kickoff.md must be a symlink into $CANON').toBe(true);
+      const content = readFileSync(kickoffPath, 'utf8');
       expect(content).toContain('my-umbrella kickoff');
     });
 
-    it('NON-DESTRUCTIVE: tracked done.md in worktree is NOT overwritten by source version', () => {
-      // Add a DIFFERENT done.md to the worktree first (simulating a newer closure),
-      // then run the hook — the worktree's version must survive.
-      const wt = `${repo}/.claude/worktrees/hyd-nondestr`;
-      mkdirSync(`${wt}/.claude/orchestrator-prompts/my-umbrella`, { recursive: true });
-      writeFileSync(
-        `${wt}/.claude/orchestrator-prompts/my-umbrella/done.md`,
-        'done-from-worktree\n',
-      );
-
-      // We cannot pre-populate the worktree and then run the hook (hook creates it);
-      // instead test via the script which has equivalent semantics.
-      // Run rsync manually as the script would, then verify.
-      const srcOp = `${repo}/.claude/orchestrator-prompts`;
-      const dstOp = `${wt}/.claude/orchestrator-prompts`;
-      // Simulates the hook's rsync step
-      execSync(
-        `rsync -a --ignore-existing "${srcOp}/" "${dstOp}/" >/dev/null 2>&1 || true`,
-        { shell: '/bin/bash' },
-      );
-      const content = readFileSync(
-        `${wt}/.claude/orchestrator-prompts/my-umbrella/done.md`,
-        'utf8',
-      );
-      expect(content).toBe('done-from-worktree\n'); // worktree version intact
-    });
-
-    it('PAIRED-NEGATIVE: without hydration block, kickoff.md is ABSENT (T-J5-A)', () => {
-      // Create a stripped version of the hook without the hydration block and
-      // verify the worktree does NOT contain the kickoff — proving the test
-      // catches the gap and the production hook genuinely fixes it.
+    it('PAIRED-NEGATIVE: without link-coordination.sh call, kickoff.md is ABSENT (T-coord-sync)', () => {
+      // Create a stripped version of the hook without the link-coordination.sh call
+      // and verify the worktree does NOT contain the kickoff.
       const strippedHook = (() => {
         const src = readFileSync(HOOK, 'utf8');
-        // Remove the hydration block (everything between the J5 comment and the
-        // fi closing it)
+        // Remove the line calling link-coordination.sh
         return src.replace(
-          /# Hydrate gitignored orchestrator-prompts[\s\S]*?\nfi\n\n/,
+          /bash "\$PROJECT_DIR\/scripts\/link-coordination\.sh".*\n/,
           '',
         );
       })();
@@ -244,7 +225,7 @@ describe.skipIf(!RSYNC || !JQ)(
         const result = execFileSync('bash', [tmpHook], {
           input: JSON.stringify(hookPayload('hyd-neg', repo)),
           encoding: 'utf8',
-          env: { ...process.env, CLAUDE_PROJECT_DIR: repo },
+          env: { ...process.env, CLAUDE_PROJECT_DIR: repo, CLAUDE_COORDINATION_DIR: canon },
         });
         const wt = result.trim();
         // Worktree was created but kickoff must be ABSENT (the gap)
@@ -260,26 +241,36 @@ describe.skipIf(!RSYNC || !JQ)(
 
 // ── Script tests (create-worktree.sh portable) ───────────────────────────────
 
-describe.skipIf(!RSYNC)(
-  'create-worktree.sh — J5 hydration (portable script)',
+describe(
+  'create-worktree.sh — coordination-sync via link-coordination.sh (portable script)',
   () => {
     let repo: string;
+    let canon: string;
 
-    beforeEach(() => { repo = setupRepoWithKickoffs(); });
-    afterEach(() => { teardown(repo); });
-
-    it('POSITIVE: kickoff.md present in worktree after script run', () => {
-      const r = runScript(['hyd-script-pos', repo]);
-      expect(r.status).toBe(0);
-      const wt = `${repo}/.claude/worktrees/hyd-script-pos`;
-      expect(existsSync(`${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`)).toBe(true);
+    beforeEach(() => {
+      repo = setupRepoWithKickoffs();
+      canon = mkdtempSync(resolve(tmpdir(), 'j5-script-canon-'));
+    });
+    afterEach(() => {
+      teardown(repo);
+      try { rmSync(canon, { recursive: true, force: true }); } catch { /* ignore */ }
     });
 
-    it('PAIRED-NEGATIVE (script): without hydration block, kickoff.md absent (T-J5-A)', () => {
+    it('POSITIVE: kickoff.md present AS A SYMLINK in worktree after script run', () => {
+      const r = runScript(['hyd-script-pos', repo], { CLAUDE_COORDINATION_DIR: canon });
+      expect(r.status).toBe(0);
+      const wt = `${repo}/.claude/worktrees/hyd-script-pos`;
+      const kickoffPath = `${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`;
+      expect(existsSync(kickoffPath), 'kickoff.md must exist').toBe(true);
+      expect(lstatSync(kickoffPath).isSymbolicLink(), 'kickoff.md must be a symlink').toBe(true);
+    });
+
+    it('PAIRED-NEGATIVE (script): without link-coordination.sh call, kickoff.md absent (T-coord-sync)', () => {
       const strippedScript = (() => {
         const src = readFileSync(SCRIPT, 'utf8');
+        // Remove the line calling link-coordination.sh
         return src.replace(
-          /# Hydrate gitignored orchestrator-prompts[\s\S]*?\nfi\n\n/,
+          /bash "\$PROJECT_DIR\/scripts\/link-coordination\.sh".*\n/,
           '',
         );
       })();
@@ -290,6 +281,7 @@ describe.skipIf(!RSYNC)(
       try {
         const result = execFileSync('bash', [tmpScript, 'hyd-script-neg', repo], {
           encoding: 'utf8',
+          env: { ...process.env, CLAUDE_COORDINATION_DIR: canon },
         });
         const wt = result.trim();
         expect(
@@ -300,16 +292,16 @@ describe.skipIf(!RSYNC)(
       }
     });
 
-    it('DUAL-PAIR PARITY: hook and script produce same hydration outcome', () => {
-      // Both must hydrate the same kickoff content — T-J5-B guard
-      // (only testing the script here; hook parity tested in the hook suite above)
-      const r = runScript(['hyd-parity', repo]);
+    it('DUAL-PAIR PARITY: hook and script both produce symlinks (when jq available)', () => {
+      // Both must link the kickoff as a symlink — T-coord-parity guard
+      // (only testing the script here; hook parity tested in the hook suite above when JQ=true)
+      const r = runScript(['hyd-parity', repo], { CLAUDE_COORDINATION_DIR: canon });
       expect(r.status).toBe(0);
       const wt = `${repo}/.claude/worktrees/hyd-parity`;
-      const content = readFileSync(
-        `${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`,
-        'utf8',
-      );
+      const kickoffPath = `${wt}/.claude/orchestrator-prompts/my-umbrella/kickoff.md`;
+      expect(existsSync(kickoffPath), 'kickoff.md must exist').toBe(true);
+      expect(lstatSync(kickoffPath).isSymbolicLink(), 'kickoff.md must be symlink').toBe(true);
+      const content = readFileSync(kickoffPath, 'utf8');
       expect(content).toContain('my-umbrella kickoff');
     });
   },

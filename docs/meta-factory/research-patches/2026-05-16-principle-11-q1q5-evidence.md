@@ -2,14 +2,14 @@
 # Research-patch — Principle 11 Q1-Q5 design questions, evidence-based answers (Track 5)
 
 > **Date:** 2026-05-16
-> **Session type:** Post-1A coordination Track 5 — evidence-gathering for [principle-11-build-first-reuse-default.design.md §5](../../packages/core/principles/11-build-first-reuse-default.design.md) Q1-Q5
-> **Predecessor:** [post-1a-coordination kickoff §3.1 Commit 6](../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md)
+> **Session type:** Post-1A coordination Track 5 — evidence-gathering for [principle-11-build-first-reuse-default.design.md §5](../../../packages/core/principles/11-build-first-reuse-default.design.md) Q1-Q5
+> **Predecessor:** [post-1a-coordination kickoff §3.1 Commit 6](../../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md)
 > **T7 template:** Problem → Root Cause → Solution → Prevention → Tags
 > **Outcome:** Q1, Q2, Q4 recommendations CONFIRMED with evidence. **Q3 recommendation CONTRADICTED by repo state — revision needed.** Q5 recommendation REVISED based on rollout-history evidence.
 
 ## §1 Problem
 
-The principle 11 design sketch ([packages/core/principles/11-build-first-reuse-default.design.md §5](../../packages/core/principles/11-build-first-reuse-default.design.md)) names 5 open design questions and provides recommended answers. The recommendations were authored in the same 1A session that produced the rule body — same blind-spot risk as documented in [pre-ship review §3 root cause](2026-05-16-1a-drafts-substantive-review.md).
+The principle 11 design sketch ([packages/core/principles/11-build-first-reuse-default.design.md §5](../../../packages/core/principles/11-build-first-reuse-default.design.md)) names 5 open design questions and provides recommended answers. The recommendations were authored in the same 1A session that produced the rule body — same blind-spot risk as documented in [pre-ship review §3 root cause](2026-05-16-1a-drafts-substantive-review.md).
 
 This patch runs evidence probes on each Q1-Q5 to verify/contradict the recommendations BEFORE Commit 6 (real principle test 11 implementation) is authored.
 
@@ -252,9 +252,9 @@ Q4 estimate is ~1-2 sec for 50; at 43 should be sub-second. The estimate isn't p
 
 ## §9 See also
 
-- [packages/core/principles/11-build-first-reuse-default.design.md §5](../../packages/core/principles/11-build-first-reuse-default.design.md) — design sketch Q1-Q5
+- [packages/core/principles/11-build-first-reuse-default.design.md §5](../../../packages/core/principles/11-build-first-reuse-default.design.md) — design sketch Q1-Q5
 - [docs/meta-factory/research-patches/2026-05-16-1a-drafts-substantive-review.md](2026-05-16-1a-drafts-substantive-review.md) — sibling pre-ship review patch (same blind-spot family)
-- [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md §3.1 Commit 6](../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) — Commit 6 deadline + design Q1-Q5 reference
-- [.husky/pre-push:167](../../.husky/pre-push) — `pa_detect_capability_reason` (shared capability definition)
-- [packages/core/stryker.config.mjs](../../packages/core/stryker.config.mjs) — mutation config (no incremental, no since-filter)
-- [packages/core/principles/08-prior-art-cited.test.ts](../../packages/core/principles/08-prior-art-cited.test.ts), [09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — hard-fail-from-day-one principle test precedents
+- [.claude/orchestrator-prompts/post-1a-coordination/kickoff.md §3.1 Commit 6](../../../.claude/orchestrator-prompts/post-1a-coordination/kickoff.md) — Commit 6 deadline + design Q1-Q5 reference
+- [.husky/pre-push:167](../../../.husky/pre-push) — `pa_detect_capability_reason` (shared capability definition)
+- [packages/core/stryker.config.mjs](../../../packages/core/stryker.config.mjs) — mutation config (no incremental, no since-filter)
+- [packages/core/principles/08-prior-art-cited.test.ts](../../../packages/core/principles/08-prior-art-cited.test.ts), [09-doc-authority-hierarchy.test.ts](../../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — hard-fail-from-day-one principle test precedents

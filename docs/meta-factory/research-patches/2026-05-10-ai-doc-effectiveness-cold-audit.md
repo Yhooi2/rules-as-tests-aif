@@ -237,10 +237,10 @@ No Phase 2 re-run. Phase 1 result stands: **PARTIAL**. Keyword set has paired fa
 
 **Header content (lines 7-9):**
 > **Authoritative for:** phase scope, sequencing, acceptance criteria, operational decisions.
-> **NOT authoritative for:** project goal, methodology, design invariants — see [README.md#why-this-exists](../../README.md#why-this-exists).
+> **NOT authoritative for:** project goal, methodology, design invariants — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 
 **§1 Pointer (lines 16-17):**
-> **Pointer (2026-05-09 goal-hierarchy fix):** project goal, methodology, and design invariants are owned by [README.md#why-this-exists](../../README.md#why-this-exists). This §1 is a pointer + operational acceptance criteria; it does **not** redefine the goal. Earlier framing of recursive self-application as «north star» drifted from README; the corrected hierarchy and Artifact Ownership Contract live in […]
+> **Pointer (2026-05-09 goal-hierarchy fix):** project goal, methodology, and design invariants are owned by [README.md#why-this-exists](../../../README.md#why-this-exists). This §1 is a pointer + operational acceptance criteria; it does **not** redefine the goal. Earlier framing of recursive self-application as «north star» drifted from README; the corrected hierarchy and Artifact Ownership Contract live in […]
 
 **Empirical drift check:** searching the file (line 17) for «north star» — present, in **historical-corrected mode** with explicit «drifted from README» marker. The header's «NOT authoritative for: project goal» line and the §1 Pointer's «does not redefine the goal» language are **both** present and mutually reinforcing.
 

@@ -9,18 +9,26 @@
  * fragile for a durable bridge until an upstream per-session-transport fix
  * lands. REST is stateless and was live-verified, so dispatch uses it now.
  *
- * dispatch() — 4-step planner-skip over REST (live-verified mechanics):
- *   1. POST /tasks            { projectId, title, plannerMode:'fast', paused:true }  -> 201 + task id
- *   2. PUT  /tasks/:id        { plan: <kickoff content> }                            -> 200
- *   3. POST /tasks/:id/events { event: 'accept_existing_plan' }                      -> advance to plan_ready
- *   4. PUT  /tasks/:id        { paused: false }                                      -> coordinator picks up
+ * dispatch() — 2-step planner-RUN over REST (live-verified 2026-06-03):
+ *   1. POST /tasks  { projectId, title, description:<kickoff content>, plannerMode:'fast',
+ *                     paused:true, autoMode:true }                       -> 201 + task id
+ *   2. PUT  /tasks/:id { paused: false }                                 -> coordinator picks up
+ *   The task stays at `backlog`; the auto-queue advances it `backlog -> planning -> runPlanner`,
+ *   and `runPlanner` (planner.ts:191-213) is the ONLY code that creates a per-task git worktree.
+ *   This is what lets N dispatched kickoffs run in PARALLEL, each in its own worktree.
+ *
+ *   Why NOT `accept_existing_plan` (the old step, removed 2026-06-03): it transitions
+ *   `backlog -> plan_ready` SKIPPING `planning`, so `runPlanner` never runs and NO worktree
+ *   is created -> all tasks forced serial. Root cause + live proof:
+ *   research-patches/2026-06-02-aif-worktree-gap.md (#372).
+ *
+ *   The kickoff goes in `description` (the planner's INPUT spec, planner.ts:246), NOT in `plan`
+ *   (the planner's OUTPUT slot @planPath, which it overwrites). The planner plans the *how*
+ *   (implementation checklist) FROM our kickoff *what*.
  *   Live-verified notes:
  *     - status is EVENT-only — `PUT { status }` is silently ignored (no direct write).
- *     - step 3 enforces aif-handoff's clean-worktree (branch-isolation) guard; a
- *       dirty target tree surfaces as a 4xx -> dispatch_failed. dispatch() then
- *       best-effort DELETEs the half-created task (rollback, no orphan), and the
- *       CLI (dispatch.ts) falls back to ManualBackend on the BackendError.
- *       (Same guard applies to the MCP path — not REST-specific.)
+ *     - step 2 (unpause) is wrapped; a failure best-effort DELETEs the half-created task
+ *       (rollback, no orphan), and the CLI (dispatch.ts) falls back to ManualBackend.
  * available(): GET /health reachability probe (1s timeout).
  * getStatus(): REST GET /tasks/:id (non-blocking snapshot via aifWsStatus.getTaskStatus).
  * awaitDone(): WebSocket status event stream (aifWsStatus.awaitTaskDone, :3009/ws).
@@ -32,6 +40,7 @@
  */
 import type { RuntimeBackend } from './backend.js';
 import { BackendError } from './backend.js';
+import { ensureParallelEnabled } from './cli/ensure-parallel.js';
 import type { KickoffSpec, TaskHandle, TaskStatus, TaskResult } from './types.js';
 import {
   awaitTaskDone,
@@ -136,13 +145,37 @@ export class AifHandoffBackend implements RuntimeBackend {
       );
     }
 
-    // -- Step 1: Create task in paused state (REST POST /tasks) -------------
-    // paused:true so the coordinator does not advance the task while we set
-    // its plan in step 2. Live-verified: returns 201 + full task object.
+    // -- Step 0: self-heal Finding A — ensure per-task worktree isolation is ON.
+    // aif creates a per-task worktree only when project.parallelEnabled=1 (gate 2 of 3,
+    // planner.ts); a freshly-provisioned instance has it 0 → tasks run in-place on the
+    // shared checkout → dirty_worktree 409 on the NEXT dispatch. Best-effort: a guard
+    // failure must NOT block dispatch (warn + proceed) — the dispatch itself still works,
+    // only the isolation is degraded. See research-patch 2026-06-01-aif-task-isolation.md §2.
+    try {
+      const ensured = await ensureParallelEnabled(this.baseUrl, this.projectId);
+      if (ensured.changed) {
+        process.stderr.write(
+          `[runtime-bridge] self-heal: enabled parallelEnabled on project ${this.projectId} (Finding A — per-task worktree isolation)\n`,
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(
+        `[runtime-bridge] WARN: could not ensure parallelEnabled (tasks may run in-place / risk dirty_worktree): ${msg}\n`,
+      );
+    }
+
+    // -- Step 1: Create the task with the kickoff as its DESCRIPTION --------
+    // description carries the kickoff content because that is the planner's
+    // INPUT spec (planner.ts:246 `Description: ${task.description}`). We do NOT
+    // push `plan` — that is the planner's OUTPUT slot (@planPath), which it
+    // overwrites. paused:true so the coordinator does not advance until step 2.
+    // autoMode:true so the auto-queue advances backlog -> planning (where the
+    // worktree is created). Live-verified 2026-06-03: returns 201 + task object.
     const createResult = await this._rest('POST', '/tasks', {
       projectId: this.projectId,
       title: kickoff.umbrellaName,
-      description: `Runtime-bridge dispatch: ${kickoff.filePath}`,
+      description: kickoff.content,
       plannerMode: 'fast',
       paused: true,
       autoMode: true,
@@ -158,22 +191,15 @@ export class AifHandoffBackend implements RuntimeBackend {
     }
     const taskId = (createResult as { id: string }).id;
 
-    // Steps 2-4 are wrapped so a mid-sequence failure (e.g. the dirty-worktree
-    // guard on step 3) does not strand the paused task created in step 1.
-    // Best-effort DELETE rolls it back, then we re-throw — the CLI then falls
-    // back to ManualBackend (dispatch.ts) with no orphan left on the project.
+    // Step 2 is wrapped so a failure does not strand the paused task created in
+    // step 1. Best-effort DELETE rolls it back, then we re-throw — the CLI then
+    // falls back to ManualBackend (dispatch.ts) with no orphan left on the project.
     try {
-      // -- Step 2: Push the kickoff content as the task plan (PUT /tasks/:id) --
-      await this._rest('PUT', `/tasks/${taskId}`, { plan: kickoff.content });
-
-      // -- Step 3: Advance to plan_ready via the state-machine event ----------
-      // Status is EVENT-only — `PUT { status }` is silently ignored (live-verified
-      // §3.3 of the dispatch-fix research-patch). aif-handoff enforces a clean-
-      // worktree (branch-isolation) guard here: a dirty target tree surfaces as a
-      // 4xx -> dispatch_failed (same guard applies to the MCP path, not REST-specific).
-      await this._rest('POST', `/tasks/${taskId}/events`, { event: 'accept_existing_plan' });
-
-      // -- Step 4: Clear paused so the coordinator picks the task up ----------
+      // -- Step 2: Clear paused so the coordinator picks the task up ----------
+      // The task stays at `backlog`; the auto-queue advances it through
+      // `planning` (NOT skipped — that is the whole fix), so runPlanner runs and
+      // creates the per-task worktree. NO `accept_existing_plan` event: that
+      // skipped `planning` and was why no worktree was ever created (#372).
       await this._rest('PUT', `/tasks/${taskId}`, { paused: false });
     } catch (err) {
       // Best-effort rollback; ignore delete failures (the throw below is what matters).

@@ -4,15 +4,16 @@ last-bootstrap: <YYYY-MM-DD>
 aif-version: <e.g. 2.1.0>
 ---
 
-<!-- Copy this file to .ai-factory/tool-decisions.md in your project root and commit it.
-     Run AIF /aif to populate the first bootstrap; the UserPromptSubmit hook (Wave 5.3)
-     will then track deps-hash changes automatically. -->
+<!-- The installer seeds this file at .ai-factory/tool-decisions.md with the deps-hash
+     sentinel below; commit it. Run /tool-bootstrapping to populate the first bootstrap
+     (stamps the real deps-hash); the UserPromptSubmit hook then tracks deps-hash changes
+     automatically. -->
 
 ## Accepted
 
 | Tool | Type | Accepted | Rationale |
 |---|---|---|---|
-| context7 | MCP | auto | setup.sh baseline — installed unconditionally as recursive bootstrap stage 1 |
+| context7 | MCP | recommended | strongly recommended for doc lookup (rule 2); NOT auto-installed — install if absent, loop degrades to WebSearch/DeepWiki without it |
 | github-mcp | MCP | YYYY-MM-DD | Replace with actual rationale: which project workflow requires this tool |
 
 ## Rejected

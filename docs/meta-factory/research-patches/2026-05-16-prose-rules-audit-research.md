@@ -2,7 +2,7 @@
 # Research-patch — Prose-rules audit R-phase (Track 3, condensed)
 
 > **Date:** 2026-05-16
-> **Session type:** Post-1A coordination Track 3 — CONDENSED prose-rules audit per [prose-rules-audit-research/kickoff.md](../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md). Original 3-4h R-phase scope was first dispatched to a Sonnet sub-agent in isolated worktree (parallel-subwave-isolation discipline); sub-agent errored mid-run (API socket closed at ~15min mark, after 61 tool uses, no file writes before failure). Re-executed condensed scope in orchestrator session — coverage substantive but lighter than original kickoff §4 methodology mandated.
+> **Session type:** Post-1A coordination Track 3 — CONDENSED prose-rules audit per [prose-rules-audit-research/kickoff.md](../../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md). Original 3-4h R-phase scope was first dispatched to a Sonnet sub-agent in isolated worktree (parallel-subwave-isolation discipline); sub-agent errored mid-run (API socket closed at ~15min mark, after 61 tool uses, no file writes before failure). Re-executed condensed scope in orchestrator session — coverage substantive but lighter than original kickoff §4 methodology mandated.
 > **Predecessor:** [2026-05-16-goal-clarity-dialogue.md §11.3](2026-05-16-goal-clarity-dialogue.md) (1A prose-rules audit) → [2026-05-16-1a-drafts-substantive-review.md §3](2026-05-16-1a-drafts-substantive-review.md) (1A defect surfacing)
 > **T7 template:** Problem → Root Cause → Solution → Prevention → Tags
 > **Outcome:** Action A PROCEED-with-refinement. Action B PROCEED-with-HISTORICAL_CUTOFF. **Action C REVISE — compensating mechanism misaligned with rule** (compliance-verifier.md scoped to §1.7, NOT to reviewer role-swap). Actions D/E NEW classifications: D PROCEED-mechanical, E CONFIRMED-Class-C-defer.
@@ -10,13 +10,13 @@
 
 ## §1 Problem
 
-[prose-rules-audit-research/kickoff.md §1](../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) describes the failures of 1A prose-rules audit (T3 + T15 + `#recommendation-skips-own-discipline`) that this R-phase corrects via evidence-based methodology. **This patch runs probes substantively, not via syntactic claims.**
+[prose-rules-audit-research/kickoff.md §1](../../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) describes the failures of 1A prose-rules audit (T3 + T15 + `#recommendation-skips-own-discipline`) that this R-phase corrects via evidence-based methodology. **This patch runs probes substantively, not via syntactic claims.**
 
 ## §2 Background
 
 5 prose-only rules require classification (Class A — mechanically testable; Class B — semantic-only compensating mechanism; Class C — mechanical-but-deferred). 1A produced provisional A/B/C verdicts without probes. This R-phase runs the probes.
 
-Sub-agent dispatch attempt 2026-05-16: orchestrator dispatched Track 3 in isolated worktree per [parallel-subwave-isolation rule](../../.claude/rules/parallel-subwave-isolation.md). After 61 tool uses + ~15 min runtime, sub-agent received `API Error: The socket connection was closed unexpectedly`. Worktree auto-cleaned (no file writes had landed). **This patch is the re-execution from orchestrator session with reduced scope.**
+Sub-agent dispatch attempt 2026-05-16: orchestrator dispatched Track 3 in isolated worktree per [parallel-subwave-isolation rule](../../../.claude/rules/parallel-subwave-isolation.md). After 61 tool uses + ~15 min runtime, sub-agent received `API Error: The socket connection was closed unexpectedly`. Worktree auto-cleaned (no file writes had landed). **This patch is the re-execution from orchestrator session with reduced scope.**
 
 ## §3 Per-rule audit results (condensed evidence-based)
 
@@ -146,7 +146,7 @@ grep -lE "git worktree add|worktree-add" .claude/orchestrator-prompts/*/kickoff.
 **Forward-check:**
 - Principle 08 capability-commit gate: principle test 12 is a new capability (new TS file ≥80 LOC in packages/core/principles). Needs Prior-art trailer when committed.
 - Build-vs-reuse SSOT: companion test 12 pattern matches principle 09 precedent (doc-authority-hierarchy companion); no new pattern.
-- Doc-authority: new test file inherits packages/core/principles/ folder authority (no per-file header needed per [doc-authority-hierarchy.md §5](../../.claude/rules/doc-authority-hierarchy.md)).
+- Doc-authority: new test file inherits packages/core/principles/ folder authority (no per-file header needed per [doc-authority-hierarchy.md §5](../../../.claude/rules/doc-authority-hierarchy.md)).
 - Phase-research-coverage 6-item: applied (this patch is the entry research for the principle).
 - No-paid-llm-in-ci: test is deterministic grep, runs in CI without API call. ✅
 
@@ -269,7 +269,7 @@ Done in §6. Self-application self-check passes with caveats noted.
 ### Decision B — Run deeper R-phase scope?
 
 - **Option B1**: Accept condensed Track 3 verdicts; ship Commits 3 (revised), 4, 5, plus new 14 (D).
-- **Option B2**: Launch fresh 3-4h R-phase per original [prose-rules-audit-research kickoff §4](../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) with full DeepWiki ≥3 per rule + bench-test for Class B.
+- **Option B2**: Launch fresh 3-4h R-phase per original [prose-rules-audit-research kickoff §4](../../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) with full DeepWiki ≥3 per rule + bench-test for Class B.
 - **Option B3**: Spot-launch deeper R-phase for ONLY the reviewer-discipline rule (most contentious finding).
 
 **Recommendation:** Option B3 — focused deeper run on the one rule that produced REVISE; accept condensed for the 4 rules with clean PROCEED/DEFER verdicts.
@@ -298,13 +298,13 @@ Per cascade plan: slot 11 BFR, 12 ai-laziness-traps, 13 phase-research-coverage 
 
 ## §12 See also
 
-- [.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md](../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) — original kickoff (still ARMED for deeper run if maintainer chooses)
+- [.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md](../../../.claude/orchestrator-prompts/prose-rules-audit-research/kickoff.md) — original kickoff (still ARMED for deeper run if maintainer chooses)
 - [docs/meta-factory/research-patches/2026-05-16-1a-drafts-substantive-review.md §3](2026-05-16-1a-drafts-substantive-review.md) — 1A prose-rules audit defect surfacing
-- [.claude/rules/ai-laziness-traps.md §3](../../.claude/rules/ai-laziness-traps.md) — Action A target
-- [.claude/rules/phase-research-coverage.md §1.7](../../.claude/rules/phase-research-coverage.md) — Action B target
-- [.claude/rules/reviewer-discipline.md](../../.claude/rules/reviewer-discipline.md) — Action C target
-- [.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) — Action D target
-- [.claude/rules/parallel-subwave-isolation.md](../../.claude/rules/parallel-subwave-isolation.md) — Action E target
-- [agents/compliance-verifier.md](../../agents/compliance-verifier.md) — §1.7 review agent (NOT a reviewer-discipline mechanism — finding §3.3)
-- [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — precedent companion-test pattern
+- [.claude/rules/ai-laziness-traps.md §3](../../../.claude/rules/ai-laziness-traps.md) — Action A target
+- [.claude/rules/phase-research-coverage.md §1.7](../../../.claude/rules/phase-research-coverage.md) — Action B target
+- [.claude/rules/reviewer-discipline.md](../../../.claude/rules/reviewer-discipline.md) — Action C target
+- [.claude/rules/no-paid-llm-in-ci.md](../../../.claude/rules/no-paid-llm-in-ci.md) — Action D target
+- [.claude/rules/parallel-subwave-isolation.md](../../../.claude/rules/parallel-subwave-isolation.md) — Action E target
+- [agents/compliance-verifier.md](../../../agents/compliance-verifier.md) — §1.7 review agent (NOT a reviewer-discipline mechanism — finding §3.3)
+- [packages/core/principles/09-doc-authority-hierarchy.test.ts](../../../packages/core/principles/09-doc-authority-hierarchy.test.ts) — precedent companion-test pattern
 - Wave 8.5 commit `93fd105` — HISTORICAL_CUTOFF precedent for Action B

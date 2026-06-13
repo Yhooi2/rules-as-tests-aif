@@ -35,7 +35,7 @@ Runs on every `git commit` against staged files only:
 | Bash syntax | `*.sh` | `bash -n` |
 | JSON validity | `*.json` | `python3 json.load` |
 | YAML validity | `*.yml`, `*.yaml` | `python3 yaml.safe_load` |
-| Markdown ≤500 lines | `*.md` | `awk` |
+| Markdown ≤600 lines | `*.md` | `awk` |
 
 All checks are scoped to `git diff --cached --diff-filter=ACM` — only files staged
 for the current commit are inspected.
@@ -100,6 +100,50 @@ make pre-commit-check    # run pre-commit probe without committing
 make pre-push-check      # run pre-push probe without pushing
 make self-audit          # run both
 ```
+
+## Bash mutation testing (on-demand, local)
+
+TypeScript hooks are mutation-tested by Stryker (`npx stryker run`, a `devDep`,
+run by hand — not in CI). Bash hooks (`.claude/hooks/*.sh`) are mutation-tested
+by a thin wrapper over [universalmutator](https://github.com/agroce/universalmutator)
+— same delivery model: **run locally on demand, not in CI** (mutation is slow and
+CI minutes are metered; README doctrine is «CI = last resort»).
+
+**One-time prerequisite (local only):**
+
+```bash
+pipx install universalmutator   # or: pip install universalmutator
+```
+
+universalmutator is MIT-licensed and is a **dev-time tool only** — it is never
+shipped to consumer projects, and nothing in CI depends on it.
+
+**Run it when you touch a hook or its paired-negative test** — this is the
+discipline that replaces a CI gate (no automated reminder; it is a convention):
+
+```bash
+# <hook>  <its paired-negative test command>  [min-kill-% floor, default 60]
+packages/core/audit-self/run-bash-mutation.sh \
+  .claude/hooks/deps-hash-check.sh \
+  "npx vitest run hooks/deps-hash-check.test.ts" \
+  60
+```
+
+It mutates the hook with the operators in
+[`packages/core/audit-self/bash.rules`](packages/core/audit-self/bash.rules)
+(negate `if`, swap `&&`/`||`, flip `exit 0`/`1`, flip `=`/`!=`, disable `set -e`),
+runs the test against each mutant, prints the kill rate + every surviving mutant,
+and exits non-zero below the floor. A surviving mutant is **either** a real gap in
+the test **or** an equivalent mutant — judgement, not automation, decides which
+(record equivalent ones so they aren't re-investigated).
+
+Notes:
+- universalmutator's generic comment scanner treats `/*` as a C block-comment
+  opener; a bash glob in a comment (`# … hooks/*.sh`) would otherwise suppress
+  mutation of the rest of the file. The wrapper neutralises this automatically
+  (line-count-preserving), so kill rates are not silently truncated.
+- The wrapper transiently overwrites the target hook while testing each mutant
+  and restores it on completion — don't edit or commit that hook mid-run.
 
 ## Build-vs-reuse + `Prior-art:` trailer convention (Phase 8.8)
 

@@ -359,10 +359,10 @@ Pre-PR verification:
 ## §9 See also
 
 - [docs/meta-factory/prior-art-evaluations.md](../prior-art-evaluations.md) — SSOT rows #69 (Bernstein), #70 (ComposioHQ), #77 (Cline Memory Bank), #80 (aif-handoff delta) — existing rows covering related patterns
-- [.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md](../../.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md) — umbrella scope; §2 Sub-wave C is the originating kickoff
-- [.claude/rules/no-paid-llm-in-ci.md](../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint driving DEFER over ADOPT
-- [.claude/rules/build-first-reuse-default.md](../../.claude/rules/build-first-reuse-default.md) — verdict ladder applied in §5
-- [.claude/rules/ai-laziness-traps.md §2 T16](../../.claude/rules/ai-laziness-traps.md) — the muddied-scope trap this umbrella corrects; walked in §1 and §6
+- [.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md](../../../.claude/orchestrator-prompts/companion-reuse-deep-dive/kickoff.md) — umbrella scope; §2 Sub-wave C is the originating kickoff
+- [.claude/rules/no-paid-llm-in-ci.md](../../../.claude/rules/no-paid-llm-in-ci.md) — hard constraint driving DEFER over ADOPT
+- [.claude/rules/build-first-reuse-default.md](../../../.claude/rules/build-first-reuse-default.md) — verdict ladder applied in §5
+- [.claude/rules/ai-laziness-traps.md §2 T16](../../../.claude/rules/ai-laziness-traps.md) — the muddied-scope trap this umbrella corrects; walked in §1 and §6
 - [docs/meta-factory/research-patches/2026-05-26-meta-orchestrator-mode-triage-prior-art.md](2026-05-26-meta-orchestrator-mode-triage-prior-art.md) — predecessor R-phase (SSOT rows #78-#81; T16 incident origin)
 - [Medium article — Nitinmatani 2026-04](https://medium.com/@nitinmatani22/how-devin-ai-actually-thinks-autonomous-planning-dag-execution-and-dynamic-re-planning-explained-997be175a475)
 - [Cognition 2025 performance review](https://cognition.ai/blog/devin-annual-performance-review-2025)
