@@ -22,6 +22,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../../');
@@ -107,9 +108,30 @@ export function evaluateSkill(
   return checkPairedNegative(content);
 }
 
+/**
+ * Tracked SKILL.md paths under the in-scope roots, or null if git is unavailable.
+ * Git-aware so the audit matches the *tracked* surface: an installer-populated clone
+ * carries gitignored `aif-*` skills (and may carry untracked rename orphans) that have
+ * no paired-negative block by design — enumerating them filesystem-blind made principle 15
+ * false-RED locally while green in CI (FQA S1-D F1). `git ls-files` returns only tracked
+ * paths, so both gitignored and untracked SKILL.md are excluded. Falls back to null (→
+ * filesystem enumeration) when git is absent, keeping the test runnable off-repo.
+ */
+function trackedSkillMds(roots: readonly string[]): Set<string> | null {
+  try {
+    const out = execFileSync('git', ['-C', REPO_ROOT, 'ls-files', '--', ...roots], {
+      encoding: 'utf8',
+    });
+    return new Set(out.split('\n').filter((l) => l.endsWith('/SKILL.md')));
+  } catch {
+    return null; // git unavailable → caller falls back to filesystem enumeration
+  }
+}
+
 /** Enumerate in-scope SKILL.md files (repo-root-relative POSIX paths). Zero glob dep. */
 function enumerateSkills(): string[] {
   const roots = ['.claude/skills', 'skills'];
+  const tracked = trackedSkillMds(roots);
   const found: string[] = [];
   for (const root of roots) {
     const abs = resolve(REPO_ROOT, root);
@@ -117,7 +139,11 @@ function enumerateSkills(): string[] {
     for (const entry of readdirSync(abs, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const rel = `${root}/${entry.name}/SKILL.md`;
-      if (existsSync(resolve(REPO_ROOT, rel))) found.push(rel);
+      if (!existsSync(resolve(REPO_ROOT, rel))) continue;
+      // Git-aware skip: when git is available, only audit the tracked surface
+      // (gitignored aif-* installer skills + untracked orphans are out of scope).
+      if (tracked && !tracked.has(rel)) continue;
+      found.push(rel);
     }
   }
   return found;
