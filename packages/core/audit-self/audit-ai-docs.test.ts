@@ -1032,12 +1032,50 @@ describe('test_R17 — R17: component .stories.tsx (react-next preset)', () => {
     // (If not in real repo, the probeR4/probeD1 assertions above are sufficient)
   });
 
-  it('WARN is the expected outcome for missing .stories.tsx (message structure)', () => {
-    // Documents the expected probe behaviour: R17 emits WARN (not FAIL),
-    // mentioning the component file name. Verified in bash integration test.
-    // Here we assert the test structure is correct (not the probe itself, which is bash).
-    const expectedBehaviour = 'WARN mentioning component filename';
-    expect(expectedBehaviour).toMatch(/WARN/);
+  // universalization-fix F2 — exec-based paired-negative for the SHIPPED preset
+  // script's R17 probe (install.sh ships it to consumers). Without the canonical
+  // UI dirs, find matches zero files; an unconditional pass() would be a silent
+  // PASS. These arms EXEC the real script (T-UF-A: assert the real output, not a
+  // string literal) and prove both: (negative) absent layout → WARN R17, and
+  // (positive) a present component + matching .stories.tsx → genuine PASS R17 —
+  // the anti-tautology contrast that distinguishes the fix from a blanket WARN.
+  const presetScript = join(REPO_ROOT, 'packages/preset-next-15-canonical/audit-self/audit-ai-docs.react-next.sh');
+  const isRealRepo = existsSync(join(REPO_ROOT, 'packages/core/package.json')) &&
+                     existsSync(presetScript);
+
+  it('emits WARN (not PASS) for R17 when no src/shared/ui or src/features/*/ui', () => {
+    // Arrange: temp dir with NO UI dirs (probe cannot run there).
+    if (!isRealRepo) return; // sandbox: script absent, nothing to exec
+    const dir = mkdtempSync(join(tmpdir(), 'audit-ai-docs-test-'));
+
+    // Act: run the SHIPPED preset script's R17 probe only.
+    const out = execFileSync('bash', [presetScript, '--only=R17'], {
+      cwd: dir,
+      encoding: 'utf8',
+    });
+
+    // Assert: live verdict is WARN R17, NOT a silent PASS R17.
+    expect(out).toMatch(/WARN.*R17/);
+    expect(out).not.toMatch(/PASS:\s*R17/);
+  });
+
+  it('emits genuine PASS for R17 when a component has a matching .stories.tsx', () => {
+    // Arrange: temp dir WITH the canonical UI layout — a component plus its
+    // matching story → the probe has files to check and must genuinely PASS.
+    if (!isRealRepo) return; // sandbox: script absent, nothing to exec
+    const dir = mkdtempSync(join(tmpdir(), 'audit-ai-docs-test-'));
+    mkdirSync(join(dir, 'src/shared/ui'), { recursive: true });
+    writeFileSync(join(dir, 'src/shared/ui/Button.tsx'), 'export const Button = () => null;\n', 'utf8');
+    writeFileSync(join(dir, 'src/shared/ui/Button.stories.tsx'), 'export default { component: Button };\n', 'utf8');
+
+    // Act: run the SHIPPED preset script's R17 probe only.
+    const out = execFileSync('bash', [presetScript, '--only=R17'], {
+      cwd: dir,
+      encoding: 'utf8',
+    });
+
+    // Assert: genuine PASS R17 fires (anti-tautology contrast to the WARN arm).
+    expect(out).toMatch(/PASS:\s*R17/);
   });
 });
 
