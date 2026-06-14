@@ -18,6 +18,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, utimesSync, 
 import { join, resolve, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 // Resolve the repo root from this test file's location (works in vitest + stryker)
 const THIS_FILE = fileURLToPath(import.meta.url);
@@ -310,11 +311,13 @@ describe('test_R4 — R4: domain export tests', () => {
   beforeEach(() => { dir = makeTmpDir(); });
   afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
 
-  it('returns pass when no src/domain dir (explicit pass result)', () => {
-    // No src/domain → pass(skipped)
+  it('returns warn (not silent pass) when no src/domain — probe could not run', () => {
+    // No src/domain → WARN(skipped): the probe checked zero files, so it must
+    // surface a WARN, never silently PASS (project thesis — a probe that cannot
+    // run must FAIL or at minimum WARN). universalization-fix F1a.
     const result = probeR4(dir);
-    // Multi-assertion: result is 'pass' specifically AND message has R4
-    expect(result.result).toBe('pass');
+    // Multi-assertion: result is 'warn' specifically AND message has R4 + skip
+    expect(result.result).toBe('warn');
     expect(result.message).toMatch(/R4/);
     expect(result.message).toMatch(/skip/i);
   });
@@ -367,6 +370,41 @@ describe('test_R4 — R4: domain export tests', () => {
     // The result can be fail or warn but NOT pass-skipped-for-missing-env
     // (it's not the "no tsconfig AND no ts-morph" path)
     expect(['fail', 'warn']).toContain(result.result);
+  });
+});
+
+// ─── test_R4 bash (shipped script) — exec-based paired-negative ───────────────
+// universalization-fix F1b — the shipped scripts/audit-ai-docs.sh is what
+// install.sh ships to consumers. Its R4 skip-branch (no src/domain) must emit
+// WARN, never a silent PASS. This test EXECs the real script in a fresh temp
+// dir with NO src/domain and asserts the live verdict is WARN (T-UF-A: assert
+// the real script's output, not a string literal). No positive arm: a genuine
+// bash R4 PASS needs ts-morph + scripts/audit-r4.ts, which a fresh temp dir
+// lacks (it would FAIL there, not PASS); the anti-tautology contrast for the
+// R4 verdict is already given by the TS probeR4 arms above (src/domain present
+// → fail/warn, never silent-pass).
+
+describe('test_R4 bash (shipped audit-ai-docs.sh) — WARN, not silent PASS, when no src/domain', () => {
+  const coreScript = join(REPO_ROOT, 'packages/core/audit-self/audit-ai-docs.sh');
+  // Stryker-sandbox guard: skip when the shipped script is not present at
+  // REPO_ROOT (mirrors the isRealRepo check used by the R17 structural test).
+  const isRealRepo = existsSync(join(REPO_ROOT, 'packages/core/package.json')) &&
+                     existsSync(coreScript);
+
+  it('emits WARN (not PASS) for R4 when src/domain is absent', () => {
+    // Arrange: fresh temp dir with no src/domain (probe cannot run there).
+    if (!isRealRepo) return; // sandbox: script absent, nothing to exec
+    const dir = mkdtempSync(join(tmpdir(), 'audit-ai-docs-test-'));
+
+    // Act: run the SHIPPED script's R4 probe only, in the empty dir.
+    const out = execFileSync('bash', [coreScript, '--only=R4'], {
+      cwd: dir,
+      encoding: 'utf8',
+    });
+
+    // Assert: live verdict is WARN R4, and NOT a silent PASS R4.
+    expect(out).toMatch(/WARN.*R4/);
+    expect(out).not.toMatch(/PASS:\s*R4/);
   });
 });
 
@@ -1218,8 +1256,9 @@ describe('runAudit() — orchestration layer', () => {
     const report = runAudit(dir, '');
     const r4 = report.results.find((r) => r.probe === 'R4');
     expect(r4).toBeDefined();
-    // No src/domain → pass(skipped)
-    expect(r4!.level).toBe('pass');
+    // No src/domain → warn(skipped): probeR4 could not run, so runAudit must
+    // surface its honest WARN verdict (never a silent pass). universalization-fix F1a.
+    expect(r4!.level).toBe('warn');
     expect(r4!.message).toMatch(/R4/);
   });
 
