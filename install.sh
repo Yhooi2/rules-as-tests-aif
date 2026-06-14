@@ -642,28 +642,43 @@ if [ "$DRY_RUN" != "--dry-run" ] && [ -f "$PROJECT_ROOT/.nvmrc" ] && [ -d "$PROJ
   fi
 fi
 
-# ─── 6c. #507 (reopen): glob-liveness gate CI-orphan WARN ────────────────
-# The check-rule-globs.sh gate is wired into BOTH the validate script AND the shipped ci.yml.
-# But copy_safe does NOT overwrite a pre-existing ci.yml (brownfield consumer), so the gate then
-# runs in NO CI job — only on a local `npm run validate` a dev must remember. R2/R7/R8 can go
-# silently inert on the consumer's layout with CI still green. Surface it: if the gate script is
-# installed but NO workflow under .github/workflows references it, WARN. Non-destructive (the
-# consumer owns their CI) — exit stays 0. When install freshly wrote ci.yml (greenfield), that
-# workflow DOES reference the gate → no warn. (GH #507 reopen #1.)
-if [ "$DRY_RUN" != "--dry-run" ] && [ -f "$PROJECT_ROOT/scripts/check-rule-globs.sh" ] && [ -d "$PROJECT_ROOT/.github/workflows" ]; then
-  _gate_wired=""
-  for _wf in "$PROJECT_ROOT/.github/workflows/"*.yml "$PROJECT_ROOT/.github/workflows/"*.yaml; do
-    [ -f "$_wf" ] || continue
-    if grep -qE 'check-rule-globs\.sh|check:globs' "$_wf" 2>/dev/null; then _gate_wired="yes"; break; fi
-  done
-  if [ -z "$_gate_wired" ]; then
+# ─── 6c. #507 (reopen) + #521: CI-orphan WARN — completeness across ALL enforcement gates ───
+# A brownfield consumer's pre-existing ci.yml is KEPT (copy_safe skips it), so the shipped CI's
+# enforcement gates run in NO CI job — only on a local `npm run validate`, which a dev must
+# remember. #507 warned about the glob gate only; #521 broadens it: for EACH gate whose artifact
+# is installed, if no kept workflow references it, name it (with what it enforces) and print a
+# ready-to-paste step. Non-destructive (consumer owns their CI) — exit stays 0. Greenfield (install
+# wrote ci.yml wiring all gates) → nothing missing → no warn. "check:globs" etc. colon forms are
+# WARN-exclusive; the grep patterns also match the hyphenated script names used inside workflows.
+if [ "$DRY_RUN" != "--dry-run" ] && [ -d "$PROJECT_ROOT/.github/workflows" ]; then
+  _aif_missing=()
+  _aif_steps=()
+  _aif_gate_check() { # $1 "gate — what it enforces"  $2 wired-grep  $3 installed-artifact  $4 paste-step
+    [ -e "$PROJECT_ROOT/$3" ] || return 0          # gate not installed for this stack → nothing to warn
+    local _wf
+    for _wf in "$PROJECT_ROOT/.github/workflows/"*.yml "$PROJECT_ROOT/.github/workflows/"*.yaml; do
+      [ -f "$_wf" ] || continue
+      # grep inside `if` is set-e-safe (non-zero no-match is consumed by the if-test, not seen by set -e)
+      if grep -qE "$2" "$_wf" 2>/dev/null; then return 0; fi   # referenced by some workflow → wired
+    done
+    _aif_missing+=("$1"); _aif_steps+=("$4")
+  }
+  _aif_gate_check "check:globs — R2/R7/R8 ESLint-rule liveness"        'check-rule-globs\.sh|check:globs'               "scripts/check-rule-globs.sh"          "- run: bash scripts/check-rule-globs.sh"
+  _aif_gate_check "arch:check — R3 architecture boundaries"            'arch:check|depcruise'                           ".dependency-cruiser.cjs"              "- run: npm run arch:check"
+  _aif_gate_check "audit:docs — AI-documentation drift"               'audit:docs|audit-ai-docs\.sh'                   "scripts/audit-ai-docs.sh"             "- run: bash scripts/audit-ai-docs.sh"
+  _aif_gate_check "check:lintstaged — lint-staged binaries resolve"   'check:lintstaged|check-lintstaged-resolves\.sh' "scripts/check-lintstaged-resolves.sh" "- run: bash scripts/check-lintstaged-resolves.sh"
+  if [ "${#_aif_missing[@]}" -gt 0 ]; then
     echo ""
-    echo "⚠ The rule-glob liveness gate (scripts/check-rule-globs.sh) is wired into 'npm run validate' but NOT into any workflow under .github/workflows/."
-    echo "   A pre-existing CI workflow was kept (install never overwrites it), so the gate only fires on a local 'npm run validate'."
-    echo "   R2/R7/R8 can go silently inert on your layout with CI still green. Add a step to your lint job:"
-    echo "       - run: bash scripts/check-rule-globs.sh"
-    echo "   (or re-run install with --force to adopt the shipped ci.yml that already wires it)."
+    echo "⚠ CI-orphan: some rule-enforcement gates run in 'npm run validate' but are NOT in any kept workflow under .github/workflows/."
+    echo "   A pre-existing CI workflow was kept (install never overwrites it), so these gates fire only on a local"
+    echo "   'npm run validate' — CI can stay green while a rule is violated. Gates missing from your CI:"
+    for _m in "${_aif_missing[@]}"; do echo "     • $_m"; done
+    echo "   Add the missing step(s) to your lint/test job's \`steps:\` (only these):"
+    for _s in "${_aif_steps[@]}"; do echo "       $_s"; done
+    echo "   (or re-run install with --force to adopt the shipped ci.yml that wires them — but --force overwrites"
+    echo "    ALL kept files, e.g. vitest.config.ts / .prettierignore, not just the workflow)."
   fi
+  unset -f _aif_gate_check
 fi
 
 # ─── 7. package.json scripts (FQA S1-A W4) ──────────────
