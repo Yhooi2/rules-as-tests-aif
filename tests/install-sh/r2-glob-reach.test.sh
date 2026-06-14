@@ -77,38 +77,64 @@ OUT4=$(gate "$T4"); RC4=$?
   && ok "#2 NEG-c: monorepo with NO per-package config → root R2 reaches apps/api (prune only fires on real shadows)" \
   || bad "#2 NEG-c: gate exited $RC4 — prune over-fired on a repo with no per-package configs"
 
-# ══════════════════════════════════════════════════════════════════════════════
-# #1 — CI-orphan WARN (brownfield ci.yml kept → gate unwired in CI)
+# #1 — CI-orphan WARN completeness (brownfield kept ci.yml → gates unwired in CI) — #521
 # ══════════════════════════════════════════════════════════════════════════════
 # NO --force: the brownfield scenario is the default skip-if-exists path that LEAVES the consumer's
-# own ci.yml in place (--force would overwrite it → gate would be wired → nothing to warn about).
-# </dev/null so the #483 dev-dep [y/N] gate reads empty stdin and defaults to "no" (non-interactive).
+# own ci.yml in place. </dev/null so the #483 dev-dep [y/N] gate reads empty stdin → defaults "no".
 seed_install() { # $1 dir, $2 ci.yml body ("" = greenfield), $3 logfile; returns install rc
   printf '{"name":"t507","version":"0.0.0"}\n' > "$1/package.json"
   if [ -n "$2" ]; then mkdir -p "$1/.github/workflows"; printf '%s\n' "$2" > "$1/.github/workflows/ci.yml"; fi
   ( cd "$1" && git init -q && bash "$REPO_ROOT/install.sh" ts-server </dev/null ) > "$3" 2>&1
 }
+# Brownfield CI wiring NONE of the 4 gates.
 BROWNFIELD_CI=$'name: CI\njobs:\n  build:\n    steps:\n      - run: pnpm turbo run lint typecheck test'
+# Brownfield CI wiring ONLY the glob gate (the partial case that proves per-gate accuracy).
+PARTIAL_CI=$'name: CI\njobs:\n  build:\n    steps:\n      - run: bash scripts/check-rule-globs.sh\n      - run: pnpm turbo run lint typecheck test'
 
-# POS: pre-existing ci.yml that does NOT wire the gate → WARN + install rc=0 + ci.yml left intact
+# ── POS-all: none wired → WARN names all 4 (colon forms are WARN-exclusive; install copy-echoes use
+#    hyphenated file names) + paste-block has the check:lintstaged step; rc=0; consumer ci.yml intact.
 P=$(mktemp -d); LOG=$(mktemp); seed_install "$P" "$BROWNFIELD_CI" "$LOG"; RCP=$?
-[ "$RCP" = "0" ] && ok "#1 POS: install exited 0 (CI-orphan warn never aborts)" || bad "#1 POS: install exited $RCP (warn block aborted install)"
-grep -q "NOT into any workflow under .github/workflows" "$LOG" \
-  && ok "#1 POS: brownfield ci.yml kept → gate-unwired-in-CI WARN printed" \
-  || bad "#1 POS: no CI-orphan warn (saw: $(grep -i 'check-rule-globs\|workflow' "$LOG" | head -1))"
+[ "$RCP" = "0" ] && ok "#1 POS-all: install exited 0 (CI-orphan warn never aborts)" || bad "#1 POS-all: install exited $RCP"
+grep -q "CI-orphan" "$LOG" \
+  && ok "#1 POS-all: CI-orphan WARN fired on brownfield" \
+  || bad "#1 POS-all: no CI-orphan WARN (saw: $(grep -i 'workflow\|validate' "$LOG" | head -1))"
+for _g in "check:globs" "arch:check" "audit:docs" "check:lintstaged"; do
+  grep -q "$_g" "$LOG" \
+    && ok "#1 POS-all: WARN names $_g" \
+    || bad "#1 POS-all: WARN omits $_g (under-reporting — the #521 bug)"
+done
+grep -q "run: bash scripts/check-lintstaged-resolves.sh" "$LOG" \
+  && ok "#1 POS-all: paste-block includes the check:lintstaged step" \
+  || bad "#1 POS-all: paste-block missing the check:lintstaged step"
 grep -q "turbo run lint" "$P/.github/workflows/ci.yml" \
-  && ok "#1 POS: pre-existing ci.yml left intact (warn is non-destructive)" \
-  || bad "#1 POS: install mutated the consumer's ci.yml (must be advisory only)"
+  && ok "#1 POS-all: pre-existing ci.yml left intact (warn is non-destructive)" \
+  || bad "#1 POS-all: install mutated the consumer's ci.yml (must be advisory only)"
 
-# NEG (load-bearing): greenfield (no pre-existing ci.yml) → shipped ci.yml wires the gate → no warn
+# ── POS-partial (load-bearing #521 proof): only globs wired → WARN names the OTHER 3, NOT check:globs.
+PP=$(mktemp -d); LOGPP=$(mktemp); seed_install "$PP" "$PARTIAL_CI" "$LOGPP"; RCPP=$?
+[ "$RCPP" = "0" ] && ok "#1 POS-partial: install exited 0" || bad "#1 POS-partial: install exited $RCPP"
+for _g in "arch:check" "audit:docs" "check:lintstaged"; do
+  grep -q "$_g" "$LOGPP" \
+    && ok "#1 POS-partial: WARN names still-missing $_g" \
+    || bad "#1 POS-partial: WARN omits $_g (per-gate detection failed)"
+done
+# The already-wired glob gate must NOT be named — proves per-gate accuracy, not a blanket warn.
+# "check:globs" (colon) is WARN-exclusive; the install copy-echo says "check-rule-globs.sh" (hyphen).
+grep -q "check:globs" "$LOGPP" \
+  && bad "#1 POS-partial: WARN names the already-wired check:globs (false positive — not per-gate)" \
+  || ok "#1 POS-partial: WARN omits the already-wired check:globs (per-gate accuracy)"
+
+# ── NEG (load-bearing): greenfield → shipped ci.yml wires ALL 4 → no warn.
 N=$(mktemp -d); LOGN=$(mktemp); seed_install "$N" "" "$LOGN"; RCN=$?
 [ "$RCN" = "0" ] && ok "#1 NEG: greenfield install exited 0" || bad "#1 NEG: greenfield install exited $RCN"
-grep -q "check-rule-globs.sh" "$N/.github/workflows/ci.yml" \
-  && ok "#1 NEG: greenfield shipped ci.yml wires the gate" \
-  || bad "#1 NEG: greenfield ci.yml missing the gate step"
-grep -q "NOT into any workflow under .github/workflows" "$LOGN" \
-  && bad "#1 NEG: CI-orphan warn fired on greenfield (false positive — the gate IS wired)" \
-  || ok "#1 NEG: no CI-orphan warn on greenfield (gate wired by the shipped ci.yml)"
+for _s in "check-rule-globs.sh" "arch:check" "audit-ai-docs.sh" "check-lintstaged-resolves.sh"; do
+  grep -q "$_s" "$N/.github/workflows/ci.yml" \
+    && ok "#1 NEG: greenfield shipped ci.yml wires $_s" \
+    || bad "#1 NEG: greenfield ci.yml missing $_s"
+done
+grep -q "CI-orphan" "$LOGN" \
+  && bad "#1 NEG: CI-orphan warn fired on greenfield (false positive — all gates wired)" \
+  || ok "#1 NEG: no CI-orphan warn on greenfield (all gates wired by the shipped ci.yml)"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # #3 — globals dev-dep (root eslint imports `globals`)
@@ -129,6 +155,21 @@ else
 fi
 
 # ══════════════════════════════════════════════════════════════════════════════
+# #4 — check:lintstaged wired in BOTH shipped CI templates (#521 Change 1)
+# ══════════════════════════════════════════════════════════════════════════════
+# `validate` runs 4 gates; the shipped greenfield ci.yml must wire the same 4 so
+# {WARN-named} = {greenfield CI} = {validate}. Direct template grep — deterministic.
+for _tpl in \
+  "$REPO_ROOT/templates/ts-server/github-actions-ci.yml" \
+  "$REPO_ROOT/packages/preset-next-15-canonical/templates/github-actions-ci-ui.yml"; do
+  grep -q "check-lintstaged-resolves.sh" "$_tpl" \
+    && ok "#4: ${_tpl#"$REPO_ROOT"/} wires check:lintstaged" \
+    || bad "#4: ${_tpl#"$REPO_ROOT"/} missing check-lintstaged-resolves.sh (validate≠CI drift)"
+done
+# NEG (non-vacuous): the predicate rejects a body lacking the step.
+grep -q "check-lintstaged-resolves.sh" <<<"- run: bash scripts/check-rule-globs.sh" \
+  && bad "#4 NEG: predicate matched a body without check:lintstaged → vacuous" \
+  || ok "#4 NEG: predicate rejects a template lacking check:lintstaged (non-vacuous)"
 # #516 — BSD/macOS awk portability + re-export classifier gap (regressions in #513)
 # ══════════════════════════════════════════════════════════════════════════════
 # §1 BSD/macOS awk crash: filter_unshadowed passed a MULTI-LINE $SHADOWS via `awk -v`, which
