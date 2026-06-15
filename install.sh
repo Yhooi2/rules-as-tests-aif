@@ -466,6 +466,13 @@ copy_safe "$PKG_ROOT/packages/core/probes/audit-r4.ts" "$PROJECT_ROOT/scripts/au
 # (silent-inertness alarm). Dependency-free bash; run pre-PR once the layout settles.
 copy_safe "$PKG_ROOT/packages/core/audit-self/check-rule-globs.sh" "$PROJECT_ROOT/scripts/check-rule-globs.sh"
 chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-globs.sh" 2>/dev/null || true
+# GH #535 "+E": deep R2-binding gate. check:globs only proves a rule's globs MATCH files; on a
+# monorepo with per-package eslint configs that re-export a base NOT wiring R2, the rule stays
+# silently inert while validate/lint pass. This gate resolves the actually-applied config per
+# boundary file via `eslint --print-config` and FAILS when R2 is absent — catching that false-green
+# without false-failing a correct re-export-of-root. Skips cleanly when eslint isn't installed yet.
+copy_safe "$PKG_ROOT/packages/core/audit-self/check-rule-enforced.sh" "$PROJECT_ROOT/scripts/check-rule-enforced.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-enforced.sh" 2>/dev/null || true
 # cih-s3 F14: lint-staged binary-resolution gate — fails if a .lintstagedrc command's binary
 # can't resolve from the cwd lint-staged would use (the ENOENT-before-commit alarm on monorepos).
 copy_safe "$PKG_ROOT/packages/core/audit-self/check-lintstaged-resolves.sh" "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh"
@@ -682,6 +689,7 @@ if [ "$DRY_RUN" != "--dry-run" ] && [ -d "$PROJECT_ROOT/.github/workflows" ]; th
   _aif_detect_gates() {   # (re)build the missing-set from scratch — idempotent, callable again post-wire
     _aif_missing=(); _aif_steps=(); _aif_cmds=()
     _aif_gate_check "check:globs — R2/R7/R8 ESLint-rule liveness"        'check-rule-globs\.sh|check:globs'               "scripts/check-rule-globs.sh"          "- run: bash scripts/check-rule-globs.sh"
+    _aif_gate_check "check:enforced — R2 actually applied (per-pkg cfg)"  'check-rule-enforced\.sh|check:enforced'         "scripts/check-rule-enforced.sh"       "- run: bash scripts/check-rule-enforced.sh"
     _aif_gate_check "arch:check — R3 architecture boundaries"            'arch:check|depcruise'                           ".dependency-cruiser.cjs"              "- run: npm run arch:check"
     _aif_gate_check "audit:docs — AI-documentation drift"               'audit:docs|audit-ai-docs\.sh'                   "scripts/audit-ai-docs.sh"             "- run: bash scripts/audit-ai-docs.sh"
     _aif_gate_check "check:lintstaged — lint-staged binaries resolve"   'check:lintstaged|check-lintstaged-resolves\.sh' "scripts/check-lintstaged-resolves.sh" "- run: bash scripts/check-lintstaged-resolves.sh"
@@ -855,8 +863,9 @@ if [ -f "$PROJECT_ROOT/package.json" ]; then
         "arch:check": "depcruise --config .dependency-cruiser.cjs " + (process.env.AIF_ARCH_TARGET || "src"),
         "audit:docs": "./scripts/audit-ai-docs.sh",
         "check:globs": "bash scripts/check-rule-globs.sh",
+        "check:enforced": "bash scripts/check-rule-enforced.sh",
         "check:lintstaged": "bash scripts/check-lintstaged-resolves.sh",
-        "validate": "npm-run-all2 --parallel typecheck lint format:check arch:check audit:docs check:globs check:lintstaged test",
+        "validate": "npm-run-all2 --parallel typecheck lint format:check arch:check audit:docs check:globs check:enforced check:lintstaged test",
         "prepare": "husky"
       };
       let added = 0;
