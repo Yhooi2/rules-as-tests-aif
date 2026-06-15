@@ -136,6 +136,31 @@ module.exports = {
       },
     },
 
+    // ─── Monorepo workspace boundaries (GH #534) ─────────
+    // Layout-agnostic: these match only when `packages/` and `apps/` dirs exist, so they are
+    // INERT on a flat / layered single-project layout and ACTIVE on a pnpm-workspace monorepo —
+    // no install-time layout detection needed. (`check-arch-boundaries.sh` is the inertness alarm
+    // that fails when a monorepo ships an arch config WITHOUT these — parallel to R2's check:globs.)
+    {
+      name: 'no-package-to-app',
+      severity: 'error',
+      comment:
+        'Monorepo boundary: a shared workspace package (packages/*) must not import application code (apps/*). Apps consume packages, never the reverse — invert the dependency or extract the shared code into a package.',
+      from: { path: '(?:^|/)packages/' },
+      to: { path: '(?:^|/)apps/' },
+    },
+    {
+      name: 'no-cross-app',
+      severity: 'warn',
+      comment:
+        'Monorepo boundary: one app (apps/<x>) should not import another app (apps/<y>) directly — extract the shared surface into packages/*. (warn, not error: a deliberate public-API import may be intended; downgrade/remove per your layout.)',
+      from: { path: '(?:^|/)apps/([^/]+)/' },
+      to: {
+        path: '(?:^|/)apps/([^/]+)/',
+        pathNot: '(?:^|/)apps/$1/',
+      },
+    },
+
     // ─── Forbidden top-level libs ────────────────────────
     {
       name: 'no-lodash-moment-axios',
