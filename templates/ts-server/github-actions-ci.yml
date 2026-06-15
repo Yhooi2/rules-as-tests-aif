@@ -37,6 +37,12 @@ jobs:
       # This gate FAILS loudly so the gap can never ship unnoticed. Dependency-free (pure bash).
       - name: Rule-glob liveness (custom ESLint rules must not be silently inert)
         run: bash scripts/check-rule-globs.sh
+      # GH #535: check:globs proves the rule's globs MATCH files; this proves the rule is actually
+      # APPLIED. On a monorepo with per-package eslint configs that re-export a base not wiring R2,
+      # `lint` + check:globs pass while R2 is silently inert. Resolves the real config per boundary
+      # file via `eslint --print-config` (runs after `npm ci`, when eslint is present).
+      - name: Rule actually applied (R2 binds to boundary files, not just glob-matched)
+        run: bash scripts/check-rule-enforced.sh
       # Same gate `npm run validate` runs locally — a single root .lintstagedrc.json can leave a
       # per-package binary unresolvable (ENOENT) before the first commit. Pure bash, dependency-free;
       # exits 0 (skips) when node_modules is absent, runs for real after `npm ci`.
