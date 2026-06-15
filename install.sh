@@ -522,6 +522,15 @@ for ts_hook in \
   checks/s17.ts; do
   copy_safe "$PKG_ROOT/packages/core/hooks/$ts_hook" "$PROJECT_ROOT/packages/core/hooks/$ts_hook"
 done
+# GH #532: the shipped pre-push.ts is authored as an ES module, but its module-type is decided by
+# the NEAREST package.json. In THIS repo packages/core/package.json declares "type":"module" (so the
+# hook loads as ESM and runs); in a consumer the nearest package.json is usually the project root with
+# no "type" → CJS default → tsx's `require(esm)` bridge hits Node ≥22 cycle detection and the hook dies
+# with ERR_REQUIRE_CYCLE_MODULE *at module load*, before any §7/§1.7 check runs (every git push aborts
+# with a stack trace). Ship a hooks-scoped {"type":"module"} marker so the shipped .ts loads as ESM —
+# exactly as it does in this framework repo. Scoped to packages/core/hooks/ (AIF-owned) so it can't
+# collide with a consumer's own packages/core package or be picked up as a workspace member.
+copy_safe "$PKG_ROOT/packages/core/templates/shared/hooks-package.json" "$PROJECT_ROOT/packages/core/hooks/package.json"
 chmod_safe +x "$PROJECT_ROOT/.husky/pre-commit" "$PROJECT_ROOT/.husky/pre-push" \
   "$PROJECT_ROOT/packages/core/hooks/pre-push.fallback.sh" 2>/dev/null || true
 
