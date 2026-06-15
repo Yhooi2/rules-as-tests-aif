@@ -260,6 +260,8 @@ jobs:
         run: bash tests/install-sh/f5-stryker-globs.test.sh
       - name: Run install-sh prettierignore-generated-docs test (consumer-install-hardening F15)
         run: bash tests/install-sh/f15-prettierignore.test.sh
+      - name: Run install-sh gh-531 shipped-prettier test (GH #531 reopen — prettier pin + .prettierignore merge)
+        run: bash tests/install-sh/gh-531-shipped-prettier.test.sh
       - name: Run install-sh lint-staged binary-resolution test (consumer-install-hardening F14)
         run: bash tests/install-sh/f14-lintstaged-resolves.test.sh
       - name: Run install-sh runtime-arming WARN test (consumer-install-hardening S3 V2)
