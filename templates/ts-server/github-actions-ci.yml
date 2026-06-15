@@ -72,6 +72,12 @@ jobs:
           cache: 'npm'
       - run: npm ci --prefer-offline
       - run: npm run arch:check
+      # GH #534: arch:check enforces the boundaries the config carries, but dependency-cruiser has
+      # no "rule matched nothing" report — on a monorepo whose arch config lacks packages↛apps /
+      # apps↔apps rules, arch:check is green while the boundary is unguarded. This is the R3
+      # inertness alarm (the dependency-cruiser analog of check:globs). Dependency-free; skips on flat.
+      - name: Architecture boundary liveness (monorepo packages↛apps rule must not be silently absent)
+        run: bash scripts/check-arch-boundaries.sh
 
   # ─────────────────────────────────────────────
   # TESTS + COVERAGE

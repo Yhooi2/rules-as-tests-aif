@@ -473,6 +473,13 @@ chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-globs.sh" 2>/dev/null || true
 # without false-failing a correct re-export-of-root. Skips cleanly when eslint isn't installed yet.
 copy_safe "$PKG_ROOT/packages/core/audit-self/check-rule-enforced.sh" "$PROJECT_ROOT/scripts/check-rule-enforced.sh"
 chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-enforced.sh" 2>/dev/null || true
+# GH #534: R3 (arch) inertness alarm — the dependency-cruiser analog of check:globs. The shipped
+# arch config carries layout-agnostic monorepo boundary rules (packages↛apps / apps↔apps), but
+# dependency-cruiser has no built-in "rule matched nothing" report, so on a monorepo whose arch
+# config lacks those rules, arch:check passes green while the boundary is unguarded — silently.
+# This gate FAILS on an apps/+packages/ monorepo when no packages↛apps rule is present.
+copy_safe "$PKG_ROOT/packages/core/audit-self/check-arch-boundaries.sh" "$PROJECT_ROOT/scripts/check-arch-boundaries.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/check-arch-boundaries.sh" 2>/dev/null || true
 # cih-s3 F14: lint-staged binary-resolution gate — fails if a .lintstagedrc command's binary
 # can't resolve from the cwd lint-staged would use (the ENOENT-before-commit alarm on monorepos).
 copy_safe "$PKG_ROOT/packages/core/audit-self/check-lintstaged-resolves.sh" "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh"
@@ -691,6 +698,7 @@ if [ "$DRY_RUN" != "--dry-run" ] && [ -d "$PROJECT_ROOT/.github/workflows" ]; th
     _aif_gate_check "check:globs — R2/R7/R8 ESLint-rule liveness"        'check-rule-globs\.sh|check:globs'               "scripts/check-rule-globs.sh"          "- run: bash scripts/check-rule-globs.sh"
     _aif_gate_check "check:enforced — R2 actually applied (per-pkg cfg)"  'check-rule-enforced\.sh|check:enforced'         "scripts/check-rule-enforced.sh"       "- run: bash scripts/check-rule-enforced.sh"
     _aif_gate_check "arch:check — R3 architecture boundaries"            'arch:check|depcruise'                           ".dependency-cruiser.cjs"              "- run: npm run arch:check"
+    _aif_gate_check "check:arch-boundaries — R3 monorepo-boundary liveness" 'check-arch-boundaries\.sh|check:arch-boundaries' "scripts/check-arch-boundaries.sh"     "- run: bash scripts/check-arch-boundaries.sh"
     _aif_gate_check "audit:docs — AI-documentation drift"               'audit:docs|audit-ai-docs\.sh'                   "scripts/audit-ai-docs.sh"             "- run: bash scripts/audit-ai-docs.sh"
     _aif_gate_check "check:lintstaged — lint-staged binaries resolve"   'check:lintstaged|check-lintstaged-resolves\.sh' "scripts/check-lintstaged-resolves.sh" "- run: bash scripts/check-lintstaged-resolves.sh"
   }
@@ -864,8 +872,9 @@ if [ -f "$PROJECT_ROOT/package.json" ]; then
         "audit:docs": "./scripts/audit-ai-docs.sh",
         "check:globs": "bash scripts/check-rule-globs.sh",
         "check:enforced": "bash scripts/check-rule-enforced.sh",
+        "check:arch-boundaries": "bash scripts/check-arch-boundaries.sh",
         "check:lintstaged": "bash scripts/check-lintstaged-resolves.sh",
-        "validate": "npm-run-all2 --parallel typecheck lint format:check arch:check audit:docs check:globs check:enforced check:lintstaged test",
+        "validate": "npm-run-all2 --parallel typecheck lint format:check arch:check audit:docs check:globs check:enforced check:arch-boundaries check:lintstaged test",
         "prepare": "husky"
       };
       let added = 0;
