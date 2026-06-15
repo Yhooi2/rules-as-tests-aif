@@ -12,6 +12,19 @@
 #   • NEG (load-bearing, runs everywhere): WITHOUT --wire-ci the consumer's workflow is left
 #     BYTE-IDENTICAL — proving the auto-wire is genuinely opt-in and the default stays non-destructive.
 #
+# Option B — yq-absent install-offer (companion-install-principle.md §1/§3). When yq is ABSENT but the
+# consumer consented (--wire-ci), the installer OFFERS yq's official installer (detect-first, unpinned,
+# TTY-gated [y/N]) instead of immediately falling back to the paste-block. None of the arms below ever
+# install yq for real (CI must not mutate the host or flake), so they exercise the *non-installing*
+# Option-B sub-branches only:
+#   • OPT-B DECLINE (load-bearing): yq absent + non-interactive (--wire-ci, stdin </dev/null). Whatever
+#     installer the host has, the SAFE-DEGRADE invariant must hold: nothing installed, workflow BYTE-
+#     IDENTICAL, a 'yq not installed' message + installer/manual guidance + the paste-block, exit 0.
+#     Self-SKIPs if the host happens to ship yq (the POS arm covers the present path).
+#   • OPT-B OFFER-REACHED (best-effort, fake-snap stub): on a host with no yq and no brew, a stubbed
+#     `snap` on PATH proves Option B ROUTES by name to 'sudo snap install yq' (the stub is only NAMED,
+#     never executed). Self-SKIPs where brew is present (DECLINE already asserts 'brew install yq').
+#
 # yq availability: GitHub-hosted runners ship `yq`, so CI exercises the POS arm. A local run without
 # yq prints an explicit SKIP (never a silent pass). Comment preservation is OBSERVED, not asserted:
 # yq's comment handling is best-effort (verdict §4 Q1 / §6 C-A — the exact reason it is DISQUALIFIED as
@@ -86,6 +99,70 @@ if command -v yq >/dev/null 2>&1; then
   fi
 else
   echo "  ⊝ SKIP: 'yq' not on PATH — the --wire-ci POS arm runs on CI (GitHub runners ship yq), not in this local env"
+fi
+
+# ── OPT-B DECLINE (load-bearing, runs everywhere; requires NO real yq install) ──
+# This arm exercises the yq-ABSENT Option-B branch directly: --wire-ci with no yq on PATH and stdin
+# fed from /dev/null (non-interactive). It deliberately uses the REAL PATH — manufacturing a minimal
+# PATH breaks coreutils install.sh needs (macOS `grep`/`sed` resolve through the system toolchain) and
+# would abort install before §6c ever runs, giving a false pass. With the real PATH, exactly one of the
+# three yq-absent sub-branches fires depending on the host (installer detected + non-interactive →
+# "run '<cmd>' then re-run"; OR no brew/snap → "no supported auto-installer"). Either way the SAFE-
+# DEGRADE invariant must hold identically: nothing installed, workflow byte-identical, a yq message +
+# the paste-block surfaced, exit 0. We skip only if the host happens to ship yq (then this is the POS
+# arm's territory, already covered above).
+if command -v yq >/dev/null 2>&1; then
+  echo "  ⊝ SKIP: host ships 'yq' — the yq-ABSENT Option-B branch can't be exercised here (POS arm covers the present path)"
+else
+  D=$(mktemp -d); seed "$D"
+  ( cd "$D" && bash "$REPO_ROOT/install.sh" ts-server --wire-ci </dev/null ) > "$D/log" 2>&1
+  DRC=$?
+  [ "$DRC" = 0 ] && ok "OPT-B DECLINE: yq-absent --wire-ci still exited 0 (degrades, never aborts)" \
+                 || bad "OPT-B DECLINE: yq-absent --wire-ci exited $DRC"
+  if diff -q <(printf '%s\n' "$BROWNFIELD_CI") "$D/.github/workflows/ci.yml" >/dev/null 2>&1; then
+    ok "OPT-B DECLINE: yq absent + non-interactive ⇒ nothing installed, workflow byte-identical"
+  else
+    bad "OPT-B DECLINE: workflow mutated though yq was absent — Option B did not degrade safely"
+  fi
+  # The yq message is one of the two non-installing sub-branches (installer-found-non-interactive, or
+  # no-installer-found). Both name 'yq' and route the consumer to the paste-block — accept either.
+  grep -qiE "'yq' (is )?not installed|yq.*not installed" "$D/log" \
+    && ok "OPT-B DECLINE: surfaced a 'yq not installed' message (no silent pass)" \
+    || bad "OPT-B DECLINE: no yq-not-installed message emitted"
+  grep -qE "then re-run|no supported auto-installer|brew install yq|snap install yq|install it manually" "$D/log" \
+    && ok "OPT-B DECLINE: directs the consumer to an official installer OR manual install (companion-install-principle §1/§3)" \
+    || bad "OPT-B DECLINE: yq-absent branch gave no installer/manual guidance"
+  grep -q 'CI-orphan' "$D/log" \
+    && ok "OPT-B DECLINE: paste-block / CI-orphan WARN still fired (consumer keeps a manual path)" \
+    || bad "OPT-B DECLINE: paste-block dropped after the yq-absent branch"
+fi
+
+# ── OPT-B OFFER-REACHED (best-effort, fake-installer stub; requires NO real yq install) ──
+# Prove Option B ROUTES to a detected official installer by name, without depending on what the host
+# ships and without mutating the system. We prepend a fake `snap` to the REAL PATH (keeps coreutils
+# working) and, only when the host has NO brew (brew would win the detect-first order), assert the
+# non-interactive Option-B message names 'snap install yq'. The stub is never executed (the non-
+# interactive branch only NAMES the command, it does not run it), so this can neither install nor flake.
+# Where brew is present (e.g. macOS dev hosts) the DECLINE arm above already asserts 'brew install yq'
+# is named, so OFFER-REACHED self-SKIPs to avoid a brew-vs-snap ordering dependency.
+if command -v yq >/dev/null 2>&1; then
+  echo "  ⊝ SKIP OFFER-REACHED: host ships yq (yq-absent routing not reachable)"
+elif command -v brew >/dev/null 2>&1; then
+  echo "  ⊝ SKIP OFFER-REACHED: host has brew → DECLINE arm already asserts 'brew install yq' is named; skipping the snap-stub to avoid a detect-order dependency"
+else
+  O=$(mktemp -d); seed "$O"
+  OBIN=$(mktemp -d)
+  printf '#!/bin/sh\necho "fake-snap (stub, installs nothing)"\nexit 0\n' > "$OBIN/snap"
+  chmod +x "$OBIN/snap"
+  ( cd "$O" && PATH="$OBIN:$PATH" bash "$REPO_ROOT/install.sh" ts-server --wire-ci </dev/null ) > "$O/log" 2>&1
+  grep -q 'snap install yq' "$O/log" \
+    && ok "OPT-B OFFER-REACHED: a detected (stub) snap routes Option B to 'sudo snap install yq' (official installer named, unpinned)" \
+    || bad "OPT-B OFFER-REACHED: stub snap detected but 'snap install yq' was never named"
+  if diff -q <(printf '%s\n' "$BROWNFIELD_CI") "$O/.github/workflows/ci.yml" >/dev/null 2>&1; then
+    ok "OPT-B OFFER-REACHED: non-interactive run installs nothing ⇒ workflow byte-identical (no silent binary install)"
+  else
+    bad "OPT-B OFFER-REACHED: workflow mutated on a non-interactive run — silent install path leaked"
+  fi
 fi
 
 echo ""; echo "PASS=$PASS FAIL=$FAIL"; [ "$FAIL" -eq 0 ]
