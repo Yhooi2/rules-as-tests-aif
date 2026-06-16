@@ -20,6 +20,7 @@ export default defineConfig({
       'audit-self/**/*.test.ts',
       'audit-self/**/*.audit.ts',
       'skills/**/*.test.ts',
+      'scenario-generator/**/*.test.ts',
     ],
     exclude: [
       '**/node_modules/**',
