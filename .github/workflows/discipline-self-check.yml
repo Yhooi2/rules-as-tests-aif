@@ -131,6 +131,25 @@ jobs:
           fi
           echo "✅ Backward-check cites ${backward_citations} file:line reference(s)."
 
+      # Anti-fabrication arm (combo L2 block + L3 warn) — confirms the cited
+      # file:line actually exists at HEAD, so a plausible-but-fake foo.ts:42 fails.
+      # Pure logic + paired-negative tests: packages/core/hooks/checks/s17-pr-body.ts.
+      # Security: runs tsx on the checked-out PR head — acceptable for this
+      # single-maintainer, same-repo-PR project (base = staging).
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+      - name: Install workspace deps (hoists tsx to root)
+        run: npm install --silent
+      - name: §1.7 citation-existence check (L2 block + L3 warn)
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: npx tsx packages/core/hooks/checks/s17-pr-body-cli.ts
+
   sanity-stub-fails-substance:
     name: Sanity — Incident-1 stub §1.7 body MUST fail substance gate
     runs-on: ubuntu-latest
