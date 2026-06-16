@@ -46,3 +46,6 @@ packages/*/reports/
 
 # Stryker mutation-run sandbox (never commit)
 packages/core/.stryker-tmp/
+
+# Agnosticism audit — generated conformance record
+tests/agnosticism/conformance-record.tsv
