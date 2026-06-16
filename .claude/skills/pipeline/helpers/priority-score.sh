@@ -222,7 +222,12 @@ for dir in "${PROMPTS_DIR}"/*/; do
   if [[ -z "${done_pr}" && -f "${dir}done.md" ]]; then
     done_pr="$(grep -m1 '^- Final PR: #' "${dir}done.md" 2>/dev/null \
       | grep -oE '[0-9]+' | head -n1 || true)"
-    [[ -n "${done_pr}" ]] && done_basis="done-md"
+    # done.md existence ALONE proves closure (C3 ADAPT Cline #77). A stale/superseded closure
+    # carries "Final PR: n/a" (no numeric PR) — still DONE; tag done_pr=n/a so the filter drops
+    # it. Pre-fix bug: n/a closures (e.g. the 2026-06-05 sweep) stayed false-open because this
+    # layer only tagged DONE on a numeric PR — fixed 2026-06-16 closure-sweep.
+    [[ -z "${done_pr}" ]] && done_pr="n/a"
+    done_basis="done-md"
   fi
 
   # Emit candidate line with optional DONE tag (basis indicates which layer matched).
