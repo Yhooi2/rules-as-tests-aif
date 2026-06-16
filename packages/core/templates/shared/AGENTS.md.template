@@ -90,10 +90,12 @@ across Claude Code / Cursor / Codex / Aider.
 
 ## Skills available
 
-The following skills auto-activate on relevant queries:
+The following skills **auto-activate on relevant queries in Claude Code**:
 
-- **`rules-as-tests`** — five-layer framework (architecture / meta-tests / spec by example / mutation / living docs). Auto-triggers on questions about ESLint, Stryker, Pact, dependency-cruiser, AI-driven code drift.
-- **`tool-bootstrapping`** — when project deps change, analyses stack for MCP/skill fit, proposes a confirmation list, persists accepted/rejected decisions in `.ai-factory/tool-decisions.md`. Auto-triggers on MCP, skill-discovery, bootstrapping, and tool-decision queries.
+- **`rules-as-tests`** — five-layer framework (architecture / meta-tests / spec by example / mutation / living docs). On Claude Code, auto-triggers on questions about ESLint, Stryker, Pact, dependency-cruiser, AI-driven code drift.
+- **`tool-bootstrapping`** — when project deps change, analyses stack for MCP/skill fit, proposes a confirmation list, persists accepted/rejected decisions in `.ai-factory/tool-decisions.md`. On Claude Code, auto-triggers on MCP, skill-discovery, bootstrapping, and tool-decision queries.
+
+> On other harnesses (Cursor, Codex CLI, Aider, Windsurf, Roo Code) skills do **not** auto-activate — load the skill manually / read its `SKILL.md` when the topic comes up.
 
 Add additional project skills here as you create them. Don't list a skill until its file is committed (see ai-traps.md, lesson #2).
 
