@@ -14,6 +14,11 @@
 # in the recap instruction. Guard ↔ message stay consistent because both read this.
 AIF_RECAP_MARKER='## 🟢 Простыми словами'
 
+# Russian phrasings of the trailing-fork detector (sibling of en.sh; same key).
+# Category-3 match-data: matches the operator-facing turn text, which is Russian
+# when AIF_HOOK_LANG=ru. Used by end-of-turn-reminder.sh Branch B.
+AIF_EOT_QUESTION_PATTERN='выбирай|реши сам|какой (вариант|подход)|выбери|хочешь чтобы'
+
 # Fallback value for the session-goal anchor when extraction fails.
 aif_msg_eot_anchor_fallback() {
   printf '%s' '(цель сессии не извлеклась — назови её сам)'

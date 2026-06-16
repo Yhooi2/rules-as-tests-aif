@@ -15,6 +15,10 @@
 # in the recap instruction. Guard ↔ message stay consistent because both read this.
 AIF_RECAP_MARKER='## 🟢 In plain words'
 
+# Extended-regex of trailing-fork phrases that count as "the turn ended on a choice"
+# (used by end-of-turn-reminder.sh Branch B). English phrasings; ru.sh has the Russian.
+AIF_EOT_QUESTION_PATTERN='Option [AB]|decide|which (option|approach)|you (decide|choose)|pick (one|between)'
+
 # Fallback value for the session-goal anchor when extraction fails.
 aif_msg_eot_anchor_fallback() {
   printf '%s' '(session goal not extractable — state it yourself)'
