@@ -1,12 +1,13 @@
-# Session-story recap — финальная история по актам
+# Session-story recap — финальная история по актам (`/story`)
 
 > **Scope:** a new "engaging story-in-acts" recap delivered when work is done, via two
-> channels — a `/recap` skill (manual) + a new branch in the Stop hook
+> channels — a `/story` skill (manual) + a new branch in the Stop hook
 > (`.claude/hooks/end-of-turn-reminder.sh`, auto on PR-create). Shared single
-> source-of-truth prompt (`@dual-pair: session-story-recap`).
+> source-of-truth prompt (`@dual-pair: session-story-recap`), localized via
+> `AIF_HOOK_LANG` (EN canonical / RU operator).
 > **NOT in scope:** the existing per-turn self-diagnostic recap (`## 🟢 Простыми
 > словами`, Branch A/C — untouched); SessionEnd channel (the agent no longer speaks
-> there); consumer shipping (these hooks are `@cc-only-rationale` internal tooling, not
+> there); consumer shipping (this feature is `@cc-only-rationale` internal tooling, not
 > in `install.sh`).
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists).
 
@@ -44,23 +45,27 @@ Prior-art survey run 2026-06-16 (installed companions + SSOT + WebSearch ×2):
   human." → **REFERENCE** the mechanism (read `~/.claude/projects/*.jsonl` transcript
   directly, not regex excerpts) — which we **already have** in the Stop hook
   (`end-of-turn-reminder.sh:23` reads `transcript_path`).
-- **Cost:** lang-function + skill markdown + hook branch + test = no new dependency, no
-  code-module ≥80 LOC under `packages/` → **not a heavy capability-commit** per
-  [CLAUDE.md](../../../CLAUDE.md). The story-in-acts *style* is maintainer taste — ours
-  to write regardless; no companion saves it.
+- **Cost:** lang-function + skill markdown + helper + hook branch + test = no new
+  dependency, no code-module ≥80 LOC under `packages/` → **not a heavy
+  capability-commit** per [CLAUDE.md](../../../CLAUDE.md). The story-in-acts *style* is
+  maintainer taste — ours to write regardless; no companion saves it.
 
 SSOT residue to land with the implementation: one row recording `session-report` REJECT
 + `claude-recap` REFERENCE.
 
-## Design — one prompt, two channels
+## Design — one prompt, two channels, one language layer
 
 Maps onto the existing [dual-implementation-discipline.md §7](../../../.claude/rules/dual-implementation-discipline.md)
 "one logic, two channels" pattern. Anchor: `@dual-pair: session-story-recap`.
 
 ### Component 1 — the story-spec (single source of truth)
 
-The canonical prose lives in the skill's `SKILL.md` (human-readable SSOT per §7); the
-hook lang-function is the mechanical embed that references the same anchor. Story-spec
+The canonical story-instruction prose is **one localized artifact**:
+`aif_msg_eot_branch_story()` in `.claude/hooks/lang/en.sh` (EN canonical) +
+`lang/ru.sh` (RU operator), selected by `AIF_HOOK_LANG` (default `en`, hard EN
+fallback) — exactly the existing recap functions' mechanism. The localized prose **is**
+the language carrier: when `AIF_HOOK_LANG=ru` the instruction is Russian, so the model
+narrates in Russian (same as today's `## 🟢 Простыми словами` recap). Story-spec
 distilled from the exemplar:
 
 1. **Open in one sentence** — what we set out to do and why, in human terms.
@@ -74,23 +79,37 @@ distilled from the exemplar:
 6. **Tone** — interesting, like a story; no filler, no self-congratulation; truth over
    smoothness.
 
-### Component 2 — `/recap` skill (manual channel)
+### Component 2 — `/story` skill (manual channel)
 
-- New directory `.claude/skills/recap/` (the **directory name is the slash command** —
-  `/recap`; renaming the command later = `git mv` the dir).
-- `SKILL.md` carries the canonical story-spec (Component 1) + instruction to read the
-  session transcript and narrate by acts.
+- New directory `.claude/skills/story/` (the **directory name is the slash command** —
+  `/story`; renaming later = `git mv` the dir).
+- **All skill files English-canonical** — `SKILL.md`, any `references/*`, helper
+  comments — per the pipeline i18n headline directive
+  ([2026-06-03 spec §Design](2026-06-03-pipeline-skill-i18n-design.md)). No Russian-only
+  prose anywhere in the skill.
+- **i18n crux** (same as pipeline): `SKILL.md` is markdown read by the AI — no runtime
+  `source`. So a bash helper bridges: `.claude/skills/story/helpers/emit-story-prompt.sh`
+  sources the active-language pack and echoes the story-instruction; `SKILL.md` invokes
+  it via `!bash ${CLAUDE_SKILL_DIR}/helpers/emit-story-prompt.sh` (the `!shell`
+  injection mechanism, modelled on
+  [pipeline `emit-output-strings.sh`](../../../.claude/skills/pipeline/helpers/emit-output-strings.sh)
+  + [SKILL.md:465](../../../.claude/skills/pipeline/SKILL.md)).
+- **Single SSOT, not a sibling copy.** Because `/story` is **internal** (not shipped,
+  unlike `/pipeline`), its helper sources the **shared** hook pack
+  (`.claude/hooks/lang/${AIF_HOOK_LANG}.sh`) directly — so the story prose exists in
+  **one** place, read by both channels. (The pipeline precedent kept *sibling* packs
+  only because a shipped skill must not depend on non-shipped hook files
+  — [2026-06-03 spec ¶ shipping](2026-06-03-pipeline-skill-i18n-design.md); that
+  constraint does not apply here.)
 - Invoked on demand — exactly the exemplar's path (the maintainer asked "расскажи
   интересно" by hand).
-- Naming: `/recap` chosen to be distinct from the dry per-turn recap; open to `/story`
-  if collision feels confusing.
 
 ### Component 3 — Stop-hook auto branch (auto channel, trigger A)
 
 In `end-of-turn-reminder.sh`, before the existing Branch A/B/C selection:
 
-- **New lang function** `aif_msg_eot_branch_story()` in both `lang/en.sh` + `lang/ru.sh`
-  (i18n parity, enforced by `lang/check-parity.sh`). Embeds the story-spec, localised.
+- Uses the same `aif_msg_eot_branch_story()` lang function (Component 1) — sourced
+  directly (the hook already sources `lang/${AIF_HOOK_LANG:-en}.sh` at line 11).
 - **New marker** `AIF_STORY_MARKER` — `## 🎬 Как это было` (ru) / `## 🎬 The story`
   (en) — distinct from `AIF_RECAP_MARKER` so the already-recapped guard can tell the two
   apart.
@@ -106,11 +125,24 @@ In `end-of-turn-reminder.sh`, before the existing Branch A/B/C selection:
   session-scoped flag (`${TMPDIR:-/tmp}/aif-story-<session_id>`, mirroring
   `ask-question-reminder.sh:42`). Same PR → silent; a genuinely new PR → its own story.
 - **Already-told guard** — if the current turn text already contains `AIF_STORY_MARKER`,
-  exit 0 (mirrors the existing `AIF_RECAP_MARKER` guard at `end-of-turn-reminder.sh:81`).
+  exit 0 (mirrors the existing `AIF_RECAP_MARKER` guard at
+  `end-of-turn-reminder.sh:81`).
 - Delivery uses the existing `decision: block` + `reason` JSON mechanism
   (`end-of-turn-reminder.sh:194`).
 
-### Component 4 — test (rule = test)
+### Component 4 — language: EN canonical, RU via the variable
+
+Per maintainer (2026-06-16) — same rule as every other hook + the `/pipeline` skill:
+
+- **Hook code, comments, `en.sh`** — English-canonical. The repo is public.
+- **`/story` skill files** — English-canonical (Component 2).
+- **Russian reaches the operator only** through the `ru.sh` pack, selected by the
+  operator's `AIF_HOOK_LANG=ru` env (`~/.claude/settings.json`). EN fallback if the pack
+  is missing.
+- **Parity guard** — the new `aif_msg_eot_branch_story()` + `AIF_STORY_MARKER` keys must
+  be present in both packs; `.claude/hooks/lang/check-parity.sh` stays green.
+
+### Component 5 — test (rule = test)
 
 Companion test for the new branch (extends the existing hook companion test):
 
@@ -119,7 +151,9 @@ Companion test for the new branch (extends the existing hook companion test):
 - **Negative (no signal):** ordinary long turn, no PR → assert the dry recap fires, NOT
   the story.
 - **Debounce:** same PR number twice in the debounce window → second fire is silent.
-- **Parity:** `lang/check-parity.sh` stays green (new function present in both packs).
+- **Parity:** `lang/check-parity.sh` green (new function + marker in both packs).
+- **Skill helper:** `emit-story-prompt.sh` under `AIF_HOOK_LANG=ru` emits the RU prose;
+  missing pack → EN fallback.
 
 ## Boundaries / YAGNI
 
@@ -127,23 +161,32 @@ Companion test for the new branch (extends the existing hook companion test):
   mechanism, kept.
 - **No SessionEnd channel** — at SessionEnd the agent no longer produces a turn, so it
   cannot narrate; Stop is the only event that can make the agent speak once more.
-- **No consumer shipping** — both hooks are `@cc-only-rationale` internal tooling; no
-  `install.sh` change, zero consumer impact.
+- **No consumer shipping** — this feature is `@cc-only-rationale` internal tooling; no
+  `install.sh` change, zero consumer impact. **If it is ever shipped**, the skill must
+  switch to a *sibling* lang pack under `.claude/skills/story/lang/` (it must not depend
+  on non-shipped hook files), per the pipeline precedent.
 
 ## Files touched
 
 | File | Change |
 |---|---|
-| `.claude/skills/recap/SKILL.md` | NEW — `/recap` skill, canonical story-spec |
-| `.claude/hooks/lang/en.sh` | + `aif_msg_eot_branch_story()` + `AIF_STORY_MARKER` |
-| `.claude/hooks/lang/ru.sh` | + `aif_msg_eot_branch_story()` + `AIF_STORY_MARKER` |
+| `.claude/skills/story/SKILL.md` | NEW — `/story` skill (EN canonical), `!bash` emit + narrate-by-acts |
+| `.claude/skills/story/helpers/emit-story-prompt.sh` | NEW — sources shared hook pack, echoes active-language story prose |
+| `.claude/hooks/lang/en.sh` | + `aif_msg_eot_branch_story()` + `AIF_STORY_MARKER` (EN) |
+| `.claude/hooks/lang/ru.sh` | + `aif_msg_eot_branch_story()` + `AIF_STORY_MARKER` (RU) |
 | `.claude/hooks/end-of-turn-reminder.sh` | + PR-detect + debounce + story-branch selection (before existing branches) |
-| hook companion test | + positive / negative / debounce cases |
+| hook companion test | + positive / negative / debounce / parity / helper cases |
 | `docs/meta-factory/prior-art-evaluations.md` | + 1 row (session-report REJECT, claude-recap REFERENCE) |
+
+## Decided
+
+- Command name **`/story`** (maintainer 2026-06-16).
+- Auto-trigger **A** (PR-create signal), debounced per PR number.
+- Approach **C** (skill + hook), single shared SSOT prose.
+- EN canonical + RU via `AIF_HOOK_LANG`, pipeline i18n pattern as precedent.
 
 ## Open (minor, decide at implementation)
 
-- Command name `/recap` vs `/story`.
-- Exact marker emoji/wording.
-- Debounce window length vs strict per-PR-number keying (lean: per-PR-number, no time
-  window — a new PR always earns a story).
+- Exact marker emoji/wording (`## 🎬 Как это было` / `## 🎬 The story`).
+- Debounce keying — lean: strict per-PR-number, no time window (a new PR always earns a
+  story).
