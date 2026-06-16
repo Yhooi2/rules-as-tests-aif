@@ -74,16 +74,16 @@ if [ -f "$marker" ]; then
 fi
 
 # Already-recapped guard: if the current assistant turn already contains the
-# canonical "## 🟢 Простыми словами" marker, the recap is done — re-firing would
-# re-inject the recap instruction over an existing recap. Complements the
-# built-in stop_hook_active guard (hook:7-10) for the case where the model
-# proactively recaps in a fresh natural turn (stop_hook_active=false).
+# active-language recap marker ($AIF_RECAP_MARKER, sourced from lang/), the recap
+# is done — re-firing would re-inject the recap instruction over an existing recap.
+# Complements the built-in stop_hook_active guard (hook:7-10) for the case where the
+# model proactively recaps in a fresh natural turn (stop_hook_active=false).
 if [ -n "$text" ] && printf '%s' "$text" | grep -qF "$AIF_RECAP_MARKER"; then
   exit 0
 fi
 
-# Trigger ONLY on (a) a substantial structured answer ("много текста") or
-# (b) a question. Tool calls alone do NOT trigger — a short "готово, поправил X"
+# Trigger ONLY on (a) a substantial structured answer (a long body) or
+# (b) a question. Tool calls alone do NOT trigger — a short "done, fixed X"
 # turn with no question needs no recap.
 #
 # NOTE: the v1 factual-claim scan (numeric / file:line / negative-existence) was
@@ -114,7 +114,7 @@ elif [ -n "$text" ]; then
   tail_chunk=$(echo "$text" | tail -c 500)
   if echo "$tail_chunk" | grep -qE '\?[[:space:]]*$'; then
     asked=true
-  elif [ "$orch_mode" = "false" ] && echo "$tail_chunk" | grep -qiE 'Option [AB]|выбирай|decide|хочешь чтобы|which (option|approach)'; then
+  elif [ "$orch_mode" = "false" ] && echo "$tail_chunk" | grep -qiE "$AIF_EOT_QUESTION_PATTERN"; then
     asked=true
   fi
 fi
