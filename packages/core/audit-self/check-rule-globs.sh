@@ -34,6 +34,11 @@ set -uo pipefail
 CFG="${ESLINT_CONFIG:-eslint.config.mjs}"
 [ -f "$CFG" ] || { echo "check-rule-globs: $CFG not found (run from the project root)" >&2; exit 2; }
 
+# C4 (GH #547 Point 2): honor a recorded R2 N/A decision via the shared marker helper (sibling file),
+# re-verifying its precondition mechanically — so a recorded N/A is conditional, not a permanent off.
+# shellcheck source=/dev/null
+. "$(dirname "$0")/r2-na-marker.sh"
+
 PRUNE=( -name node_modules -o -name dist -o -name coverage -o -name .stryker-tmp -o -name reports -o -name .next -o -name .git )
 
 # ── #507 (reopen #2): per-package ESLint flat configs SHADOW the root ──────────
@@ -215,7 +220,17 @@ check_shadowed_boundary
 # is an alarm UNLESS a per-package config owns the boundary layer (PKG_BOUNDARY) — the per-package
 # monorepo case where the root legitimately governs no boundary file and the verdict for that layer
 # was already rendered above.
-check_rule "R2 no-unsafe-zod-parse" boundary "$PKG_BOUNDARY"
+# C4: if R2 was recorded N/A for this layout (declarative validation), the marker IS the R2 verdict —
+# re-verify its precondition instead of running the glob-liveness check. No marker → today's behaviour.
+R2_NA_HANDLED=0
+if r2_na_marker_present; then
+  R2_NA_HANDLED=1
+  case "$(r2_na_recheck)" in
+    holds) echo "  · R2 no-unsafe-zod-parse: N/A recorded for this layout — precondition holds (declarative validation, no manual-parse boundary). See $R2_DECISIONS_FILE" ;;
+    broke) echo "  ✗ R2 no-unsafe-zod-parse: marked N/A in $R2_DECISIONS_FILE but a parse boundary now exists — wire R2 (widen RULE_GLOBS.boundary) or update the decision." >&2; FAIL=1 ;;
+  esac
+fi
+[ "$R2_NA_HANDLED" = "1" ] || check_rule "R2 no-unsafe-zod-parse" boundary "$PKG_BOUNDARY"
 if [ "${AIF_STRICT_RUNTIME:-}" = "1" ]; then
   check_rule "R7 no-direct-time-randomness" appCode "$PKG_BOUNDARY"
   check_rule "R8 require-otel-span" application "$PKG_BOUNDARY"

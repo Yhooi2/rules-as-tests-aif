@@ -31,6 +31,18 @@ RULE="${AIF_ENFORCED_RULE:-rules-as-tests/no-unsafe-zod-parse}"
 
 PRUNE=( -name node_modules -o -name dist -o -name coverage -o -name .stryker-tmp -o -name reports -o -name .next -o -name .git )
 
+# C4 (GH #547 Point 2): honor a recorded R2 N/A decision through the SAME shared helper as
+# check-rule-globs.sh (two gates, one marker). The recheck is pure-bash (no eslint), so it short-
+# circuits before eslint resolution. No marker → fall through to today's --print-config behaviour.
+# shellcheck source=/dev/null
+. "$(dirname "$0")/r2-na-marker.sh"
+if r2_na_marker_present; then
+  case "$(r2_na_recheck)" in
+    holds) echo "▶ check-rule-enforced: R2 N/A recorded for this layout — precondition holds (declarative validation)."; echo "check-rule-enforced: OK"; exit 0 ;;
+    broke) echo "  ✗ check-rule-enforced: R2 marked N/A in $R2_DECISIONS_FILE but a parse boundary now exists — wire R2 or update the decision." >&2; echo "check-rule-enforced: FAILED — stale R2 N/A marker." >&2; exit 1 ;;
+  esac
+fi
+
 # Resolve an eslint runner. AIF_ESLINT_CMD lets tests inject a fake; else prefer the local bin, then
 # a PATH eslint, then `npx --no-install` (never triggers a network fetch). Absent → SKIP.
 ESLINT="${AIF_ESLINT_CMD:-}"
