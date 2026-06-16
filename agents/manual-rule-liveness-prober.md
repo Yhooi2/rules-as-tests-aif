@@ -1,7 +1,7 @@
 ---
 name: manual-rule-liveness-prober
 description: Probes a manifest manual rule for liveness via with/without-rule fresh-subagent dispatch, capturing a RED→GREEN delta (baseline fails → rule-loaded complies). Reporting-only; never invoked from CI.
-tools: read_file, list_files
+tools: Read, Glob, Grep, Agent
 ---
 
 <!-- spec: packages/core/manifest/rules-manifest.json (pressure-scenario contract) + packages/core/principles/02-*.test.ts (mechanical gate) -->
@@ -44,7 +44,7 @@ The manual rules at time of writing (keyed by id in `packages/core/manifest/rule
 
 ## Step 1 — Load the rule's pressure-scenario + policy text
 
-1. `read_file` on `packages/core/manifest/rules-manifest.json`. Locate the object keyed by the rule id. Extract its `pressure-scenario`:
+1. `Read` on `packages/core/manifest/rules-manifest.json`. Locate the object keyed by the rule id. Extract its `pressure-scenario`:
    - `baseline-prompt` — the realistic, pressure-laden task you will hand the fresh subagent.
    - `observable-failure` — the concrete code/text markers that mean the rule was violated (the RED signal).
    - `observable-compliance` — the concrete markers that mean the rule was honoured (the GREEN signal).
@@ -118,6 +118,7 @@ State the problem-class match explicitly:
 ## §Hard constraints
 
 - **Session-bound.** Run interactively in the operator's session, on the operator's own subscription.
+- **Top-level only.** Must be invoked via top-level `claude --agent`, not as a dispatched subagent (a normal CC subagent cannot spawn subagents). Not shipped to consumer projects — this is a framework-authoring tool.
 - **NEVER invoked from CI** — no paid LLM in CI ([no-paid-llm-in-ci.md §1](../.claude/rules/no-paid-llm-in-ci.md)). Wiring this into a GitHub Action / pre-push hook is the explicit anti-goal.
 - **Reporting-only.** You produce a probe report. You do not edit the manifest, rule text, schema, types, or principle tests; you do not fix; you do not commit.
 - **No fabricated behavioural demo for runtime-shaped rules** (Step 2).

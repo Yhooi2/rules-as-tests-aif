@@ -1,7 +1,7 @@
 ---
 name: orchestrator-worker-discipline
 description: Discipline for aif-dispatched workers — REPORT schema, park-vs-proceed, stage-gate check. Read when you are a worker dispatched via runtime-bridge/dispatch.ts.
-tools: read_file
+tools: Read
 ---
 
 # orchestrator-worker-discipline
