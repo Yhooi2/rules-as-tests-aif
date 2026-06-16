@@ -50,17 +50,18 @@ The manual rules at time of writing (keyed by id in `packages/core/manifest/rule
 2. **Manifest** (fallback): If not found in the generated-scenarios store, `Read` on `packages/core/manifest/rules-manifest.json`. Locate the object keyed by the rule id. Extract its `pressure-scenario`.
 
 Extract from whichever source is used:
-   - `baseline-prompt` — the realistic, pressure-laden task you will hand the fresh subagent.
-   - `observable-failure` — the concrete code/text markers that mean the rule was violated (the RED signal).
-   - `observable-compliance` — the concrete markers that mean the rule was honoured (the GREEN signal).
-   - `pressure` — the declared forcing vectors, drawn from the manifest's fixed vocabulary `time` / `authority` / `sunk-cost` / `scope-creep` (principle 02 validates against exactly this allowlist), baked into `baseline-prompt`.
+
+- `baseline-prompt` — the realistic, pressure-laden task you will hand the fresh subagent.
+- `observable-failure` — the concrete code/text markers that mean the rule was violated (the RED signal).
+- `observable-compliance` — the concrete markers that mean the rule was honoured (the GREEN signal).
+- `pressure` — the declared forcing vectors, drawn from the manifest's fixed vocabulary `time` / `authority` / `sunk-cost` / `scope-creep` (principle 02 validates against exactly this allowlist), baked into `baseline-prompt`.
 
 Note the source in your report preamble: `(source: generated-scenarios.json, validated:true)` or `(source: manifest, rules-manifest.json:line)`.
 
 3. Load the rule's **policy text** — the constraint you will inject in Pass 2. Source by id:
    - `R10` / `R13` / `R18` → `packages/preset-next-15-canonical/RULES.md` (find the rule's section). For `R10` the verify-time policy also lives in `packages/core/templates/shared/skill-context/aif-rules-check/SKILL.md` (the `## R10 — Naming` section) — use whichever states the constraint most operationally.
    - `IR5` / `IR6` → `packages/core/templates/shared/integration-rules.md` (find the `IR5` / `IR6` section).
-3. Quote the exact `baseline-prompt`, `observable-failure`, `observable-compliance`, and the policy paragraph(s) in your report's preamble, with `file:line`. No prose-only summaries (per [ai-laziness-traps.md §2 T3](../.claude/rules/ai-laziness-traps.md)).
+4. Quote the exact `baseline-prompt`, `observable-failure`, `observable-compliance`, and the policy paragraph(s) in your report's preamble, with `file:line`. No prose-only summaries (per [ai-laziness-traps.md §2 T3](../.claude/rules/ai-laziness-traps.md)).
 
 ## Step 2 — Classify demoability (do this BEFORE dispatching)
 

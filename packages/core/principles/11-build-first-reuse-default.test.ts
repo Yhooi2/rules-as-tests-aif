@@ -87,6 +87,11 @@ const VERDICTS = new Set([
   // The kickoff frames the R-phase fork as "ADOPT vs BUILD vs HYBRID"; registered here per the
   // line-47 "extend VERDICTS when a new keyword appears" instruction (2026-06-14).
   'HYBRID',
+  // ADAPT base verdict upgraded with a generative-automation residue (SSOT #115, 2026-06-17):
+  // the manual-rule-liveness prober's RED→GREEN methodology stays ADAPT, and the #552-flip I-phase
+  // built a pressure-scenario generator on top of it. Registered per the line-47 extend-VERDICTS
+  // instruction (first use: SSOT #115).
+  'ADAPT+generative',
 ]);
 
 /** Placeholder words for F3 validation — mirrors pre-push hook pa_check_trailer logic. */
