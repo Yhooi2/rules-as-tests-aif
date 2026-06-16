@@ -55,18 +55,22 @@ boundary_token_files() {
     find "$ROOT" \( "${PRUNE[@]}" \) -prune -o -type f \( -name '*.ts' -o -name '*.tsx' \) -path "*/app/api/*" -print 2>/dev/null)
 }
 
-# (2) zod-parse call sites in non-test source (one path per line). `.safeParse(` anywhere, OR
-# `<ident>.parse(` where <ident> is not a stdlib parser. BSD grep lacks -P (no negative lookbehind),
-# so match `.parse(` first then exclude stdlib idents on the captured token.
+# (2) zod-parse call sites in non-test source (one path per line). Detection MUST be as broad as the
+# R2 AST rule (no-unsafe-zod-parse.ts), which flags ANY `.parse(` member call regardless of what
+# precedes it — `).parse(`, `].parse(`, indented `.parse(`, `.parse (` — so a leading-identifier
+# anchor would MISS idiomatic zod (`z.object({…}).parse(req)`) and produce a false N/A that silently
+# un-guards a real boundary (GH #547 cold-review BLOCKER; DECIDED #4 forbids any false-N/A). So:
+# a file is a parse-site if it has a `.safeParse(` anywhere, OR strictly more `.parse(` calls than
+# stdlib `(JSON|Date|Number).parse(` calls (the only non-zod `.parse(` callers). Whitespace-tolerant
+# before `(`. False-RED on a `.parse(` in a comment/string is acceptable (DECIDED #4); false-N/A is not.
 parse_site_files() {
-  local f
+  local f total stdlib
   while IFS= read -r f; do
     is_test_path "$f" && continue
-    if grep -qE '\.safeParse\(' "$f" 2>/dev/null; then printf '%s\n' "$f"; continue; fi
-    if grep -oE '[A-Za-z_$][A-Za-z0-9_$]*\.parse\(' "$f" 2>/dev/null \
-         | grep -qvE '^(JSON|Date|Number|parseInt|parseFloat)\.parse\('; then
-      printf '%s\n' "$f"
-    fi
+    if grep -qE '\.safeParse[[:space:]]*\(' "$f" 2>/dev/null; then printf '%s\n' "$f"; continue; fi
+    total=$(grep -oE '\.parse[[:space:]]*\(' "$f" 2>/dev/null | grep -c .)
+    stdlib=$(grep -oE '(JSON|Date|Number)\.parse[[:space:]]*\(' "$f" 2>/dev/null | grep -c .)
+    [ "$total" -gt "$stdlib" ] && printf '%s\n' "$f"
   done < <(find "$ROOT" \( "${PRUNE[@]}" \) -prune -o -type f \( -name '*.ts' -o -name '*.tsx' \) -print 2>/dev/null)
 }
 

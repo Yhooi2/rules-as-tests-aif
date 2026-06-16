@@ -35,6 +35,28 @@ T=$(mkrepo); mkdir -p "$T/src"; echo 'export const h=(b)=>schema.safeParse(b);' 
   && ok ".safeParse( → boundary-present (R2 must still guard it)" \
   || bad ".safeParse( → got '$(verdict "$T")'"
 
+# ── boundary-present: idiomatic .parse( forms with NO leading identifier (cold-review BLOCKER) ──
+# The R2 AST rule flags ANY `.parse(` member call; C1 must match as broadly or it false-N/A's a real
+# boundary. Each of these has the framework allowlisted, so a miss would (wrongly) become confident-N/A.
+for form in \
+  'export const h=(b)=>z.object({id:z.string()}).parse(b);' \
+  'export const h=(b)=>schemas["user"].parse(b);' \
+  'export const h=(b)=>schema.parse (b);' ; do
+  T=$(mktemp -d)
+  printf '{"name":"x","version":"0.0.0","dependencies":{"@hono/zod-openapi":"^0.9.0"}}\n' > "$T/package.json"
+  mkdir -p "$T/src"; printf '%s\n' "$form" > "$T/src/h.ts"
+  [ "$(verdict "$T")" = "boundary-present" ] \
+    && ok "idiomatic parse form is caught: ${form#export const h=(b)=>}" \
+    || bad "FALSE N/A: '${form#export const h=(b)=>}' → got '$(verdict "$T")' (R2 would be silently waived)"
+done
+
+# ── NEG (load-bearing): a file with BOTH JSON.parse AND a zod .parse → still boundary-present ──
+T=$(mkrepo); mkdir -p "$T/src"
+printf 'const a = JSON.parse(raw);\nconst b = schema.parse(input);\n' > "$T/src/mix.ts"
+[ "$(verdict "$T")" = "boundary-present" ] \
+  && ok "NEG: JSON.parse + a real zod .parse in one file → boundary-present (stdlib count does not mask the real call)" \
+  || bad "NEG: mixed file → got '$(verdict "$T")' (stdlib exclusion over-counted and hid the real boundary)"
+
 # ── no-boundary-confident: allowlisted framework, zero boundary signals ───────
 T=$(mktemp -d)
 printf '{"name":"x","version":"0.0.0","dependencies":{"@hono/zod-openapi":"^0.9.0"}}\n' > "$T/package.json"
