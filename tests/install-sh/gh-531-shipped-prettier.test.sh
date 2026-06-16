@@ -194,16 +194,17 @@ if npx --yes prettier@3.8.3 --version >/dev/null 2>&1; then
   [ "$nb" -eq 0 ] \
     && ok "brownfield: consumer w/ own printWidth-100 .prettierrc is Prettier-clean ($nb issues — vendored source ignored)" \
     || bad "brownfield: $nb prettier failures under the consumer's own config (#531 config-mismatch NOT closed)"
-  # NEG (LOAD-BEARING, non-vacuity): strip BOTH AIF managed blocks (static source + shipped-configs)
-  # → the vendored files MUST reappear. Proves the ignore is what makes it green, not that the files
-  # were clean under this config anyway.
-  sed -e '/# >>> rules-as-tests-aif (managed) >>>/,/# <<< rules-as-tests-aif (managed) <<</d' \
-      -e '/# >>> rules-as-tests-aif shipped-configs (managed) >>>/,/# <<< rules-as-tests-aif shipped-configs (managed) <<</d' \
-      "$TB/.prettierignore" > "$TB/.pi.x" && mv "$TB/.pi.x" "$TB/.prettierignore"
+  # NEG (LOAD-BEARING, non-vacuity): remove BOTH AIF managed blocks → the vendored files MUST
+  # reappear as failures. Proves the ignore is what makes it green, not that the files were clean
+  # under this config anyway. Rewrite the file to the scaffolding lines deterministically rather than
+  # sed-deleting the marker ranges — a marker-range `sed` is non-portable (GNU vs BSD handled it
+  # differently → CI false-VACUOUS); recreating the known scaffolding drops every AIF block with no
+  # sed dependency.
+  printf '%s\n' '*.md' '/package.json' '/.prettierrc.json' > "$TB/.prettierignore"
   nb2=$( ( cd "$TB" && npx --yes prettier@3.8.3 --check . 2>&1 ) | grep -cE '^\[warn\]|^\[error\]' )
   [ "$nb2" -gt 0 ] \
     && ok "neg: removing the AIF .prettierignore blocks resurfaces $nb2 vendored failures (ignore is non-vacuous)" \
-    || bad "neg: stripping the ignore blocks still 0 failures → the ignore did nothing (VACUOUS)"
+    || bad "neg: removing the ignore blocks still 0 failures → the ignore did nothing (VACUOUS)"
 else
   echo "  · brownfield arm skipped (npx prettier@3.8.3 unreachable)"
 fi
