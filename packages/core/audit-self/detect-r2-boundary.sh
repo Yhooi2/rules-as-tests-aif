@@ -34,7 +34,11 @@ PKG_JSON="${R2_PKG_JSON:-$ROOT/package.json}"
 # here — the safe default (spec §9 risk 3 / kickoff risk 3).
 DECLARATIVE_ALLOWLIST="${R2_DECLARATIVE_ALLOWLIST:-@hono/zod-openapi}"
 
-PRUNE=( -name node_modules -o -name dist -o -name coverage -o -name .stryker-tmp -o -name reports -o -name .next -o -name .git )
+# PRUNE excludes build/vendor dirs AND `eslint-rules-local` — the AIF-shipped rule plugin install.sh
+# generates into the consumer. That dir's own rule source (e.g. no-unsafe-zod-parse.ts) literally
+# contains `.safeParse(`/`.parse(` as the thing the rule TALKS ABOUT — counting it as a consumer
+# boundary signal would false-positive every install to boundary-present (GH #547 self-test finding).
+PRUNE=( -name node_modules -o -name dist -o -name coverage -o -name .stryker-tmp -o -name reports -o -name .next -o -name .git -o -name eslint-rules-local )
 BOUNDARY_TOKENS=( handlers routes controllers actions )   # app/api is two-segment → path-probed below
 
 # A file is "test" (excluded from boundary signals) if it is *.test.* / *.spec.* / under __tests__ / under tests/.

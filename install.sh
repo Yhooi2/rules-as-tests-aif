@@ -604,6 +604,14 @@ chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-globs.sh" 2>/dev/null || true
 # without false-failing a correct re-export-of-root. Skips cleanly when eslint isn't installed yet.
 copy_safe "$PKG_ROOT/packages/core/audit-self/check-rule-enforced.sh" "$PROJECT_ROOT/scripts/check-rule-enforced.sh"
 chmod_safe +x "$PROJECT_ROOT/scripts/check-rule-enforced.sh" 2>/dev/null || true
+# GH #547 Point 2: R2 boundary probe (C1) + the shared N/A-marker reader (C4). detect-r2-boundary.sh
+# classifies the repo (boundary-present | no-boundary-confident | ambiguous) by READING it; the
+# installer (§6b-bis below) and BOTH inertness gates consume it. r2-na-marker.sh is sourced by
+# check-rule-globs.sh + check-rule-enforced.sh so they never diverge on honoring a recorded R2 N/A.
+copy_safe "$PKG_ROOT/packages/core/audit-self/detect-r2-boundary.sh" "$PROJECT_ROOT/scripts/detect-r2-boundary.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/detect-r2-boundary.sh" 2>/dev/null || true
+copy_safe "$PKG_ROOT/packages/core/audit-self/r2-na-marker.sh" "$PROJECT_ROOT/scripts/r2-na-marker.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/r2-na-marker.sh" 2>/dev/null || true
 # GH #534: R3 (arch) inertness alarm — the dependency-cruiser analog of check:globs. The shipped
 # arch config carries layout-agnostic monorepo boundary rules (packages↛apps / apps↔apps), but
 # dependency-cruiser has no built-in "rule matched nothing" report, so on a monorepo whose arch
@@ -808,6 +816,67 @@ if [ "$DRY_RUN" != "--dry-run" ] && [ -f "$PROJECT_ROOT/.nvmrc" ] && [ -d "$PROJ
       fi
     done
   fi
+fi
+
+# ─── 6b-bis. GH #547 Point 2: auto-wire R2 by reading the repo ───────────────
+# Classify the consumer's layout (C1) and configure R2 enforcement so the shipped check:globs gate
+# is green-because-understood, never red-because-unconfigured — WITHOUT mutating consumer-authored
+# per-package eslint configs (deferred Layer 2 / --wire-rules). We only ever patch the ROOT
+# eslint.config.mjs (OUR shipped file, whose own comment invites editing RULE_GLOBS), additively +
+# idempotently. rc=0 on every branch (a crash here must never abort install — lesson GH #531/#544).
+if [ "$DRY_RUN" = "--dry-run" ]; then
+  echo "▶ R2 auto-wire → [dry-run] would classify the repo and patch RULE_GLOBS / record R2 N/A as warranted"
+elif [ -f "$PROJECT_ROOT/eslint.config.mjs" ]; then
+  echo "▶ R2 auto-wire (reading the repo)"
+  _r2_out="$( cd "$PROJECT_ROOT" && bash "$PKG_ROOT/packages/core/audit-self/detect-r2-boundary.sh" 2>/dev/null )"
+  _r2_verdict="$(printf '%s\n' "$_r2_out" | head -1)"
+  case "$_r2_verdict" in
+    boundary-present)
+      _patched=0
+      while IFS= read -r _line; do
+        case "$_line" in glob:*) ;; *) continue ;; esac
+        _g="${_line#glob:}"
+        grep -qF "$_g" "$PROJECT_ROOT/eslint.config.mjs" && continue   # already covered → idempotent
+        awk -v ins="    '$_g'," '
+          done2!=1 && /^[[:space:]]*boundary:[[:space:]]*\[/ { print; print ins; done2=1; next }
+          { print }
+        ' "$PROJECT_ROOT/eslint.config.mjs" > "$PROJECT_ROOT/eslint.config.mjs.tmp" \
+          && mv "$PROJECT_ROOT/eslint.config.mjs.tmp" "$PROJECT_ROOT/eslint.config.mjs"
+        _patched=$((_patched + 1))
+      done <<EOF
+$_r2_out
+EOF
+      if [ "$_patched" -gt 0 ]; then
+        echo "  ✓ HTTP boundary detected → added $_patched glob(s) to RULE_GLOBS.boundary in eslint.config.mjs so R2 covers it"
+      else
+        echo "  ✓ HTTP boundary detected → already covered by the default RULE_GLOBS.boundary (no change)"
+      fi ;;
+    no-boundary-confident)
+      _dec="$PROJECT_ROOT/.ai-factory/tool-decisions.md"
+      if [ -f "$_dec" ]; then
+        if grep -qF '<!-- aif:r2-na:begin -->' "$_dec"; then   # replace existing block (idempotent re-install)
+          awk '/<!-- aif:r2-na:begin -->/{skip=1} skip&&/<!-- aif:r2-na:end -->/{skip=0;next} !skip' "$_dec" > "$_dec.tmp" && mv "$_dec.tmp" "$_dec"
+        fi
+        {
+          echo ""
+          echo "<!-- aif:r2-na:begin -->"
+          echo "### R2 (no-unsafe-zod-parse) — N/A for this layout (auto-recorded by install.sh)"
+          echo "**Verdict:** N/A — validation is declarative (allowlisted framework); no manual \`.parse()\` HTTP boundary detected."
+          echo "**Precondition (re-checked by check:globs / check:enforced via scripts/detect-r2-boundary.sh):**"
+          echo "- no file matches RULE_GLOBS.boundary tokens, AND"
+          echo "- no \`.safeParse(\` and no non-stdlib \`.parse(\` in non-test source."
+          echo "**If this precondition breaks** (you add a hand-rolled parse boundary) the gate goes RED again — wire R2 (widen RULE_GLOBS.boundary) or update this decision."
+          echo "<!-- aif:r2-na:end -->"
+        } >> "$_dec"
+        echo "  ✓ declarative validation, no manual-parse boundary → recorded a re-checkable R2 N/A in .ai-factory/tool-decisions.md"
+      else
+        echo "  · declarative validation detected, but .ai-factory/ absent → skipped R2 N/A record (gate behaviour unchanged)"
+      fi ;;
+    *)
+      # NB: say "scripts/check-rule-globs.sh" (hyphen), NOT the colon-form "check:globs" — the colon
+      # form is reserved for the CI-orphan WARN's missing-gate list (r2-glob-reach asserts per-gate accuracy).
+      echo "  · R2 boundary layout ambiguous → leaving scripts/check-rule-globs.sh as the alarm. If R2 applies, widen RULE_GLOBS.boundary in eslint.config.mjs to cover your layout." ;;
+  esac
 fi
 
 # ─── 6c. #507 (reopen) + #521: CI-orphan WARN — completeness across ALL enforcement gates ───
