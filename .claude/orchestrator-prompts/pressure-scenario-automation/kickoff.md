@@ -32,3 +32,9 @@ Domain-specific: **T-genscenario-A** — «accept a generated scenario because i
 - SSOT #115 ([prior-art-evaluations.md:188](../../../docs/meta-factory/prior-art-evaluations.md)) — the prober + its "Trigger to revisit" (incl. N5 give-back).
 - `agents/manual-rule-liveness-prober.md` — the consumer of these scenarios.
 - #552 (why the prober isn't consumer-shipped today).
+
+## §autonomous-dispatch — park-don't-guess (aif-handoff agent, non-negotiable)
+
+> **aif agent — fork discipline (non-negotiable):** On ANY genuine fork or ambiguity — two defensible designs, an undecided choice, or any of the kickoff's explicitly-listed **«Open design questions for the R-phase (do not pre-answer)»** (who triggers generation: install-time vs on-demand; how generated scenarios are stored consumer-side given #552 A; the weak-auto-trap guardrail; the per-validation cost) — **do NOT pick.** Instead, **park it as a question** (set the task to `manualReviewRequired` / `blocked_external`, stating the fork as «Option A → consequence X / Option B → consequence Y») and **stop that task.** Proceed only on the unambiguous parts. The **#552-flip verdict** in particular is surfaced as **DECISION-NEEDED for the maintainer** (reviewer-discipline §2) — the R-phase states the evidence both ways; it does NOT decide the flip. Guessing a fork to "keep moving" is the exact weak-trap / false-negative failure this whole track exists to prevent.
+
+This R-phase ships a **Markdown research-patch only** (`docs/meta-factory/research-patches/<ship-date>-pressure-scenario-automation.md`) — NOT generator implementation code (T5). Every feasibility claim must be backed by an actual RED→GREEN dispatch on generated output (T2/T6/T-genscenario-A), not described.

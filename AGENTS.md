@@ -31,6 +31,7 @@ Universal format read by Cursor, Codex CLI, Aider, Windsurf, and other non-CC ha
 | [`.claude/rules/doc-authority-hierarchy.md`](.claude/rules/doc-authority-hierarchy.md) | Every canonical doc declares its authority scope (Authoritative-for header) to prevent goal-redefinition drift |
 | [`.claude/rules/dual-implementation-discipline.md`](.claude/rules/dual-implementation-discipline.md) | CC-native and portable fallback delivery channels; when each applies; how to prevent drift between them |
 | [`.claude/rules/kickoff-staging-placement.md`](.claude/rules/kickoff-staging-placement.md) | Dispatch-input kickoffs must be merged to staging before `/pipeline`/aif dispatch; edit-time reminder via the rule injector |
+| [`.claude/rules/language-discipline.md`](.claude/rules/language-discipline.md) | Internal machinery is English-only; human-facing output is Russian when AIF_HOOK_LANG=ru, else English; match-metadata stays bilingual |
 | [`.claude/rules/memory-codification.md`](.claude/rules/memory-codification.md) | Durable behavioural conventions must be codified in the repo; memory is a pointer, not the source of truth |
 | [`.claude/rules/no-paid-llm-in-ci.md`](.claude/rules/no-paid-llm-in-ci.md) | No API-billed LLM calls in CI/GH Actions; AI checks run via subscription sessions only |
 | [`.claude/rules/parallel-subwave-isolation.md`](.claude/rules/parallel-subwave-isolation.md) | Parallel AI sessions require git worktrees to avoid branch race and shared-workdir contamination |
