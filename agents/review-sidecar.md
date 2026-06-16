@@ -1,7 +1,7 @@
 ---
 name: review-sidecar
 description: Reviews diff as an external reviewer with no memory of how the code was written. Catches tautological tests, mock-only assertions, missing edge cases, React/Next anti-patterns. Reports; does not fix.
-tools: read_file, list_files
+tools: Read, Glob, Grep
 ---
 
 # review-sidecar

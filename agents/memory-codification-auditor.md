@@ -1,7 +1,7 @@
 ---
 name: memory-codification-auditor
 description: Audits user-scope agent memory for durable conventions that live only in memory and were never codified into the repo. Flags stage-0 entries; reports candidates with a codify-or-leave verdict. Reports; does not fix.
-tools: read_file, list_files
+tools: Read, Glob, Grep
 ---
 
 <!-- spec: .claude/rules/memory-codification.md -->
@@ -45,9 +45,9 @@ For each entry, ask: **would a fresh session on a different machine — with no 
 
 ## Method (no prose-only findings — per ai-laziness-traps.md T3)
 
-1. Enumerate the population first: count the entries you will review (`list_files` on the memory dir). State the count before sampling — partial coverage must be reported as partial, not as "clean" (T10/T14).
+1. Enumerate the population first: count the entries you will review (`Glob` on the memory dir). State the count before sampling — partial coverage must be reported as partial, not as "clean" (T10/T14).
 2. For each entry, read it and apply the triage test. Quote the **specific line** that makes it a durable convention (or that marks it as state/identity/reference).
-3. Cross-check the repo: for a CODIFY candidate, confirm the convention is **not** already in `CLAUDE.md` or `.claude/rules/*` under a different name (`list_files` + `read_file`). A convention already codified but lacking a back-pointer in memory is a `#pointer-without-codification`-adjacent finding (codified, but the memory note didn't get reduced).
+3. Cross-check the repo: for a CODIFY candidate, confirm the convention is **not** already in `CLAUDE.md` or `.claude/rules/*` under a different name (`Glob` + `Read`). A convention already codified but lacking a back-pointer in memory is a `#pointer-without-codification`-adjacent finding (codified, but the memory note didn't get reduced).
 4. Distinguish "no findings" from "low coverage" explicitly (T14): if you reviewed N of M entries, say so.
 
 ## Output format

@@ -94,7 +94,7 @@ fi
 # docs/meta-factory/research-patches/2026-05-09-§13.21-l3-revision.md).
 # Mirrors the canonical list at
 # packages/core/principles/09-doc-authority-hierarchy.test.ts
-# (REQUIRED_HEADER_DOCS Wave 2 + Wave 5.1 + memory-codification-auditor + manual-rule-liveness-prober — 18 shipped surfaces).
+# (REQUIRED_HEADER_DOCS Wave 2 + Wave 5.1 + memory-codification-auditor + orchestrator-worker-discipline — 18 shipped surfaces).
 # Runs in --dry-run too, so preview also catches drift between PR-side
 # (principle 09 CI) and release-time copy. Positioned before package.json
 # check + stack picker so framework-author drift fails fastest, before any
@@ -122,7 +122,7 @@ SHIPPED_DOCS=(
   "agents/living-docs-auditor.md"
   "agents/compliance-verifier.md"
   "agents/memory-codification-auditor.md"
-  "agents/manual-rule-liveness-prober.md"
+  "agents/orchestrator-worker-discipline.md"
   "skills/tool-bootstrapping/SKILL.md"
   "skills/tool-bootstrapping/references/decision-format.md"
 )
@@ -541,6 +541,9 @@ echo "▶ Sub-agents → .claude/agents/"
 #     agents/review-sidecar.md remains the portable SSOT (@dual-pair anchor: review-sidecar).
 mkdir_safe "$PROJECT_ROOT/.claude/agents"
 for f in "$PKG_ROOT"/agents/*.md; do
+  case "$(basename "$f")" in
+    manual-rule-liveness-prober.md) continue ;;  # authoring-only tool (#552)
+  esac
   copy_safe "$f" "$PROJECT_ROOT/.claude/agents/$(basename "$f")"
 done
 

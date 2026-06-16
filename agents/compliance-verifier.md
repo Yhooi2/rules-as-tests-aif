@@ -1,7 +1,7 @@
 ---
 name: compliance-verifier
 description: Reviews PR description §1.7 Forward-check and Backward-check sections for substantive evidence — file:line citations, sweep completeness, exemption quality. Reports; does not fix.
-tools: read_file, list_files
+tools: Read, Glob, Grep
 ---
 
 # compliance-verifier
@@ -50,7 +50,7 @@ The §1.7 Forward-check must demonstrate that **each applicable discipline layer
 Pick 2-3 of the `file.ext:line` citations in the Forward-check and read the cited locations:
 
 ```text
-read_file("cited-file.ext")  →  scroll to cited line
+Read("cited-file.ext")  →  scroll to cited line
 ```
 
 Ask: does the cited line actually contain what the Forward-check claims it contains?
