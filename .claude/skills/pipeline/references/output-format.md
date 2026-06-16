@@ -111,7 +111,7 @@ Total open umbrellas: <K> (after §2.5 completion-filter; recently DONE entries 
 
 ## §1B Named-dispatch compact format (pipeline-ux Stage 2)
 
-> **Origin:** pipeline-ux Stage 2 (2026-06-04). Operator feedback: «почему столько текста». The live run produced walls of per-step narration on every `/pipeline <umbrella>` invocation.
+> **Origin:** pipeline-ux Stage 2 (2026-06-04). Operator feedback: "why so much text". The live run produced walls of per-step narration on every `/pipeline <umbrella>` invocation.
 
 Emitted by `/pipeline <umbrella>` (string arg). Same 3-layer structure as §1 but **bounded to ≤~15 visible lines**: dep-graph + action-queue + 1-liner blocks WITHOUT the verbose 3-line `What it does / Deliverable / Why now` description block per stage. Description blocks are optional in named-dispatch mode — the operator already selected the umbrella.
 
