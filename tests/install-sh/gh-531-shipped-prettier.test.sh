@@ -194,17 +194,25 @@ if npx --yes prettier@3.8.3 --version >/dev/null 2>&1; then
   [ "$nb" -eq 0 ] \
     && ok "brownfield: consumer w/ own printWidth-100 .prettierrc is Prettier-clean ($nb issues — vendored source ignored)" \
     || bad "brownfield: $nb prettier failures under the consumer's own config (#531 config-mismatch NOT closed)"
-  # NEG (LOAD-BEARING, non-vacuity): remove BOTH AIF managed blocks → the vendored files MUST
-  # reappear as failures. Proves the ignore is what makes it green, not that the files were clean
-  # under this config anyway. Rewrite the file to the scaffolding lines deterministically rather than
-  # sed-deleting the marker ranges — a marker-range `sed` is non-portable (GNU vs BSD handled it
-  # differently → CI false-VACUOUS); recreating the known scaffolding drops every AIF block with no
-  # sed dependency.
-  printf '%s\n' '*.md' '/package.json' '/.prettierrc.json' > "$TB/.prettierignore"
-  nb2=$( ( cd "$TB" && npx --yes prettier@3.8.3 --check . 2>&1 ) | grep -cE '^\[warn\]|^\[error\]' )
-  [ "$nb2" -gt 0 ] \
-    && ok "neg: removing the AIF .prettierignore blocks resurfaces $nb2 vendored failures (ignore is non-vacuous)" \
-    || bad "neg: removing the ignore blocks still 0 failures → the ignore did nothing (VACUOUS)"
+  # NEG (LOAD-BEARING, non-vacuity, environment-INDEPENDENT): plant grossly-dirty content (a long
+  # minified line prettier reformats under ANY config — printWidth 80/100/default) at one path each
+  # AIF block covers: packages/core/hooks/** (static SOURCE block) and vitest.config.ts (shipped-
+  # config block). WITH the blocks both are skipped; after removing the blocks both MUST be flagged.
+  # This avoids depending on the vendored files' subtle printWidth-80↔100 reflow, which a CI runner's
+  # prettier config resolution can mask (observed: CI saw 0 reflow failures where local saw 14).
+  dirt='export const z = {a:1,b:2,c:3,d:4,e:5,f:6,g:7,h:8,i:9,j:10,k:11,l:12,m:13,n:14,o:15,p:16,q:17,r:18,s:19,t:20};'
+  mkdir -p "$TB/packages/core/hooks"
+  printf '%s\n' "$dirt" > "$TB/packages/core/hooks/_neg_probe.ts"
+  printf '%s\n' "$dirt" > "$TB/vitest.config.ts"
+  flagged_with=$( ( cd "$TB" && npx --yes prettier@3.8.3 --check . 2>&1 ) | grep -cE '_neg_probe\.ts|vitest\.config\.ts' )
+  [ "$flagged_with" -eq 0 ] \
+    && ok "with AIF blocks: planted dirt under packages/core/hooks/ + vitest.config.ts is skipped (both blocks ignore)" \
+    || bad "with AIF blocks: planted dirt flagged ($flagged_with) — a managed block is not covering its path"
+  printf '%s\n' '*.md' '/package.json' '/.prettierrc.json' > "$TB/.prettierignore"   # remove ALL AIF blocks
+  flagged_without=$( ( cd "$TB" && npx --yes prettier@3.8.3 --check . 2>&1 ) | grep -cE '_neg_probe\.ts|vitest\.config\.ts' )
+  [ "$flagged_without" -ge 2 ] \
+    && ok "neg: removing the AIF blocks flags both planted-dirty files ($flagged_without — ignore is non-vacuous)" \
+    || bad "neg: planted dirt still not flagged after removing blocks ($flagged_without/2) → ignore VACUOUS"
 else
   echo "  · brownfield arm skipped (npx prettier@3.8.3 unreachable)"
 fi
