@@ -180,7 +180,7 @@ Write: .ai-factory/DESCRIPTION.md  ← content from Step 2
 Write: .ai-factory/ARCHITECTURE.md ← content from Step 3
 ```
 
-If `.ai-factory/` does not exist, use `Bash: mkdir -p .ai-factory` first.
+The `Write` tool creates the parent directory automatically if `.ai-factory/` does not exist.
 
 **Do NOT overwrite** if the target file already exists AND does not contain `<PLACEHOLDER>` tokens — it has already been filled by a human. Ask before overwriting.
 
