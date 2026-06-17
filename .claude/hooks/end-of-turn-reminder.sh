@@ -50,7 +50,15 @@ if echo "$tool_names" | grep -qx 'AskUserQuestion'; then
 fi
 
 text=$(echo "$last_line" | jq -r '.message.content[]? | select(.type=="text") | .text' 2>/dev/null || true)
-if [ -z "$text" ] && [ "$has_askuserquestion" != "true" ]; then
+# -- story branch detection: a PR was just created this turn → engaging recap ----
+session_id=$(echo "$input" | jq -r '.session_id // "nosession"' 2>/dev/null || echo "nosession")
+story_signal=""
+_gh=$(echo "$last_line" | jq -r '.message.content[]? | select(.type=="tool_use" and .name=="Bash") | .input.command // empty' 2>/dev/null | grep -c 'gh pr create' || true)
+_url=$(printf '%s' "$text" | grep -oE 'github\.com/[^ )]+/pull/[0-9]+' | head -1 || true)
+if [ "${_gh:-0}" -gt 0 ] || [ -n "$_url" ]; then
+  story_signal="${_url:-pr-created}"
+fi
+if [ -z "$text" ] && [ "$has_askuserquestion" != "true" ] && [ -z "$story_signal" ]; then
   exit 0
 fi
 
@@ -80,6 +88,18 @@ fi
 # model proactively recaps in a fresh natural turn (stop_hook_active=false).
 if [ -n "$text" ] && printf '%s' "$text" | grep -qF "$AIF_RECAP_MARKER"; then
   exit 0
+fi
+
+# Story already told this turn → do not re-inject.
+if [ -n "$story_signal" ] && [ -n "$text" ] && printf '%s' "$text" | grep -qF "$AIF_STORY_MARKER"; then
+  exit 0
+fi
+# Debounce by PR: same PR already storied this session → fall through to normal branches.
+if [ -n "$story_signal" ]; then
+  story_flag="${TMPDIR:-/tmp}/aif-story-${session_id}"
+  if [ -f "$story_flag" ] && [ "$(cat "$story_flag" 2>/dev/null || true)" = "$story_signal" ]; then
+    story_signal=""
+  fi
 fi
 
 # Trigger ONLY on (a) a substantial structured answer (a long body) or
@@ -170,11 +190,14 @@ glance_line="🎯 ${anchor_short}"
 #   Branch A — long substantive answer, no question: lighter per-turn work recap.
 #   Branch B — a question with no long answer body: fork-challenge + recommend-first.
 #   Neither (short chatter, bare tool call) — stay silent (no reminder).
-if [ "$long_text" = "false" ] && [ "$asked" = "false" ]; then
+if [ "$long_text" = "false" ] && [ "$asked" = "false" ] && [ -z "$story_signal" ]; then
   exit 0
 fi
 
-if [ "$long_text" = "true" ] && [ "$asked" = "true" ]; then
+if [ -n "$story_signal" ]; then
+  reminder=$(aif_msg_eot_branch_story)
+  printf '%s' "$story_signal" > "${TMPDIR:-/tmp}/aif-story-${session_id}" 2>/dev/null || true
+elif [ "$long_text" = "true" ] && [ "$asked" = "true" ]; then
   # Branch C: whole-session recap + fork-challenge (DECISION-1=B full recap stays here)
   reminder=$(aif_msg_eot_branch_c)
 elif [ "$long_text" = "true" ]; then
