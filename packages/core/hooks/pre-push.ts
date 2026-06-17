@@ -122,7 +122,12 @@ function resolveBase(): ResolvedBase {
     if (r.remoteSha !== Z40 && upstreamExists(`${r.remoteSha}^{commit}`)) {
       // Range endpoint is the PUSHED ref's local_sha, NOT HEAD: pushing `feat`
       // from a checkout on `staging` must validate feat's commits, not staging's.
-      return { base: r.remoteSha, commits: null, head: r.localSha, source: 'stdin' };
+      return {
+        base: r.remoteSha,
+        commits: null,
+        head: r.localSha,
+        source: 'stdin',
+      };
     }
     // New branch (Z40) or an unknown remote sha → the commits this push adds.
     const newCommits = commitsNotOnRemotes(r.localSha);
