@@ -13,6 +13,13 @@
 set -uo pipefail
 REPO_ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 WIRER="$REPO_ROOT/packages/core/install/wire-eslint-r2.ts"
+# install.sh invokes the wirer via tsx (NOT the `node --experimental-strip-types`
+# shebang, which is a bad option on Node <22 — e.g. CI Node 20). Mirror that:
+# run the wirer through the framework's bundled tsx so the test is node-version-agnostic.
+RUN_WIRER_TSX=""
+for _c in "$REPO_ROOT/packages/core/node_modules/.bin/tsx" "$REPO_ROOT/node_modules/.bin/tsx"; do
+  [ -x "$_c" ] && { RUN_WIRER_TSX="$_c"; break; }
+done
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); echo "  ✓ $1"; }
 bad() { FAIL=$((FAIL+1)); echo "  ✗ $1"; }
@@ -70,11 +77,18 @@ export default base;
 EOF
 _ORIG_F=$(cat "$T_F/apps/api/eslint.config.mjs")
 
-# Ensure ts-morph is NOT in this temp project's node_modules
-if command -v node >/dev/null 2>&1; then
-  # Run wirer directly; since T_F has no node_modules/ts-morph, it should degrade
+# Ensure ts-morph is NOT in this temp project's node_modules.
+# Run the wirer via tsx (the wirer dynamic-imports ts-morph from the framework's
+# node_modules, where it is absent → degrade), matching install.sh's invocation.
+if ! command -v node >/dev/null 2>&1; then
+  echo "  [skip] node not installed — Fixture F skipped"
+  ok "F: skipped (node absent on host)"
+elif [ -z "$RUN_WIRER_TSX" ]; then
+  echo "  [skip] tsx not found (run after npm install) — Fixture F skipped"
+  ok "F: skipped (tsx unavailable)"
+else
   _rc_F=0
-  _out_F=$(cd "$T_F" && node --experimental-strip-types "$WIRER" \
+  _out_F=$(cd "$T_F" && "$RUN_WIRER_TSX" "$WIRER" \
       --path "apps/api/eslint.config.mjs" 2>&1) || _rc_F=$?
   [ "$_rc_F" -eq 0 ] && ok "F: rc=0 when ts-morph absent" || bad "F: rc=$_rc_F (expected 0)"
   echo "$_out_F" | grep -qi 'not auto-wired\|ts-morph\|degrade\|manually' \
@@ -82,9 +96,6 @@ if command -v node >/dev/null 2>&1; then
     || bad "F: no degrade message in output: $_out_F"
   _AFTER_F=$(cat "$T_F/apps/api/eslint.config.mjs")
   [ "$_ORIG_F" = "$_AFTER_F" ] && ok "F: file unchanged (no half-edit)" || bad "F: file was modified"
-else
-  echo "  [skip] node not installed — Fixture F skipped"
-  ok "F: skipped (node absent on host)"
 fi
 rm -rf "$T_F"
 
