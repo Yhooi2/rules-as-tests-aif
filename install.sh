@@ -620,6 +620,12 @@ do_refresh() {
   if [ "$DRY_RUN" != "--dry-run" ] && [ -f "$_fb_dst" ]; then
     chmod_safe +x "$_fb_dst" 2>/dev/null || true
   fi
+  # #635: also refresh the hooks-scoped {"type":"module"} marker (mirrors the full-install copy_safe
+  # at install.sh:915). Without this, a consumer upgraded via --refresh gets the new multi-file
+  # pre-push.ts WITHOUT type:module → Node ≥22 dies with ERR_REQUIRE_CYCLE_MODULE on the require(esm)
+  # bridge. Same AIF-owned, hooks-scoped marker — cannot collide with a consumer's own package.
+  refresh_safe "$PKG_ROOT/packages/core/templates/shared/hooks-package.json" \
+               "$PROJECT_ROOT/packages/core/hooks/package.json"
 
   # ── Skill-context overrides (derived from SHIPPED_DOCS — cannot drift) ──
   echo "▶ Skill-context → .ai-factory/skill-context/"
