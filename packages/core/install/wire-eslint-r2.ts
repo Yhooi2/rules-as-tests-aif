@@ -30,7 +30,18 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 export const R2_RULE_ID = 'rules-as-tests/no-unsafe-zod-parse';
-const R2_ELEMENT = `{ rules: { '${R2_RULE_ID}': 'error' } }`;
+
+export type TransformVariant = 'bare' | 'self-contained';
+export interface TransformOpts {
+  variant?: TransformVariant;
+  customRulesImportPath?: string; // required when variant === 'self-contained'
+}
+
+function r2Element(variant: TransformVariant): string {
+  return variant === 'self-contained'
+    ? `{ plugins: { 'rules-as-tests': customRules }, rules: { '${R2_RULE_ID}': 'error' } }`
+    : `{ rules: { '${R2_RULE_ID}': 'error' } }`;
+}
 
 export interface WireOpts {
   assumeYes?: boolean;
@@ -43,6 +54,7 @@ export interface WireResult {
   original: string;
   modified: string;
   degradeReason?: string;
+  variant?: TransformVariant;
 }
 
 export function generateDegradedSnippet(configPath: string): string {
@@ -77,7 +89,7 @@ function buildLineDiff(original: string, modified: string): string {
  * Uses dynamic ts-morph import so the module loads without crashing when
  * ts-morph is absent (degrade path).
  */
-export async function wireConfigSource(source: string): Promise<WireResult> {
+export async function wireConfigSource(source: string, opts: TransformOpts = {}): Promise<WireResult> {
   // Idempotency: if R2 already referenced, bail early (byte-identical)
   if (source.includes(R2_RULE_ID)) {
     return { status: 'already-wired', original: source, modified: source };
@@ -127,19 +139,22 @@ export async function wireConfigSource(source: string): Promise<WireResult> {
 
   const expr = exportAssignment.getExpression();
 
+  const variant = opts.variant ?? 'bare';
+  const element = r2Element(variant);
+
   if (expr.isKind(SyntaxKind.ArrayLiteralExpression)) {
     // export default [...] or export default [...base, {...}]
     // addElement appends while preserving existing element formatting
-    (expr as any).addElement(R2_ELEMENT);
+    (expr as any).addElement(element);
   } else if (expr.isKind(SyntaxKind.Identifier)) {
     // export default base → export default [...base, R2]
-    exportAssignment.setExpression(`[...${expr.getText()}, ${R2_ELEMENT}]`);
+    exportAssignment.setExpression(`[...${expr.getText()}, ${element}]`);
   } else if (expr.isKind(SyntaxKind.CallExpression)) {
     // export default defineConfig([...]) or similar
     const callExpr = expr as any;
     const args = callExpr.getArguments();
     if (args.length > 0 && args[0].isKind(SyntaxKind.ArrayLiteralExpression)) {
-      args[0].addElement(R2_ELEMENT);
+      args[0].addElement(element);
     } else {
       return { status: 'unrecognised', original: source, modified: source };
     }
@@ -148,8 +163,20 @@ export async function wireConfigSource(source: string): Promise<WireResult> {
     return { status: 'unrecognised', original: source, modified: source };
   }
 
+  // self-contained variant must also register the plugin → inject the customRules import
+  if (variant === 'self-contained') {
+    const spec = opts.customRulesImportPath;
+    if (!spec) throw new Error('self-contained variant requires customRulesImportPath');
+    const already = sf.getImportDeclarations().some(
+      (d: any) => d.getDefaultImport()?.getText() === 'customRules',
+    );
+    if (!already) {
+      sf.addImportDeclaration({ defaultImport: 'customRules', moduleSpecifier: spec });
+    }
+  }
+
   const modified = sf.getFullText();
-  return { status: 'wired', original: source, modified };
+  return { status: 'wired', original: source, modified, variant };
 }
 
 // ─── CLI entry point ──────────────────────────────────────────────────────────

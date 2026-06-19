@@ -171,3 +171,28 @@ describe('wire-eslint-r2', () => {
     }
   );
 });
+
+describe('transform variants (#644)', () => {
+  const base = `import base from './base.mjs';\nexport default [...base];\n`;
+
+  it.skipIf(!TS_MORPH_AVAILABLE)('bare (default): rules-only element, no plugins, no import', async () => {
+    const r = await wireConfigSource(base);
+    expect(r.status).toBe('wired');
+    expect(r.variant).toBe('bare');
+    expect(r.modified).toContain(`'${R2_RULE_ID}': 'error'`);
+    expect(r.modified).not.toContain('plugins:');
+    expect(r.modified).not.toContain('customRules');
+  });
+
+  it.skipIf(!TS_MORPH_AVAILABLE)('self-contained: plugins+rules element + injected customRules import', async () => {
+    const r = await wireConfigSource(base, {
+      variant: 'self-contained',
+      customRulesImportPath: '../../eslint-rules-local/index.ts',
+    });
+    expect(r.status).toBe('wired');
+    expect(r.variant).toBe('self-contained');
+    expect(r.modified).toContain(`plugins: { 'rules-as-tests': customRules }`);
+    expect(r.modified).toContain(`'${R2_RULE_ID}': 'error'`);
+    expect(r.modified).toMatch(/import customRules from ['"]\.\.\/\.\.\/eslint-rules-local\/index\.ts['"]/);
+  });
+});
