@@ -6,8 +6,10 @@
 # Fixture F: node present, ts-morph absent → rc=0 + degrade message, no half-edit
 # Layer-2-arm: install.sh §6b-bis-L2 exits 0 on no per-package configs (degrade path)
 #
-# Fixture A (headline red→green integration: install.sh ts-server --full + eslint --print-config)
-# requires a full consumer environment with ts-morph installed → runs in CI via consumer-pipeline.
+# Fixtures P1/P2 (below) are the headline red→green loadability gate: they run the wirer over a
+# plugin-less / plugin-registering base and assert `eslint --print-config` LOADS (rc 0) + applies R2.
+# (Earlier this header claimed a print-config integration "runs in CI via consumer-pipeline" — false:
+# consumer-pipeline.test.sh runs zero ESLint; the real gate is P1/P2 here. GH #644 §6.)
 # Fixture E (format-preserved blocking gate) and Fixtures B/C are vitest unit tests in
 # packages/core/install/wire-eslint-r2.test.ts.
 set -uo pipefail
