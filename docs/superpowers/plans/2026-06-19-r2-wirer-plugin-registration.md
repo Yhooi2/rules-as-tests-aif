@@ -60,7 +60,6 @@ describe('transform variants', () => {
     expect(r.modified).not.toContain('plugins:');
     expect(r.modified).not.toContain('customRules');
   });
-
   it('self-contained: appends plugins+rules element and injects the customRules import', async () => {
     const r = await wireConfigSource(base, {
       variant: 'self-contained',
@@ -111,6 +110,8 @@ if (variant === 'self-contained') {
 ```
 
 (Place this after the `expr.isKind(...)` append branches, before `const modified = sf.getFullText();`.)
+
+Existing call-sites stay valid — `opts` defaults to `{}` → `variant: 'bare'`: `main()` (`:191`) and the unit-test helper + Fixtures A/B/C (`wire-eslint-r2.test.ts:19/71/168`) all pass one arg and keep the bare transform.
 
 - [ ] **Step 4: Run to verify it passes**
 
@@ -211,7 +212,6 @@ describe('resolveAndWire', () => {
     expect(out).toContain(`'rules-as-tests/no-unsafe-zod-parse': 'error'`);
     expect(out).not.toContain('plugins:');
   });
-
   it('escalates to self-contained when the bare config cannot find the plugin', async () => {
     const { dir, p } = tmpConfig(body);
     let calls = 0;
@@ -223,14 +223,12 @@ describe('resolveAndWire', () => {
     expect(out).toContain(`plugins: { 'rules-as-tests': customRules }`);
     expect(out).toContain('import customRules from');
   });
-
   it('degrades and restores the original when the probe is unavailable', async () => {
     const { p } = tmpConfig(body);
     const r = await resolveAndWire({ configPath: p, cwd: '/repo', runProbe: async () => 'unavailable' });
     expect(r.status).toBe('degrade');
     expect(readFileSync(p, 'utf8')).toBe(body); // byte-identical restore
   });
-
   it('is idempotent: already-wired config is left byte-identical', async () => {
     const wired = `import base from './base.mjs';\nexport default [...base, { rules: { 'rules-as-tests/no-unsafe-zod-parse': 'error' } }];\n`;
     const { p } = tmpConfig(wired);
@@ -309,39 +307,44 @@ git commit -m "feat(install): resolveAndWire orchestrates bare→self-contained 
 **Files:**
 - Modify: `packages/core/install/wire-eslint-r2.ts`
 
-- [ ] **Step 1: Implement** (no unit test — real-ESLint behaviour is covered by the install-harness in Task 6; this is the wiring of the injected `runProbe` default):
+- [ ] **Step 1: Implement** (no unit test — Task 6's harness covers the real-ESLint path). Add `unlinkSync` to the `node:fs` import, `join` to the `node:path` import, and a new `node:child_process` import:
 
 ```ts
 import { execFileSync } from 'node:child_process';
-import { readdirSync, unlinkSync } from 'node:fs';
 
-function findOrSynthProbeTarget(configDir: string): { path: string; synthesized: boolean } {
-  // The bare element is global (no `files`) → any .ts under the config dir matches it.
-  const existing = readdirSync(configDir).find((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'));
-  if (existing) return { path: resolve(configDir, existing), synthesized: false };
+function synthProbeTarget(configDir: string): string {
+  // ALWAYS synthesize (deterministic). Verdict depends only on whether the plugin is registered
+  // anywhere, not on which file we probe (spec §2 fact E) — avoids a stray *.config.ts skewing it.
   const p = resolve(configDir, '__aif_r2_probe__.ts');
   writeFileSync(p, 'export const __aif_probe = 1;\n', 'utf8');
-  return { path: p, synthesized: true };
+  return p;
 }
 
 export async function probeViaEslint(configPath: string, cwd: string): Promise<ProbeVerdict> {
+  // eslint `exports` does NOT expose `./bin/eslint.js` (resolve throws ERR_PACKAGE_PATH_NOT_EXPORTED
+  // on v9/v10, verified). Resolve the EXPORTED `./package.json`, derive bin from its dir (#535 trap).
   let eslintBin: string;
   try {
     const reqd = createRequire(resolve(cwd, 'package.json'));
-    eslintBin = reqd.resolve('eslint/bin/eslint.js');
+    const pj = reqd.resolve('eslint/package.json');
+    eslintBin = join(dirname(pj), 'bin', 'eslint.js');
+    if (!existsSync(eslintBin)) return 'unavailable';
   } catch {
     return 'unavailable';
   }
   const dir = dirname(resolve(configPath));
-  const target = findOrSynthProbeTarget(dir);
+  const target = synthProbeTarget(dir);
   try {
-    execFileSync(process.execPath, [eslintBin, '--print-config', target.path], { cwd: dir, stdio: 'pipe' });
+    execFileSync(process.execPath, [eslintBin, '--print-config', target], { cwd: dir, stdio: 'pipe' });
     return 'ok';
   } catch (e: unknown) {
     const stderr = String((e as { stderr?: Buffer }).stderr ?? '');
-    return /could not find plugin/i.test(stderr) ? 'could-not-find-plugin' : 'other-error';
+    if (/could not find plugin/i.test(stderr)) return 'could-not-find-plugin';
+    // Surface WHY we degrade (e.g. type-aware projectService/tsconfig error) — no silent degrade.
+    console.error(`  · R2 probe: unexpected eslint error → degrading:\n${stderr.slice(0, 400)}`);
+    return 'other-error';
   } finally {
-    if (target.synthesized) { try { unlinkSync(target.path); } catch { /* best-effort */ } }
+    try { unlinkSync(target); } catch { /* best-effort */ }
   }
 }
 ```
@@ -363,27 +366,35 @@ git commit -m "feat(install): probeViaEslint default probe resolves eslint from 
 **Files:**
 - Modify: `packages/core/install/wire-eslint-r2.ts` (the `case 'wired':` apply branch, `:213`-`:247`)
 
-- [ ] **Step 1: Rewire the apply path.** Keep `--dry-run` / `--diff` showing the **bare** diff (side-effect-free, no probe). In **apply** mode (after the `[y/N]` / `--yes` confirmation), replace the `writeFileSync(configPath, result.modified, ...)` line with:
+- [ ] **Step 1: Rewire the apply path.** Replace the entire `case 'wired': { … }` body (`wire-eslint-r2.ts:213-248`) with the block below. `--dry-run`/`--diff` keep the **bare** preview (side-effect-free, no probe); only the **apply** branch goes through `resolveAndWire` (bare → probe → escalate/degrade):
 
 ```ts
-if (apply) {
-  const res = await resolveAndWire({ configPath, cwd: process.cwd(), runProbe: probeViaEslint });
-  switch (res.status) {
-    case 'wired':
-      console.log(`  ✓ R2 wired into ${configPath} (${res.variant})`);
-      break;
-    case 'already-wired':
-      console.log(`· R2 already enforced in ${configPath} (no change)`);
-      break;
-    default:
-      console.log(generateDegradedSnippet(configPath));
-  }
-} else {
-  console.log(generateDegradedSnippet(configPath));
-}
+    case 'wired': {
+      const diff = buildLineDiff(result.original, result.modified); // bare preview
+      if (dryRun || diffOnly) {
+        console.log(`Diff for ${configPath}:\n${diff}`);
+        process.exit(0);
+      }
+      console.log(`\nProposed change to ${configPath}:\n${diff}\n`);
+      let apply = assumeYes;
+      if (!apply) {
+        if (!process.stdin.isTTY) { console.log(generateDegradedSnippet(configPath)); process.exit(0); }
+        const { createInterface } = await import('node:readline');
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise<string>((done) => rl.question('Apply this change? [y/N] ', done));
+        rl.close();
+        apply = /^y(es)?$/i.test(answer.trim());
+      }
+      if (!apply) { console.log(generateDegradedSnippet(configPath)); process.exit(0); }
+      const wired = await resolveAndWire({ configPath, cwd: process.cwd(), runProbe: probeViaEslint });
+      if (wired.status === 'wired') console.log(`  ✓ R2 wired into ${configPath} (${wired.variant})`);
+      else if (wired.status === 'already-wired') console.log(`· R2 already enforced in ${configPath}`);
+      else console.log(generateDegradedSnippet(configPath));
+      process.exit(0);
+    }
 ```
 
-Note: `result` (the pre-computed bare transform) is still used for the dry-run/diff display above this block; `resolveAndWire` re-reads the file in apply mode, so the two paths don't conflict.
+(Pre-computed `result` feeds ONLY the dry-run/diff preview; apply re-reads via `resolveAndWire` — no double-write.)
 
 - [ ] **Step 2: Typecheck + full unit file**
 
@@ -419,6 +430,9 @@ if [ -z "$RUN_WIRER_TSX" ] || ! command -v node >/dev/null 2>&1; then ok "P1: sk
   T_P1=$(mktemp -d); _mk_consumer "$T_P1"
   printf "const base = [{ files: ['**/*.ts'], rules: { 'no-console': 'error' } }];\nexport default [...base];\n" > "$T_P1/apps/api/eslint.config.mjs"
   ( cd "$T_P1" && "$RUN_WIRER_TSX" "$WIRER" --path apps/api/eslint.config.mjs --yes >/dev/null 2>&1 ) || true
+  grep -q "plugins: { 'rules-as-tests'" "$T_P1/apps/api/eslint.config.mjs" \
+    && ok "P1: wirer escalated to self-contained (probe resolved eslint)" \
+    || bad "P1: wirer did NOT escalate — probe degraded (broken eslint resolve? the #535 trap)"
   if ( cd "$T_P1/apps/api" && "$T_P1/node_modules/.bin/eslint" --print-config src/h.ts >/tmp/p1.out 2>/tmp/p1.err ); then
     grep -q 'rules-as-tests/no-unsafe-zod-parse' /tmp/p1.out && ok "P1: LOADS (rc 0) + R2 applied" || bad "P1: loads but R2 absent"
   else bad "P1: FAILS to load: $(head -c 160 /tmp/p1.err | tr '\n' ' ')"; fi
@@ -430,7 +444,8 @@ if [ -z "$RUN_WIRER_TSX" ] || ! command -v node >/dev/null 2>&1; then ok "P2: sk
   T_P2=$(mktemp -d); _mk_consumer "$T_P2"
   printf "import customRules from '../../eslint-rules-local/index.ts';\nconst base = [{ files: ['**/*.ts'], plugins: { 'rules-as-tests': customRules }, rules: {} }];\nexport default [...base];\n" > "$T_P2/apps/api/eslint.config.mjs"
   ( cd "$T_P2" && "$RUN_WIRER_TSX" "$WIRER" --path apps/api/eslint.config.mjs --yes >/dev/null 2>&1 ) || true
-  ! grep -q 'plugins:' <(tail -n +2 "$T_P2/apps/api/eslint.config.mjs") && ok "P2: kept bare (no 2nd plugins block)" || bad "P2: appended plugins over registering base → redefine risk"
+  _n2=$(grep -c "plugins: { 'rules-as-tests'" "$T_P2/apps/api/eslint.config.mjs")
+  [ "$_n2" = "1" ] && ok "P2: plugin registered once (base only) — kept bare, no duplicate" || bad "P2: $_n2 'rules-as-tests' registrations (want 1) — wirer double-registered"
   ( cd "$T_P2/apps/api" && "$T_P2/node_modules/.bin/eslint" --print-config src/h.ts >/dev/null 2>/tmp/p2.err ) && ok "P2: loads rc 0 (no Cannot redefine)" || bad "P2: failed: $(head -c 160 /tmp/p2.err | tr '\n' ' ')"
 fi
 ```
@@ -544,9 +559,7 @@ gh issue comment 644 --repo Yhooi2/rules-as-tests-aif --body "$(cat <<'EOF'
 
 **Reproduced (eslint v10.4.1):** rule→unregistered-plugin = rc 2 `could not find plugin` (both lint and `--print-config`); plugin registered twice with **different objects** = rc 2 `Cannot redefine plugin`. The latter means a naive "always register" fix would crash consumers whose base already registers it → the fix is conditional. Full table: spec §2.
 
-**MINOR:** (1) fix forward, do **not** revert #642 (re-masks R2 as inert). (2) injected import path must be **computed** per config depth, not hardcoded `../../`.
-
-Design + plan: `docs/superpowers/specs/2026-06-19-r2-wirer-plugin-registration-design.md`.
+**MINOR:** (1) fix forward, do **not** revert #642 (re-masks R2 as inert). (2) injected import path must be **computed** per config depth, not hardcoded `../../`. Design+plan in repo.
 EOF
 )"
 ```
