@@ -25,7 +25,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
@@ -41,6 +41,18 @@ function r2Element(variant: TransformVariant): string {
   return variant === 'self-contained'
     ? `{ plugins: { 'rules-as-tests': customRules }, rules: { '${R2_RULE_ID}': 'error' } }`
     : `{ rules: { '${R2_RULE_ID}': 'error' } }`;
+}
+
+/**
+ * Relative import specifier from a per-package config to the consumer-root
+ * eslint-rules-local barrel (install.sh ships it at <root>/eslint-rules-local/index.ts).
+ * Computed per config depth — never hardcoded.
+ */
+export function customRulesImportSpecifier(configPath: string, cwd: string): string {
+  const target = resolve(cwd, 'eslint-rules-local/index.ts');
+  let rel = relative(dirname(resolve(configPath)), target);
+  if (!rel.startsWith('.')) rel = `./${rel}`;
+  return rel;
 }
 
 export interface WireOpts {

@@ -9,7 +9,12 @@
 
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { R2_RULE_ID, generateDegradedSnippet, wireConfigSource } from './wire-eslint-r2.ts';
+import {
+  R2_RULE_ID,
+  customRulesImportSpecifier,
+  generateDegradedSnippet,
+  wireConfigSource,
+} from './wire-eslint-r2.ts';
 
 const TS_MORPH_AVAILABLE = existsSync('./node_modules/ts-morph/package.json')
   || existsSync('node_modules/ts-morph/package.json');
@@ -194,5 +199,18 @@ describe('transform variants (#644)', () => {
     expect(r.modified).toContain(`plugins: { 'rules-as-tests': customRules }`);
     expect(r.modified).toContain(`'${R2_RULE_ID}': 'error'`);
     expect(r.modified).toMatch(/import customRules from ['"]\.\.\/\.\.\/eslint-rules-local\/index\.ts['"]/);
+  });
+});
+
+describe('customRulesImportSpecifier (#644)', () => {
+  it('computes the relative path from a per-package config to <root>/eslint-rules-local', () => {
+    expect(customRulesImportSpecifier('/repo/apps/api/eslint.config.mjs', '/repo')).toBe(
+      '../../eslint-rules-local/index.ts',
+    );
+  });
+  it('prefixes ./ when the config is at the consumer root', () => {
+    expect(customRulesImportSpecifier('/repo/eslint.config.mjs', '/repo')).toBe(
+      './eslint-rules-local/index.ts',
+    );
   });
 });
