@@ -59,12 +59,17 @@ for f in ${scripts[@]+"${scripts[@]}"}; do
     ok "$base has no mis-rooted plugin-data path"
   fi
 
-  # (d) reads consumer rules → must go through CLAUDE_PROJECT_DIR
+  # (d) reads consumer rules → must be ROOTED at CLAUDE_PROJECT_DIR, never at the plugin root.
+  # Two arms so the check is not satisfied by a stray CLAUDE_PROJECT_DIR mention elsewhere:
+  #   (d1) the var must appear at all; (d2) consumer rules must NOT be rooted at the plugin root
+  #   (the T-PLUG-A *inverse* mis-rooting: `${CLAUDE_PLUGIN_ROOT}/…/.claude/rules`).
   if grep -qE '\.claude/rules' "$f"; then
-    if grep -qE 'CLAUDE_PROJECT_DIR' "$f"; then
-      ok "$base resolves consumer rules via CLAUDE_PROJECT_DIR"
-    else
+    if ! grep -qE 'CLAUDE_PROJECT_DIR' "$f"; then
       bad "$base reads .claude/rules but never references CLAUDE_PROJECT_DIR (project-data misrooted)"
+    elif grep -qE 'CLAUDE_PLUGIN_ROOT[^[:space:]]*/?\.claude/rules' "$f"; then
+      bad "$base roots consumer .claude/rules at \${CLAUDE_PLUGIN_ROOT} (T-PLUG-A inverse — reads plugin's rules, not the consumer's)"
+    else
+      ok "$base roots consumer rules at CLAUDE_PROJECT_DIR (not the plugin root)"
     fi
   fi
 
