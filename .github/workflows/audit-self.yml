@@ -441,7 +441,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install python pyyaml (required by audit probes)
-        run: pip install pyyaml
+        run: pip install pyyaml==6.0.2
       - name: Install packages/core deps (remark + vitest for audit-ai-docs.test.ts)
         run: npm ci --prefix "$GITHUB_WORKSPACE/packages/core" --silent
       - name: Self-install on tmp consumer (ts-server preset)
@@ -471,7 +471,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install python pyyaml (required by audit probes)
-        run: pip install pyyaml
+        run: pip install pyyaml==6.0.2
       - name: Install packages/core deps (remark + vitest for audit-ai-docs.test.ts)
         run: npm ci --prefix "$GITHUB_WORKSPACE/packages/core" --silent
       - name: Self-install on tmp consumer (react-next preset)
