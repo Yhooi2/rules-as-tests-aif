@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship rules-as-tests-aif as a Claude-Code-first plugin installable from an in-repo marketplace (soft layer: skills/agents/session-hooks auto-triggering via a `using-rules-as-tests` bootstrap) + a `/rules-as-tests:install-enforcement` command that bridges to the bundled `install.sh` hard layer. Degrade gracefully to non-CC (OpenCode). Enforce the packaging with its own principle test. **No regression to existing `install.sh`.**
+**Goal:** Ship rules-as-tests-aif as a Claude-Code-first plugin installable from an in-repo marketplace (soft layer: skills/agents/session-hooks auto-triggering via a `using-rules-as-tests` bootstrap) + a `/rules-as-tests:install-enforcement` command that bridges to the hard layer by fetching + running the project's own official `install.sh` (Option C — no bundled copy). Degrade gracefully to non-CC (OpenCode). Enforce the packaging with its own principle test. **No regression to existing `install.sh`.**
 
-**Architecture:** A dedicated `plugin/` payload subtree (so the maintainer-internal `.claude/` dev harness never ships) addressed by an in-repo `.claude-plugin/marketplace.json`. Session hooks use `${CLAUDE_PLUGIN_ROOT}` for plugin-data and `$CLAUDE_PROJECT_DIR` for consumer-data (per-hook audit, not a blanket swap). The hard layer (git-hooks/CI) is reached only through the `/install-enforcement` command running the bundled installer. Adopted verbatim-where-allowed from superpowers (`plugin.json`, `hooks.json` SessionStart, `run-hook.cmd`, the bootstrap-skill mechanism).
+**Architecture:** A dedicated `plugin/` payload subtree (so the maintainer-internal `.claude/` dev harness never ships) addressed by an in-repo `.claude-plugin/marketplace.json`. Session hooks use `${CLAUDE_PLUGIN_ROOT}` for plugin-data and `$CLAUDE_PROJECT_DIR` for consumer-data (per-hook audit, not a blanket swap). The hard layer (git-hooks/CI) is reached only through the `/install-enforcement` command, which fetches + runs the project's own official installer (Option C — not a bundled copy). Adopted verbatim-where-allowed from superpowers (`plugin.json`, `hooks.json` SessionStart, `run-hook.cmd`, the bootstrap-skill mechanism).
 
 **Tech Stack:** JSON manifests, Bash (`set -euo pipefail`) hooks, extensionless hook scripts + polyglot `run-hook.cmd`, one TypeScript Vitest principle test (`packages/core/principles/`), `tests/` custom PASS/FAIL harnesses. No paid LLM.
 
@@ -151,17 +151,19 @@ echo ""; echo "PASS=$PASS FAIL=$FAIL"; [ "$FAIL" -eq 0 ]
 
 ## Task 5: Hybrid seam — `/install-enforcement` (S5)
 
+> **Option C (maintainer decision 2026-06-22) — fetch, not bundle.** install.sh's preflight hard-aborts unless its full ~2MB payload is present, so «bundle install.sh» would duplicate the framework (incl. the not-shipped dispatcher/pipeline) under `plugin/install/`. Verdict: the seam **fetches** the project's own official installer. See spec §6 «Decision — fetch, not bundle».
+
 **Files:**
 - Create: `plugin/commands/install-enforcement.md`, `plugin/skills/installing-enforcement/SKILL.md`
-- Bundle: `plugin/install/` ← `install.sh` + `templates/` + `setup.d/` (copied, not symlinked)
+- Create: `plugin/install/fetch-and-wire.sh` (the thin seam — fetches+runs the official `install.sh`; NO bundled copy)
 - Test: `tests/plugin/install-seam.test.sh`
 
 - [ ] **Step 1: Worktree** `bash scripts/create-worktree.sh plug-s5-seam`.
-- [ ] **Step 2: Bundle the installer** — copy `install.sh` + `templates/` into `plugin/install/` (a copy — the plugin must be self-contained when installed). Note in the spec that this copy is kept in sync by the Task 6 self-test (version/hash check).
-- [ ] **Step 3: Author `commands/install-enforcement.md`** — a slash command that: runs `${CLAUDE_PLUGIN_ROOT}/install/install.sh <stack> --dry-run` against `$CLAUDE_PROJECT_DIR`, shows the diff, then asks `[y/N]` before the real run. Consent-gated; dry-run first.
+- [ ] **Step 2: Author `fetch-and-wire.sh`** — resolves the installer source (`RAT_INSTALL_SOURCE`: a local dir used in place, else `git clone --depth 1 --branch v<version>` of the official repo), then runs `install.sh <stack>` against `$CLAUDE_PROJECT_DIR`. Default `--dry-run` (writes nothing); `--apply` does the real run. Version-pinned to the plugin version (S6 asserts parity).
+- [ ] **Step 3: Author `commands/install-enforcement.md`** — a slash command that runs `${CLAUDE_PLUGIN_ROOT}/install/fetch-and-wire.sh <stack>` (dry-run), shows the plan, asks `[y/N]`, then `--apply`. Consent-gated; dry-run first.
 - [ ] **Step 4: Author `installing-enforcement/SKILL.md`** (gerund, superpowers house style) — documents WHEN to wire the hard layer + the soft/hard boundary (T16).
-- [ ] **Step 5: Test** — `install-seam.test.sh`: in a throwaway repo, `install.sh --dry-run` via the bundled copy writes nothing and exits 0; a non-dry run creates `.husky/` + the CI workflow. Use the existing `tests/install-sh/` harness style.
-- [ ] **Step 6: Commit** — `feat(plugin): /install-enforcement seam to bundled installer`. Trailer: `Prior-art: prior-art-evaluations.md#<id> (companion-install-principle: own installer installs own artefacts).`
+- [ ] **Step 5: Test** — `install-seam.test.sh`: with `RAT_INSTALL_SOURCE` pointed at the repo root (offline), dry-run writes nothing + exits 0; `--apply` creates `.husky/pre-commit` + `.husky/pre-push`; an unknown flag exits 2.
+- [ ] **Step 6: Commit** — `feat(plugin): /install-enforcement fetch-and-wire seam (Option C)`. Trailer: `Prior-art: prior-art-evaluations.md#<id> (companion-install-principle: install via the official top-level installer).`
 
 ## Task 6: Recursive self-test (S6)
 
@@ -175,7 +177,9 @@ echo ""; echo "PASS=$PASS FAIL=$FAIL"; [ "$FAIL" -eq 0 ]
   - `plugin.json.version` === `marketplace.json.plugins[0].version`;
   - no `plugin/hooks/*` plugin-data path hardcodes `$CLAUDE_PROJECT_DIR/.claude/hooks/` (relocation correctness);
   - every `plugin/hooks/*` (non-`.cmd`) carries `@dual-pair`/`@cc-only-rationale`;
-  - the bundled `plugin/install/install.sh` matches the root `install.sh` (hash/version — no silent drift).
+  - `plugin/install/fetch-and-wire.sh`'s pinned `RAT_PLUGIN_VERSION` === `plugin.json.version` (Option C: no bundled install.sh to hash; the seam's version pin must track the plugin version);
+  - `plugin/agents/*.md` are byte-identical to their `agents/*.md` sources, and `plugin/hooks/inject-matching-rule` stays in sync with `.claude/hooks/inject-matching-rule.sh` (content-drift guard — from S2/S4 cold-reviews);
+  - `plugin/agents/*` + `plugin/skills/*` carry doc-authority headers (enforce shipped-copy headers — from S4 cold-review).
 - [ ] **Step 3: Paired-negative fixture** — `tests/fixtures/plugin-broken-manifest/` with a deliberately broken manifest (missing skill ref + version drift); a test case asserts the integrity logic **fails** on it (guards the gate, per `discipline-self-check.yml` precedent — T15).
 - [ ] **Step 4: Run** — `npx vitest run packages/core/principles/24-plugin-manifest-integrity.test.ts`. Expected: green on real tree, red on fixture.
 - [ ] **Step 5: Doc-authority** — ensure the new spec carries Class/Authoritative-for headers; run `npx vitest run packages/core/principles/09-doc-authority-hierarchy*`.
