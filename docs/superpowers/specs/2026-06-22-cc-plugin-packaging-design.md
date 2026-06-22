@@ -21,7 +21,7 @@ But there is **no plugin-native distribution**. A user on Claude Code cannot do 
 
 …and instantly get the skills/agents/session-hooks, with skills that **auto-trigger** (no manual `Skill` invocation) because a `SessionStart` hook injects a bootstrap. The closest we have is `extension.json` (an AIF/Gemini best-effort manifest, schema still in draft) and the raw `install.sh`.
 
-**Goal:** ship a Claude-Code plugin (CC-first, all CC features) installable from an **in-repo** marketplace, that delivers the *soft layer* the plugin format supports, and reaches the *hard layer* through a bundled-`install.sh` seam — **superpowers-style**, with graceful degradation to non-CC harnesses (OpenCode et al.). No regression to the existing `install.sh` path.
+**Goal:** ship a Claude-Code plugin (CC-first, all CC features) installable from an **in-repo** marketplace, that delivers the *soft layer* the plugin format supports, and reaches the *hard layer* through an `install.sh` seam (the plugin fetches the project's own official installer — §6 Option C) — **superpowers-style**, with graceful degradation to non-CC harnesses (OpenCode et al.). No regression to the existing `install.sh` path.
 
 ## §2 The load-bearing distinction — two layers, two channels
 
@@ -73,7 +73,7 @@ rules-as-tests-aif/                         (existing repo — internals untouch
 │   ├── agents/                             ← consumer-facing subset only (§5)
 │   ├── commands/
 │   │   └── install-enforcement.md          ← NEW: /rules-as-tests:install-enforcement
-│   └── install/                            ← bundled install.sh + templates (hard layer payload)
+│   └── install/                            ← fetch-and-wire.sh (thin seam — fetches the official install.sh; Option C, §6)
 ├── .opencode/INSTALL.md                    ← LATER: graceful-degradation adapter
 ├── extension.json  AGENTS.md  install.sh   ← unchanged
 └── …
@@ -113,9 +113,11 @@ The triage output is itself a reviewable artifact; shipping the whole `.claude/`
 
 superpowers delivers actions through skills (a skill *does* the thing). We mirror that for the hard layer:
 
-1. The plugin **bundles** `install.sh` + all templates under `plugin/install/`.
+1. The plugin ships a **thin seam** — `plugin/install/fetch-and-wire.sh` — that **fetches the project's own official `install.sh`** (pinned to the plugin version) and runs it against `$CLAUDE_PROJECT_DIR`. It does **not** bundle a copy of `install.sh` + payload.
 2. A skill `installing-enforcement/SKILL.md` (gerund naming, superpowers house style) documents and gates the operation.
-3. A slash command `commands/install-enforcement.md` → `/rules-as-tests:install-enforcement` runs the bundled installer against `$CLAUDE_PROJECT_DIR` (the consumer's repo), **dry-run first**, consent-gated `[y/N]` (the installer already is idempotent + `--dry-run`-honest).
+3. A slash command `commands/install-enforcement.md` → `/rules-as-tests:install-enforcement` runs the seam **dry-run first**, shows the plan, consent-gates `[y/N]`, then `--apply` (the installer is idempotent + `--dry-run`-honest).
+
+> **Decision — fetch, not bundle (Option C, 2026-06-22, maintainer).** S5 design surfaced that `install.sh`'s preflight hard-aborts unless its **full** shipped-artefact payload is present (agents/, skills/, presets/, `.claude/skills/{pipeline,dispatcher,…}`). So «bundle `install.sh`» would mean committing ~2MB of the framework under `plugin/install/` — duplicating the plugin's own skills/agents **and** carrying the `dispatcher`/`pipeline` dev-harness the §5 triage marks *not shipped*, plus exposing that copy to repo-wide CI scans. The re-implement-a-thin-wirer alternative was rejected (it would discard `install.sh`'s battle-hardened wiring — fixes #532/#533/#635 — a `#parallel-evolution-creep` violation). **Verdict: fetch the official installer** (`fetch-and-wire.sh`, source overridable via `RAT_INSTALL_SOURCE` for forks/offline/tests). Reuses `install.sh` **verbatim** (zero drift), keeps the plugin thin, ships no dev-harness, and matches [companion-install-principle.md](../../../.claude/rules/companion-install-principle.md) («install via the official top-level installer»). Cost: a network fetch at command time — acceptable for an explicitly opt-in, one-time action; offline users set `RAT_INSTALL_SOURCE` to a local checkout.
 
 Result: one `/plugin install` makes the soft layer live immediately; one command opt-in-wires the hard 5-channel enforcement into the current repo. Single distribution, both layers reachable, honest boundary. This satisfies [companion-install-principle.md](../../../.claude/rules/companion-install-principle.md) (own installer installs own artefacts; free-on-subscription, no paid default).
 
@@ -147,7 +149,7 @@ CC gets the full feature set (all hooks, commands, MCP). Non-CC harnesses (OpenC
 | **S2** | Hook relocation: triage 15 hooks; convert shippable ones to extensionless + self-resolving + correct env vars + `hooks.json` | shipped hooks fire from plugin root in a throwaway consumer repo; no mis-rooted paths; markers present | no |
 | **S3** | `using-rules-as-tests` meta-bootstrap skill + `SessionStart` wiring; assemble shippable `skills/` | fresh session in throwaway repo surfaces bootstrap; skills discoverable via Skill tool | yes w/ S4 (disjoint) |
 | **S4** | Ship consumer-facing agent subset (add `compliance-verifier` to `extension.json`); pass `21-shipped-agent-tools-valid.test.ts` | agents resolve; `21-shipped-agent-tools-valid.test.ts` green | yes w/ S3 |
-| **S5** | Hybrid seam: bundle `install.sh`+templates; `installing-enforcement` skill + `/install-enforcement` command | command dry-run-wires git-hooks/CI into a throwaway repo; consent-gated | no (needs S1) |
+| **S5** | Hybrid seam: thin `fetch-and-wire.sh` (fetches the official `install.sh`, Option C §6); `installing-enforcement` skill + `/install-enforcement` command | command dry-run-wires git-hooks/CI into a throwaway repo (offline via `RAT_INSTALL_SOURCE`); consent-gated | no (needs S1) |
 | **S6** | Recursive self-test: `<N>-plugin-manifest-integrity.test.ts` + paired-negative fixture + doc-authority headers on new shipped docs | principle test green; negative fixture fails; principle 09 green | no (needs S1–S5) |
 | **S7** | OpenCode adapter + reconcile `extension.json`/`AGENTS.md` | OpenCode INSTALL path documented; skills load off-CC | yes |
 | **S8** | README install section (superpowers-style per-harness) + version bump + integration PR + `done.md` | e2e: marketplace add → install → skills active → `/install-enforcement` wires hard layer | no (last) |
