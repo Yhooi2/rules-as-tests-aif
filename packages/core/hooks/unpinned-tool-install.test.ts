@@ -64,6 +64,16 @@ jobs:
     expect(trips(yml)).toBe(true);
   });
 
+  it('npm install -g scoped package without @version trips (scope @ is not a version pin)', () => {
+    const yml = `
+jobs:
+  build:
+    steps:
+      - run: npm install -g @angular/cli
+`;
+    expect(trips(yml)).toBe(true);
+  });
+
   it('pip install with trailing regular comment (not escape hatch) trips the check', () => {
     // A regular comment does NOT activate the escape hatch.
     // Only the exact token # ci-tool-pin: allow triggers exemption.
@@ -194,6 +204,16 @@ jobs:
   build:
     steps:
       - run: npm install -g zizmor@1.26.1
+`;
+    expect(passes(yml)).toBe(true);
+  });
+
+  it('npm install -g scoped package with @version passes (scope stripped, version pin present)', () => {
+    const yml = `
+jobs:
+  build:
+    steps:
+      - run: npm install -g @angular/cli@15.0.0
 `;
     expect(passes(yml)).toBe(true);
   });

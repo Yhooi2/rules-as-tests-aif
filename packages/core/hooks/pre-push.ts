@@ -514,7 +514,7 @@ async function cmdScriptLivenessSection(rb: ResolvedBase): Promise<void> {
  * commands that lack an explicit version pin.
  *
  * This slice is NOT covered by zizmor's `adhoc-packages` audit (which targets
- * npm/gem/pip via setup-python action inputs only — SSOT #149b, 2026-06-22).
+ * npm/gem/pip via setup-python action inputs only — SSOT #153b, 2026-06-22).
  * Deterministic regex scan; zero API calls (no-paid-llm-in-ci.md compliant).
  */
 function unpinnedToolInstallSection(): void {
@@ -807,7 +807,7 @@ async function main(): Promise<void> {
   // ── ci-tool-pinning. Unpinned bare-run tool install gate ─────────────────────
   // Scan .github/workflows/*.yml for bare `run: pip install <pkg>` / `npm i -g
   // <pkg>` without a version pin. Slice not covered by zizmor adhoc-packages
-  // (which targets action inputs only — SSOT #149b). No base required: full scan
+  // (which targets action inputs only — SSOT #153b). No base required: full scan
   // every push (fast; <1ms per file). (.claude/rules/ci-tool-pinning.md §1 Rule A)
   unpinnedToolInstallSection();
 

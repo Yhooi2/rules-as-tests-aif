@@ -10,7 +10,7 @@
  * install a tool WITHOUT an explicit version pin. This slice is NOT covered by
  * zizmor's `adhoc-packages` audit, which targets npm/gem/pip via `setup-python`
  * action inputs only (T16 verified against docs.zizmor.sh + live 1.26.1 run;
- * SSOT #149b, 2026-06-22).
+ * SSOT #153b, 2026-06-22).
  */
 
 /** A single line-level finding: file, 1-based line, the line text, and a hint. */
@@ -21,23 +21,12 @@ export interface UnpinnedFinding {
   hint: string;
 }
 
-/**
- * Patterns for bare pip installs that lack a ==version pin.
- *
- * Carve-outs (do NOT flag):
- *   pip install -r <file>   — pin lives in the requirements file
- *   pip install .           — local package install
- *   pip install -e .        — explicit editable flag
- *   pip install <pkg>==X    — already pinned (== present)
- */
-const PIP_UNVERSIONED_RE =
-  /\bpip\s+install\b(?!\s+-r\b)(?!\s+-e?\s*\.)(?:[^#\n]*?)(?<!\S==\S*)\s([a-zA-Z0-9_.-]+)\s*(?:#|$)/;
-
-/**
- * Patterns for bare `npm install -g` / `npm i -g` that lack @version.
- * Carve-out: already pinned (`@` present after the package name).
- */
-const NPM_GLOBAL_UNVERSIONED_RE = /\bnpm\s+(?:install|i)\s+-g\b[^#\n]*[^@#\n\s](?:\s*)(?:#|$)/;
+// NOTE: detection is a per-line heuristic, not a shell parser. Known boundaries
+// (acceptable — no repo site hits them, and the rule's escape hatch covers
+// intentional exceptions): a line installing multiple packages where only some
+// are pinned may slip the unpinned one through; an install command embedded in a
+// quoted string (echo "pip install x") may be flagged. Carve-outs below handle
+// the real-world workflow forms.
 
 /** Escape hatch token — exact match required on the same line. */
 const ESCAPE_HATCH_RE = /\bci-tool-pin:\s+allow\b/;
@@ -85,8 +74,10 @@ export function checkNpmGlobalLine(rawLine: string): string | null {
 
   if (!/\bnpm\s+(?:install|i)\s+-g\b/.test(rawLine)) return null;
 
-  // Already pinned: @ present after the package name.
-  if (/@/.test(rawLine)) return null;
+  // Already pinned: a version `@<ver>` after the package name. Strip leading
+  // scope(s) (`@scope/pkg`) first — a scoped name's own `@` is not a version
+  // separator (`@angular/cli` is unpinned; `@angular/cli@15` is pinned).
+  if (/@/.test(rawLine.replace(/@[\w.-]+\//g, ''))) return null;
 
   return 'fix: add a version pin, e.g. `npm install -g <pkg>@<ver>`';
 }
