@@ -521,7 +521,12 @@ function unpinnedToolInstallSection(): void {
   const workflows = workflowYmlFiles();
   if (workflows.length === 0) return;
 
-  const allFindings: Array<{ file: string; line: number; text: string; hint: string }> = [];
+  const allFindings: Array<{
+    file: string;
+    line: number;
+    text: string;
+    hint: string;
+  }> = [];
 
   for (const relPath of workflows) {
     const absPath = resolve(REPO_ROOT, relPath);
