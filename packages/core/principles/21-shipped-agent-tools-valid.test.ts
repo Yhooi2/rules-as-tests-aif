@@ -318,7 +318,7 @@ describe('Principle 21 — shipped agent/skill tools-name validity (M1 gate, clo
   // umbrella S4). They are the same #551 surface as agents/*.md and must satisfy the
   // same tool-name-validity invariant — guarded here so a future plugin-agent edit
   // cannot drift to a non-canonical name unnoticed.
-  it('(h) plugin-tree: every plugin/agents/*.md tools: entry is a canonical CC tool', () => {
+  it('(j) plugin-tree: every plugin/agents/*.md tools: entry is a canonical CC tool', () => {
     const agents = collectPluginAgentFiles();
     // Non-vacuity guard: v1 ships review-sidecar + living-docs-auditor + compliance-verifier.
     expect(agents.length, 'expected ≥3 shipped plugin/agents/*.md to scan').toBeGreaterThanOrEqual(3);
