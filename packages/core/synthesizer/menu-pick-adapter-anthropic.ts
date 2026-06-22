@@ -43,11 +43,6 @@ export function createAnthropicMenuPickClient(
 
   return {
     async pick(menu: Menu): Promise<MenuSelection> {
-      console.debug(
-        '[anthropic-adapter] calling API',
-        JSON.stringify({ model, candidateIds: menu.candidates.map((c) => c.id) }),
-      );
-
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -72,14 +67,19 @@ export function createAnthropicMenuPickClient(
       const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) ?? text.match(/(\{[\s\S]*\})/);
       const jsonStr = jsonMatch?.[1] ?? text;
 
-      const selection = JSON.parse(jsonStr) as MenuSelection;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        return { selected: [] };
+      }
 
-      console.debug(
-        '[anthropic-adapter] selection received',
-        JSON.stringify({ selectedIds: selection.selected.map((s) => s.id) }),
-      );
+      const selection = parsed as Record<string, unknown>;
+      if (!Array.isArray(selection?.['selected'])) {
+        return { selected: [] };
+      }
 
-      return selection;
+      return { selected: (selection['selected'] as MenuSelection['selected']) };
     },
   };
 }

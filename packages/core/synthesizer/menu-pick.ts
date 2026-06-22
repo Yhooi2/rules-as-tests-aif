@@ -31,17 +31,7 @@ export async function synthesizeLive(
     candidates,
   };
 
-  console.debug(
-    '[synthesizeLive] picking from menu',
-    JSON.stringify({ framework: menu.framework, candidateIds: candidates.map((c) => c.id) }),
-  );
-
   const selection = await client.pick(menu);
-
-  console.debug(
-    '[synthesizeLive] selection received',
-    JSON.stringify({ selectedIds: selection.selected.map((s) => s.id) }),
-  );
 
   const rules: SynthesizedRule[] = [];
   const mdFragments: string[] = [];
@@ -51,19 +41,10 @@ export async function synthesizeLive(
 
   for (const selected of selection.selected) {
     const entry = plan.patterns.find((p) => p.id === selected.id);
-    if (!entry) {
-      console.debug(`[synthesizeLive] skipping unknown id "${selected.id}" (not in patterns)`);
-      continue;
-    }
+    if (!entry) continue;
     const recipe = loadRecipe(entry.id);
-    if (!recipe) {
-      console.debug(`[synthesizeLive] skipping "${entry.id}" (no recipe)`);
-      continue;
-    }
-    if (plan.framework !== null && !recipe.appliesTo.includes(plan.framework)) {
-      console.debug(`[synthesizeLive] skipping "${entry.id}" (appliesTo mismatch)`);
-      continue;
-    }
+    if (!recipe) continue;
+    if (plan.framework !== null && !recipe.appliesTo.includes(plan.framework)) continue;
 
     const id = `G${nextId++}`;
     const rule: SynthesizedRule = {
@@ -76,8 +57,6 @@ export async function synthesizeLive(
 
     const eslintConfig = selected.eslintConfigOverride ?? recipe.eslintRuleConfig;
     mergeEslintRuleConfig(mergedEslintConfig, eslintConfig, recipe.patternId, ruleSources);
-
-    console.debug(`[synthesizeLive] composed rule ${id} from "${entry.id}"`);
   }
 
   return {
