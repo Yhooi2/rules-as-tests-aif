@@ -22,7 +22,7 @@
       "failures": [
         {
           "ruleId": "G91",
-          "reason": "single-token-diff: examples.bad and examples.good differ by 22 tokens (threshold 5) — pair does not isolate the forbidden construct; reduce to a minimal ≈1 token / 1 AST-node difference"
+          "reason": "single-token-diff: examples.bad and examples.good differ by 22 tokens (threshold 5) \u2014 pair does not isolate the forbidden construct; reduce to a minimal \u22481 token / 1 AST-node difference"
         }
       ]
     },
@@ -31,6 +31,10 @@
       "failures": []
     },
     "autofixClean": {
+      "status": "n/a",
+      "failures": []
+    },
+    "requireVacuity": {
       "status": "n/a",
       "failures": []
     }

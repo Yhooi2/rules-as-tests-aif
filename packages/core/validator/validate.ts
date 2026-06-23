@@ -11,6 +11,7 @@ import { runRuleTesterGate } from './gate-rule-tester.ts';
 import { runSchemaGate } from './gate-schema.ts';
 import { runSingleTokenDiffGate } from './gate-single-token-diff.ts';
 import { runTautologyGate } from './gate-tautology.ts';
+import { runRequireVacuityGate } from './gate-require-vacuity.ts';
 import type { GateOutcome, ValidationReport } from './types.ts';
 
 const SKIPPED: GateOutcome = {
@@ -27,6 +28,7 @@ export function validate(plan: SynthesisPlan): ValidationReport {
   const singleTokenDiff = downstreamSkipped ? SKIPPED : runSingleTokenDiffGate(plan);
   const messageIdCoverage = downstreamSkipped ? SKIPPED : runMessageIdCoverageGate(plan);
   const autofixClean = downstreamSkipped ? SKIPPED : runAutofixCleanGate(plan);
+  const requireVacuity = downstreamSkipped ? SKIPPED : runRequireVacuityGate(plan);
 
   const ok =
     schema.status !== 'fail' &&
@@ -35,7 +37,8 @@ export function validate(plan: SynthesisPlan): ValidationReport {
     conflict.status !== 'fail' &&
     singleTokenDiff.status !== 'fail' &&
     messageIdCoverage.status !== 'fail' &&
-    autofixClean.status !== 'fail';
+    autofixClean.status !== 'fail' &&
+    requireVacuity.status !== 'fail';
 
   // Read-only visibility of the silent manual-bypass: rules L4 cannot roundtrip
   // (check.type:'manual') are surfaced here WITHOUT affecting `ok`.
@@ -51,6 +54,7 @@ export function validate(plan: SynthesisPlan): ValidationReport {
       singleTokenDiff,
       messageIdCoverage,
       autofixClean,
+      requireVacuity,
     },
     manualCount: manualRules.length,
     manualRuleIds: manualRules.map((r) => r.id),

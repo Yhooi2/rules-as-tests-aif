@@ -25,6 +25,7 @@ export interface ValidationReport {
     singleTokenDiff: GateOutcome;
     messageIdCoverage: GateOutcome;
     autofixClean: GateOutcome;
+    requireVacuity: GateOutcome;
   };
   /** Count of rules emitted as check.type:'manual' (L4 cannot roundtrip them — surfaced, not failed). */
   manualCount: number;
