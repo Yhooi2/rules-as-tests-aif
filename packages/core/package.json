@@ -10,7 +10,8 @@
     "rules-as-tests-research": "./research/cli.ts",
     "rules-as-tests-synth": "./synthesizer/cli.ts",
     "rules-as-tests-validate": "./validator/cli.ts",
-    "rules-as-tests-install": "./installer/cli.ts"
+    "rules-as-tests-install": "./installer/cli.ts",
+    "rules-as-tests-verify-provenance": "./synthesizer/verify-provenance-cli.ts"
   },
   "exports": {
     "./manifest": "./manifest/rules-manifest.json",
@@ -36,6 +37,7 @@
     "detect:install-rules": "tsx detector-v0/detect-applicable-rules.ts",
     "research": "tsx research/cli.ts",
     "synth": "tsx synthesizer/cli.ts",
+    "verify:provenance": "tsx synthesizer/verify-provenance-cli.ts",
     "validate": "tsx validator/cli.ts",
     "install:synth": "tsx installer/cli.ts"
   },
