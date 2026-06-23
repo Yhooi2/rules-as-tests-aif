@@ -19,7 +19,12 @@ function canonicalize(value: unknown): unknown {
   return value;
 }
 
-export function canonicalRuleHash(rule: SynthesizedRule): string {
+// Param is the identity sub-shape (not the full rule): emit.ts passes a whole
+// SynthesizedRule (assignable), and S5's verifier passes a parsed-JSON manifest
+// entry cast to this Pick — one hash function across emit + verify (SSOT).
+export function canonicalRuleHash(
+  rule: Pick<SynthesizedRule, 'title' | 'check' | 'examples'>,
+): string {
   const identity = { title: rule.title, check: rule.check, examples: rule.examples };
   const json = JSON.stringify(canonicalize(identity));
   return createHash('sha256').update(json).digest('hex');
