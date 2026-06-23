@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { Linter } from 'eslint';
 import * as tseslintParser from '@typescript-eslint/parser';
 import { synthesizeGenerate } from './generate.ts';
-import { stubGenerateRN, stubGenerateBad } from './generate-stubs.ts';
+import { stubGenerateRN, stubGenerateBad, stubGenerateForbid } from './generate-stubs.ts';
 import { validate } from '../validator/validate.ts';
 import type { ResearchPlan } from '../research/types.ts';
 
@@ -79,6 +79,24 @@ describe('synthesizeGenerate — Stage 4 recipe-less generate-path (React Native
     const plan = await synthesizeGenerate(rnPlan, stubGenerateBad);
     const report = validate(plan);
     expect(report.ok).toBe(false);
+  });
+
+  // (d) Seam i-2: a forbid-expressible candidate is routed to a FULL declarative rule
+  // (presence + negative-test + no-restricted-syntax inset), inheriting the executable L4
+  // roundtrip — NOT emitted as `manual` (which L4 silently skips).
+  it('(d) stubGenerateForbid: forbid candidate → declarative rule, L4 accepts + roundtrips', async () => {
+    const plan = await synthesizeGenerate(rnPlan, stubGenerateForbid);
+    const rule = plan.rules[0];
+    expect(rule.check.type).toBe('declarative');
+    expect(rule.check).toMatchObject({
+      presence: 'forbid',
+      selector: "CallExpression[callee.name='foo']",
+    });
+    const report = validate(plan);
+    expect(report.ok).toBe(true);
+    expect(report.gates.ruleTester.status).toBe('pass');
+    expect(report.gates.singleTokenDiff.status).toBe('pass');
+    expect(report.gates.messageIdCoverage.status).toBe('pass');
   });
 });
 
