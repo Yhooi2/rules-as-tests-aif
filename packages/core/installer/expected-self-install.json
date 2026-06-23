@@ -32,6 +32,18 @@
       "conflict": {
         "status": "pass",
         "failures": []
+      },
+      "singleTokenDiff": {
+        "status": "n/a",
+        "failures": []
+      },
+      "messageIdCoverage": {
+        "status": "n/a",
+        "failures": []
+      },
+      "autofixClean": {
+        "status": "n/a",
+        "failures": []
       }
     }
   },
@@ -52,6 +64,18 @@
       },
       "conflict": {
         "status": "pass",
+        "failures": []
+      },
+      "singleTokenDiff": {
+        "status": "n/a",
+        "failures": []
+      },
+      "messageIdCoverage": {
+        "status": "n/a",
+        "failures": []
+      },
+      "autofixClean": {
+        "status": "n/a",
         "failures": []
       }
     }
