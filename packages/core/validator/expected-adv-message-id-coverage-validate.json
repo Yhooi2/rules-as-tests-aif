@@ -26,11 +26,15 @@
       "failures": [
         {
           "ruleId": "G89",
-          "reason": "messageId-coverage: declared check.message 'Do not use generators' not found in emitted message 'No generators!' — declared message is unreachable"
+          "reason": "messageId-coverage: declared check.message 'Do not use generators' not found in emitted message 'No generators!' \u2014 declared message is unreachable"
         }
       ]
     },
     "autofixClean": {
+      "status": "n/a",
+      "failures": []
+    },
+    "requireVacuity": {
       "status": "n/a",
       "failures": []
     }

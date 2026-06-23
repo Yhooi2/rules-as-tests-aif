@@ -146,4 +146,28 @@ describe('synthesize — pure recipe lookup + composition', () => {
     expect(result.rulesMd).toContain('## G1 — Forbid `.only` in test calls');
     expect(result.rulesMd).toContain('no-restricted-syntax');
   });
+
+  // S2: presence:'require' end-to-end — recipe → synthesize → eslintConfigSnippet + rulesMd
+  it('compiles a declarative+require recipe into no-restricted-syntax config (S2 end-to-end)', () => {
+    const result = synthesize(
+      plan({ patterns: [entry('test-only-require-declarative')] }),
+    );
+    expect(result.rules).toHaveLength(1);
+    expect(result.rules[0].check.type).toBe('declarative');
+    expect((result.rules[0].check as { presence: string }).presence).toBe('require');
+    const merged = JSON.parse(result.eslintConfigSnippet);
+    expect(merged).toHaveProperty('no-restricted-syntax');
+    const [severity, ...entries] = merged['no-restricted-syntax'] as [string, ...{ selector: string }[]];
+    expect(severity).toBe('error');
+    expect(entries.some((e) => e.selector.includes(':not(:has('))).toBe(true);
+  });
+
+  it('generates rulesMd with "require" wording for presence:require declarative recipe', () => {
+    const result = synthesize(
+      plan({ patterns: [entry('test-only-require-declarative')] }),
+    );
+    expect(result.rulesMd).toContain('require');
+    expect(result.rulesMd).toContain('no-restricted-syntax');
+    expect(result.rulesMd).not.toContain('forbid');
+  });
 });

@@ -28,6 +28,10 @@
     "autofixClean": {
       "status": "n/a",
       "failures": []
+    },
+    "requireVacuity": {
+      "status": "n/a",
+      "failures": []
     }
   },
   "manualCount": 0,

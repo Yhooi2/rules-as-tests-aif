@@ -30,9 +30,13 @@
       "failures": [
         {
           "ruleId": "G87",
-          "reason": "autofix-clean: fixer for 'no-extra-parens' left 1 violation(s) in fixed output — fix is incomplete or introduces new same-rule violations"
+          "reason": "autofix-clean: fixer for 'no-extra-parens' left 1 violation(s) in fixed output \u2014 fix is incomplete or introduces new same-rule violations"
         }
       ]
+    },
+    "requireVacuity": {
+      "status": "n/a",
+      "failures": []
     }
   },
   "manualCount": 0,

@@ -39,6 +39,7 @@ const GATE_NAMES = [
   'singleTokenDiff',
   'messageIdCoverage',
   'autofixClean',
+  'requireVacuity',
 ] as const;
 
 function flattenGate(name: string, outcome: GateOutcome): AifBlocker[] {

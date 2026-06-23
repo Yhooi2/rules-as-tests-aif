@@ -16,7 +16,7 @@ export type ManifestCheck =
       selector: string;
       messageId?: string;
       message?: string;
-      presence: 'forbid';
+      presence: 'forbid' | 'require';
     };
 
 export interface NegativeTest {
