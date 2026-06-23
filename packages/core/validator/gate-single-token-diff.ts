@@ -6,6 +6,14 @@
 // construct — the bad example could "redden" for unrelated reasons, making
 // the rule's positive-signal vacuous.
 //
+// THRESHOLD: MAX_TOKEN_EDITS = 5 is a CONSERVATIVE INTERIM bound — it rejects
+// grossly non-minimal pairs (this gate's adversarial BAD fixture is 22 edits).
+// The ideal is a single targeted construct (≈1 token / 1 AST-node — the
+// umbrella §S3 intent). The exact minimality threshold is CALIBRATED at S4,
+// against the first real `declarative` forbid pairs `synthesize` emits; no real
+// pair exists yet (until S4 this gate is n/a on every live-pipeline plan — see
+// architecture.md §2.6 "Runtime status").
+//
 // NET-NEW vs gate 2 (rule-tester): gate 2 checks the rule FIRES; this gate
 // checks the example pair IS MINIMAL — isolating the forbidden construct.
 // NET-NEW vs gate 4 (tautology): gate 4 checks corpus-firing; this gate
