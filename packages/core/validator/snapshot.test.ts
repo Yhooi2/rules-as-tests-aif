@@ -40,7 +40,6 @@ const fixturePlan = (): ResearchPlan => ({
     entry('nextjs-app-router'),
     entry('nextjs-pages-router'),
     entry('next-r12-no-server-imports-in-client'),
-    entry('test-only-forbid-declarative'),
   ],
   missing: [],
   drift: null,
@@ -59,5 +58,26 @@ describe('validator self-application snapshots', () => {
     const report = validate(synthPlan);
     const expected = JSON.parse(readFileSync(FIXTURE_EXPECTED, 'utf8'));
     expect(report).toEqual(expected);
+  });
+
+  // S4: a declarative forbid activates anti-vacuity gates 7-8 (n/a → pass) on
+  // real generator output. Kept as an INLINE expectation — deliberately NOT
+  // folded into the next-16 fixture snapshot, whose CI job validates the on-disk
+  // next-16-fixture/ directory (3 recipes, no declarative forbid → its gates 7-8
+  // stay n/a). Sharing expected-fixture-validate.json across both inputs is what
+  // caused the S4 round-1 drift.
+  it('activates gates 7-8 on a declarative forbid (singleTokenDiff + messageIdCoverage n/a → pass)', () => {
+    const declarativePlan: ResearchPlan = {
+      framework: 'next',
+      version: '16.0.0',
+      patterns: [entry('test-only-forbid-declarative')],
+      missing: [],
+      drift: null,
+    };
+    const report = validate(synthesize(declarativePlan));
+    expect(report.gates.singleTokenDiff.status).toBe('pass');
+    expect(report.gates.messageIdCoverage.status).toBe('pass');
+    expect(report.gates.autofixClean.status).toBe('n/a'); // forbid has no fixer
+    expect(report.ok).toBe(true);
   });
 });
