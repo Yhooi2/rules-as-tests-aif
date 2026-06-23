@@ -108,6 +108,33 @@ export const stubGenerateRN: GenerateClient = {
   },
 };
 
+// stubGenerateForbid → one forbid-class candidate (seam i-2). presence:'forbid' + selector →
+//                  synthesizeGenerate routes it to check.type:'declarative' (executable L4 roundtrip),
+//                  NOT manual. entryId MUST be a real id in rn-research-plan.json, else the candidate
+//                  is skipped (generate.ts) and plan.rules is empty.
+export const stubGenerateForbid: GenerateClient = {
+  async generate(_menu: Menu): Promise<GenerateSelection> {
+    return {
+      rules: [
+        {
+          entryId: 'rn-web-globals',
+          ruleId: 'no-foo',
+          title: 'Forbid foo() calls (seam i-2 declarative)',
+          stack: ['react-native'],
+          presence: 'forbid',
+          selector: "CallExpression[callee.name='foo']",
+          message: 'foo banned',
+          examples: { bad: 'foo()', good: 'bar()' },
+          negativeTest: {
+            input: ['foo()'],
+            'expect-violation': 'no-restricted-syntax',
+          },
+        },
+      ],
+    };
+  },
+};
+
 export const stubGenerateBad: GenerateClient = {
   async generate(menu: Menu): Promise<GenerateSelection> {
     const first = menu.candidates[0];

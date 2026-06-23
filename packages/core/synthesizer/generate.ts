@@ -8,6 +8,7 @@
 // L4 + L5 are byte-identical — this is a new input path, not a change to the validator.
 
 import type { ResearchPlan } from '../research/types.ts';
+import { compileDeclarativeMd } from './compile-declarative-md.ts';
 import { mergeEslintRuleConfig } from './merge-eslint-config.ts';
 import type { ManifestCheck, SynthesisPlan, SynthesizedRule } from './types.ts';
 import type { GenerateClient, Menu, MenuCandidate } from './generate-port.ts';
@@ -47,13 +48,25 @@ export async function synthesizeGenerate(
       candidate.eslintConfig !== undefined &&
       Object.keys(candidate.eslintConfig).length > 0;
 
-    // eslintConfig present → eslint check type; absent/empty → manual (plugin outside L4 registry)
-    const check: ManifestCheck = hasEslintConfig
-      ? { type: 'eslint', rule: candidate.ruleId }
-      : {
-          type: 'manual',
-          rationale: `Plugin rule '${candidate.ruleId}' — L4 harness KNOWN_PLUGINS only registers rules-as-tests; roundtrip not supported for this rule`,
-        };
+    // forbid-expressible → declarative (executable L4 roundtrip); else eslintConfig → eslint;
+    // else manual (plugin outside L4 registry). Forbid branch FIRST so it wins over a stray eslintConfig.
+    let check: ManifestCheck;
+    if (candidate.presence === 'forbid' && candidate.selector) {
+      check = {
+        type: 'declarative',
+        presence: 'forbid',
+        selector: candidate.selector,
+        message: candidate.message ?? 'forbidden construct',
+        engine: candidate.engine ?? 'eslint-restricted',
+      };
+    } else if (hasEslintConfig) {
+      check = { type: 'eslint', rule: candidate.ruleId };
+    } else {
+      check = {
+        type: 'manual',
+        rationale: `Plugin rule '${candidate.ruleId}' — L4 harness KNOWN_PLUGINS only registers rules-as-tests; roundtrip not supported for this rule`,
+      };
+    }
 
     const rule: SynthesizedRule = {
       id,
@@ -64,16 +77,39 @@ export async function synthesizeGenerate(
       research: { entryId: entry.id, provenance: entry.provenance },
     };
 
-    if (hasEslintConfig && candidate.negativeTest) {
+    // negative-test: BOTH declarative and eslint require it (gate-schema). Manual: omitted.
+    if (
+      candidate.negativeTest &&
+      (check.type === 'declarative' || check.type === 'eslint')
+    ) {
       rule['negative-test'] = candidate.negativeTest;
     }
 
     rules.push(rule);
-    mdFragments.push(
-      `## ${id} — ${candidate.title}\n\n**Check:** ${hasEslintConfig ? `\`${candidate.ruleId}\`` : 'Manual review'}\n`,
-    );
 
-    if (hasEslintConfig && candidate.eslintConfig) {
+    // md fragment: declarative → compiled; eslint/manual → existing one-liner (unchanged behaviour)
+    if (check.type === 'declarative') {
+      mdFragments.push(compileDeclarativeMd(rule));
+    } else {
+      mdFragments.push(
+        `## ${id} — ${candidate.title}\n\n**Check:** ${hasEslintConfig ? `\`${candidate.ruleId}\`` : 'Manual review'}\n`,
+      );
+    }
+
+    // eslint config merge: declarative → no-restricted-syntax(selector,message); eslint → candidate.eslintConfig
+    if (
+      check.type === 'declarative' &&
+      (!check.engine || check.engine === 'eslint-restricted')
+    ) {
+      const selectorEntry: Record<string, string> = { selector: check.selector };
+      if (check.message) selectorEntry.message = check.message;
+      mergeEslintRuleConfig(
+        mergedEslintConfig,
+        { 'no-restricted-syntax': ['error', selectorEntry] } as Record<string, unknown>,
+        candidate.ruleId,
+        ruleSources,
+      );
+    } else if (hasEslintConfig && candidate.eslintConfig) {
       mergeEslintRuleConfig(
         mergedEslintConfig,
         candidate.eslintConfig,

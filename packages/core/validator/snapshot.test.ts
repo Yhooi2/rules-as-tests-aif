@@ -36,10 +36,15 @@ const entry = (id: string): ResearchEntry => ({
 const fixturePlan = (): ResearchPlan => ({
   framework: 'next',
   version: '16.0.0',
+  // Order mirrors the on-disk next-16-fixture detect→research order
+  // (next-r12 → app-router → pages-router) so the synthesized rule ids match
+  // the CI `validate` CLI's self-application gate. Before manualRuleIds was
+  // surfaced, only ok+gates were compared (order-independent), so the inline
+  // order drifted harmlessly; manualRuleIds exposes the id, which IS order-bound.
   patterns: [
+    entry('next-r12-no-server-imports-in-client'),
     entry('nextjs-app-router'),
     entry('nextjs-pages-router'),
-    entry('next-r12-no-server-imports-in-client'),
   ],
   missing: [],
   drift: null,
