@@ -319,7 +319,14 @@
       "input": [
         "'use server';\nexport async function submit(fd: FormData) {\n  await save(fd.get('name') as string);\n}"
       ],
-      "expect-violation": "no-restricted-syntax"
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": ":function:not(:has(CallExpression[callee.property.name='safeParse'])):has(Identifier[typeAnnotation.typeAnnotation.typeName.name='FormData'], Identifier[typeAnnotation.typeAnnotation.typeName.right.name='FormData'])",
+          "message": "Function accepts FormData but does not call .safeParse(...). Validate the form input with a Zod schema (R14)."
+        }
+      ]
     }
   },
   "R15": {
@@ -450,7 +457,14 @@
       "input": [
         "export async function deleteItem(id: string) {\n  await db.delete(id);\n}"
       ],
-      "expect-violation": "no-restricted-syntax"
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "Program:not(Program:has(ExpressionStatement:first-child > Literal[value='use server'])) ExportNamedDeclaration > FunctionDeclaration[async=true], Program:not(Program:has(ExpressionStatement:first-child > Literal[value='use server'])) ExportDefaultDeclaration > FunctionDeclaration[async=true]",
+          "message": "Server Action file must start with 'use server' directive at the top of the file (R20)."
+        }
+      ]
     }
   },
   "IR1": {
