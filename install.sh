@@ -78,7 +78,7 @@ for arg in "$@"; do
     --full)                 FULL="--full" ;;
     --wire-ci)              WIRE_CI="--wire-ci" ;;
     --refresh)              REFRESH="--refresh" ;;
-    ts-server|react-next)   STACK="$arg" ;;
+    ts-server|react-next|react-spa)   STACK="$arg" ;;
     *)                      ;;
   esac
 done
@@ -117,6 +117,9 @@ SHIPPED_DOCS=(
   "packages/preset-next-15-canonical/RULES.md"
   "packages/preset-next-15-canonical/RULES.react-next.md"
   "packages/preset-next-15-canonical/templates/ARCHITECTURE.react-next.md"
+  "packages/preset-react-spa/RULES.md"
+  "packages/preset-react-spa/RULES.react-spa.md"
+  "packages/preset-react-spa/templates/ARCHITECTURE.react-spa.md"
   "packages/core/templates/shared/skill-context/aif-review/SKILL.md"
   "packages/core/templates/shared/skill-context/aif-rules-check/SKILL.md"
   "packages/core/templates/shared/skill-context/aif-orchestrator-discipline/SKILL.md"
@@ -168,6 +171,9 @@ if [ -n "$REFRESH" ] && [ -z "$STACK" ]; then
   if [ -f "$PROJECT_ROOT/.ai-factory/RULES.react-next.md" ] || \
      [ -f "$PROJECT_ROOT/.ai-factory/ARCHITECTURE.react-next.md" ]; then
     STACK="react-next"
+  elif [ -f "$PROJECT_ROOT/.ai-factory/RULES.react-spa.md" ] || \
+       [ -f "$PROJECT_ROOT/.ai-factory/ARCHITECTURE.react-spa.md" ]; then
+    STACK="react-spa"
   else
     STACK="ts-server"
   fi
@@ -178,16 +184,18 @@ if [ -z "$STACK" ]; then
   echo "What stack does this project use?"
   echo "  1) ts-server    — Node.js + Fastify/Hono/Express (server only)"
   echo "  2) react-next   — React 19 + Next.js 15 App Router"
-  read -rp "Choose [1/2]: " choice
+  echo "  3) react-spa    — React 19 + Vite SPA (Feature-Sliced Design)"
+  read -rp "Choose [1/2/3]: " choice
   case "$choice" in
     1) STACK="ts-server" ;;
     2) STACK="react-next" ;;
+    3) STACK="react-spa" ;;
     *) echo "❌ Invalid choice"; exit 1 ;;
   esac
 fi
 
-if [ "$STACK" != "ts-server" ] && [ "$STACK" != "react-next" ]; then
-  echo "❌ Unknown stack: $STACK (use ts-server or react-next)"
+if [ "$STACK" != "ts-server" ] && [ "$STACK" != "react-next" ] && [ "$STACK" != "react-spa" ]; then
+  echo "❌ Unknown stack: $STACK (use ts-server, react-next, or react-spa)"
   exit 1
 fi
 
@@ -603,6 +611,14 @@ do_refresh() {
       chmod_safe +x "$_rn_dst" 2>/dev/null || true
     fi
   fi
+  if [ "$STACK" = "react-spa" ]; then
+    _rs_src="$PKG_ROOT/packages/preset-react-spa/audit-self/audit-ai-docs.react-spa.sh"
+    _rs_dst="$PROJECT_ROOT/scripts/audit-ai-docs.react-spa.sh"
+    refresh_safe "$_rs_src" "$_rs_dst"
+    if [ "$DRY_RUN" != "--dry-run" ] && [ -f "$_rs_dst" ]; then
+      chmod_safe +x "$_rs_dst" 2>/dev/null || true
+    fi
+  fi
 
   # ── Core hooks (TS pre-push pipeline) ───────────────────
   echo "▶ Core hooks (TS) → packages/core/hooks/"
@@ -776,7 +792,15 @@ mkdir_safe "$PROJECT_ROOT/.ai-factory/rules"
 mkdir_safe "$PROJECT_ROOT/.ai-factory/orchestrator-prompts"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/DESCRIPTION.template.md" "$PROJECT_ROOT/.ai-factory/DESCRIPTION.template.md"
 copy_safe "$PKG_ROOT/packages/core/templates/shared/ARCHITECTURE.ts-server.md" "$PROJECT_ROOT/.ai-factory/ARCHITECTURE.ts-server.md"
-copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/RULES.md" "$PROJECT_ROOT/.ai-factory/RULES.md"
+# Base RULES.md is the stack's primary rule doc. ts-server/react-next share the manifest-rendered
+# multi-stack preset-next RULES.md (Stack column carries per-stack applicability); react-spa ships
+# its own standalone SPA-tailored RULES.md (no Stack column, R3 via eslint-plugin-boundaries). The
+# `else` keeps the ts-server/react-next output byte-identical to before this branch existed.
+if [ "$STACK" = "react-spa" ]; then
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/RULES.md" "$PROJECT_ROOT/.ai-factory/RULES.md"
+else
+  copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/RULES.md" "$PROJECT_ROOT/.ai-factory/RULES.md"
+fi
 copy_safe "$PKG_ROOT/packages/core/templates/shared/integration-rules.md" "$PROJECT_ROOT/.ai-factory/rules/integration-rules.md"
 
 # Seed tool-decisions.md so the deps-change re-evaluation hook actually fires (FQA S1-B P1:
@@ -806,6 +830,10 @@ done
 if [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/ARCHITECTURE.react-next.md" "$PROJECT_ROOT/.ai-factory/ARCHITECTURE.react-next.md"
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/RULES.react-next.md" "$PROJECT_ROOT/.ai-factory/RULES.react-next.md"
+fi
+if [ "$STACK" = "react-spa" ]; then
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/templates/ARCHITECTURE.react-spa.md" "$PROJECT_ROOT/.ai-factory/ARCHITECTURE.react-spa.md"
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/RULES.react-spa.md" "$PROJECT_ROOT/.ai-factory/RULES.react-spa.md"
 fi
 
 # ── aif-handoff integration note ─────────────────────────
@@ -853,6 +881,10 @@ chmod_safe +x "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh" 2>/dev/null |
 if [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/audit-self/audit-ai-docs.react-next.sh" "$PROJECT_ROOT/scripts/audit-ai-docs.react-next.sh"
   chmod_safe +x "$PROJECT_ROOT/scripts/audit-ai-docs.react-next.sh" 2>/dev/null || true
+fi
+if [ "$STACK" = "react-spa" ]; then
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/audit-self/audit-ai-docs.react-spa.sh" "$PROJECT_ROOT/scripts/audit-ai-docs.react-spa.sh"
+  chmod_safe +x "$PROJECT_ROOT/scripts/audit-ai-docs.react-spa.sh" 2>/dev/null || true
 fi
 
 # ─── 5. Shared templates ────────────────────────────────
@@ -956,6 +988,16 @@ if [ "$STACK" = "react-next" ]; then
     copy_safe "$f" "$PROJECT_ROOT/eslint-rules-local/$(basename "$f")"
   done
 fi
+if [ "$STACK" = "react-spa" ]; then
+  # Stack-specific rules (preset): require-error-boundary
+  for f in "$PKG_ROOT"/packages/preset-react-spa/eslint-rules/*.ts; do
+    case "$f" in
+      *.test.ts) continue ;;
+      */index.ts) continue ;;
+    esac
+    copy_safe "$f" "$PROJECT_ROOT/eslint-rules-local/$(basename "$f")"
+  done
+fi
 
 # Generate the barrel that eslint.config.mjs imports (`./eslint-rules-local/index.ts`).
 # FQA S1-A W1: install copied the rule FILES but the copy loop skips `*/index.ts`, so the
@@ -1016,6 +1058,19 @@ elif [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/templates/ts-server/stryker.config.json" "$PROJECT_ROOT/stryker.config.json"
   patch_stryker_package_manager
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/templates/github-actions-ci-ui.yml" "$PROJECT_ROOT/.github/workflows/ci.yml"
+  # R11 branch-protection self-assertion (stack-agnostic — asserts ci-success stays required).
+  copy_safe "$PKG_ROOT/templates/ts-server/github-actions-workflow-integrity.yml" "$PROJECT_ROOT/.github/workflows/workflow-integrity.yml"
+elif [ "$STACK" = "react-spa" ]; then
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/templates/eslint.config.react.mjs" "$PROJECT_ROOT/eslint.config.mjs"
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/templates/vitest.config.ts" "$PROJECT_ROOT/vitest.config.ts"
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/templates/playwright.config.ts" "$PROJECT_ROOT/playwright.config.ts"
+  # Ship the arch config (FQA S1-A W2). The ts-server base (no-circular/no-orphans) is
+  # stack-agnostic; SPA layering (Feature-Sliced Design) is enforced by eslint-plugin-boundaries
+  # in the shipped eslint.config, so dependency-cruiser stays the universal base here.
+  copy_safe "$PKG_ROOT/templates/ts-server/dependency-cruiser.cjs" "$PROJECT_ROOT/.dependency-cruiser.cjs"
+  copy_safe "$PKG_ROOT/templates/ts-server/stryker.config.json" "$PROJECT_ROOT/stryker.config.json"
+  patch_stryker_package_manager
+  copy_safe "$PKG_ROOT/packages/preset-react-spa/templates/github-actions-ci-ui.yml" "$PROJECT_ROOT/.github/workflows/ci.yml"
   # R11 branch-protection self-assertion (stack-agnostic — asserts ci-success stays required).
   copy_safe "$PKG_ROOT/templates/ts-server/github-actions-workflow-integrity.yml" "$PROJECT_ROOT/.github/workflows/workflow-integrity.yml"
 fi
@@ -1362,8 +1417,17 @@ REACT_DEVDEPS=(
   eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y
   eslint-plugin-testing-library @playwright/test
 )
+# react-spa (Vite SPA): de-Next-ified — drop @next/eslint-plugin-next, add eslint-plugin-boundaries
+# (Feature-Sliced Design layering the shipped SPA eslint.config enforces). Mirrors REACT_DEVDEPS otherwise.
+REACT_SPA_DEVDEPS=(
+  @vitejs/plugin-react jsdom @testing-library/react
+  @testing-library/jest-dom eslint-plugin-boundaries
+  eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y
+  eslint-plugin-testing-library @playwright/test
+)
 DEVDEPS=( "${CORE_DEVDEPS[@]}" )
 [ "$STACK" = "react-next" ] && DEVDEPS+=( "${REACT_DEVDEPS[@]}" )
+[ "$STACK" = "react-spa" ] && DEVDEPS+=( "${REACT_SPA_DEVDEPS[@]}" )
 
 DEPS_INSTALLED=""
 _do_dep_install=""

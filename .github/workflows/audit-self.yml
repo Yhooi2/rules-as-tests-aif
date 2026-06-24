@@ -302,6 +302,8 @@ jobs:
         run: bash tests/install-sh/gh-535-rule-enforced.test.sh
       - name: Run install-sh C1 skill-context wiring test (was present-but-unwired)
         run: bash tests/install-sh/c1-wiring.test.sh
+      - name: Run install-sh react-spa eslint-rules wiring test (PR #708 cold-review gap)
+        run: bash tests/install-sh/react-spa-wiring.test.sh
       - name: Run install-sh ship-orchestration-skills test (#500 — was present-but-unwired)
         run: bash tests/install-sh/ship-orchestration-skills.test.sh
       - name: install-sh — detect-r2-boundary (GH #547 C1 classifier)
