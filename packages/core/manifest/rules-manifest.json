@@ -171,7 +171,14 @@
       "input": [
         "export async function placeOrder(o) { return await save(o); }"
       ],
-      "expect-violation": "no-restricted-syntax"
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "ExportNamedDeclaration > FunctionDeclaration[async=true]:not(:has(CallExpression[callee.property.name='startActiveSpan'])):not(:has(CallExpression[callee.name='withSpan'])), ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > :function[async=true]:not(:has(CallExpression[callee.property.name='startActiveSpan'])):not(:has(CallExpression[callee.name='withSpan']))",
+          "message": "Exported async function must open an OTel span (tracer.startActiveSpan / withSpan) — R8."
+        }
+      ]
     }
   },
   "R9": {
@@ -292,7 +299,14 @@
       "input": [
         "useEffect(() => { fetch('/api/orders'); }, []);"
       ],
-      "expect-violation": "no-restricted-syntax"
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "CallExpression[callee.name='useEffect'] :function CallExpression[callee.name='fetch']",
+          "message": "Bare fetch() inside useEffect is forbidden — use useQuery instead (R13 narrow: fetch-in-useEffect). Broad TanStack/SWR-without-validation coverage = future follow-up."
+        }
+      ]
     },
     "policy": "Server Components: direct async/await. Client reads: TanStack Query / SWR with Zod-typed response. Writes: Server Actions. No raw `fetch()` in Client Components without useQuery/useSWR wrapper.",
     "pressure-scenario": {
@@ -411,7 +425,14 @@
       "input": [
         "useQuery({ queryFn: () => fetchData() });"
       ],
-      "expect-violation": "no-restricted-syntax"
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "Property[key.name='queryFn'] > :function:not(:has(CallExpression[callee.property.name=/^(parse|safeParse)$/]))",
+          "message": "queryFn must call .parse() or .safeParse() on the response — R18."
+        }
+      ]
     },
     "policy": "`useQuery`/`useSWR` has typed response via Zod (`.parse()` or `.safeParse()` in `queryFn`). `queryKey` includes all params. `staleTime`/`gcTime` set explicitly. `onError` reacts (toast/Sentry). No `useEffect(() => fetch(...))` for reads.",
     "pressure-scenario": {
