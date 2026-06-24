@@ -171,7 +171,14 @@
       "input": [
         "export async function placeOrder(o) { return await save(o); }"
       ],
-      "expect-violation": "no-restricted-syntax"
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "ExportNamedDeclaration > FunctionDeclaration[async=true]:not(:has(CallExpression[callee.property.name='startActiveSpan'])):not(:has(CallExpression[callee.name='withSpan'])), ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > :function[async=true]:not(:has(CallExpression[callee.property.name='startActiveSpan'])):not(:has(CallExpression[callee.name='withSpan']))",
+          "message": "Exported async function must open an OTel span (tracer.startActiveSpan / withSpan) — R8."
+        }
+      ]
     }
   },
   "R9": {
@@ -281,12 +288,25 @@
     "requires-package": "next",
     "auto-skip-if-missing": true,
     "check": {
-      "type": "manual",
-      "rationale": "AST grep on TanStack Query / SWR usage; no ESLint rule today."
+      "type": "eslint",
+      "rule": "no-restricted-syntax"
     },
     "examples": {
       "bad": "'use client';\nexport function Orders() {\n  useEffect(() => { fetch('/api/orders').then(r => r.json()).then(setData); }, []);\n}",
       "good": "'use client';\nexport function Orders() {\n  const { data } = useQuery({ queryKey: ['orders'], queryFn: fetchOrders });\n}"
+    },
+    "negative-test": {
+      "input": [
+        "useEffect(() => { fetch('/api/orders'); }, []);"
+      ],
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "CallExpression[callee.name='useEffect'] :function CallExpression[callee.name='fetch']",
+          "message": "Bare fetch() inside useEffect is forbidden — use useQuery instead (R13 narrow: fetch-in-useEffect). Broad TanStack/SWR-without-validation coverage = future follow-up."
+        }
+      ]
     },
     "policy": "Server Components: direct async/await. Client reads: TanStack Query / SWR with Zod-typed response. Writes: Server Actions. No raw `fetch()` in Client Components without useQuery/useSWR wrapper.",
     "pressure-scenario": {
@@ -394,12 +414,25 @@
     "requires-package": "@tanstack/react-query",
     "auto-skip-if-missing": true,
     "check": {
-      "type": "manual",
-      "rationale": "AST grep on `useQuery` without `.parse()` in `queryFn` (project-specific)."
+      "type": "eslint",
+      "rule": "no-restricted-syntax"
     },
     "examples": {
       "bad": "const { data } = useQuery({\n  queryKey: ['orders'],\n  queryFn: () => fetch('/api/orders').then(r => r.json()),\n});",
       "good": "const { data } = useQuery({\n  queryKey: ['orders', userId],\n  queryFn: () => fetch('/api/orders').then(r => r.json()).then(OrderSchema.parse),\n  staleTime: 60_000,\n});"
+    },
+    "negative-test": {
+      "input": [
+        "useQuery({ queryFn: () => fetchData() });"
+      ],
+      "expect-violation": "no-restricted-syntax",
+      "eslintRuleConfig": [
+        "error",
+        {
+          "selector": "Property[key.name='queryFn'] > :function:not(:has(CallExpression[callee.property.name=/^(parse|safeParse)$/]))",
+          "message": "queryFn must call .parse() or .safeParse() on the response — R18."
+        }
+      ]
     },
     "policy": "`useQuery`/`useSWR` has typed response via Zod (`.parse()` or `.safeParse()` in `queryFn`). `queryKey` includes all params. `staleTime`/`gcTime` set explicitly. `onError` reacts (toast/Sentry). No `useEffect(() => fetch(...))` for reads.",
     "pressure-scenario": {
