@@ -1,131 +1,138 @@
-// Fixture-parity harness for require-use-server-directive (R20) declarative migration.
-// Runs all existing inline fixtures from require-use-server-directive.test.ts against the
-// declarative no-restricted-syntax selector in next-r20-require-use-server-directive.json.
+// Fixture-parity harness for require-use-server-directive (R20) — declarative migration.
 //
-// Result: PARTIAL PARITY — main-case fixtures match; per-line audit:exempt exemption
-// is NOT expressible in esquery (comment-based). R20 is RETAINED handwritten.
-// The GAP block below is the evidence (T3 — parity table with quoted output).
+// PROVES the exempt-aware wrapper (rules-as-tests/restricted-syntax-audit-exempt)
+// reaches FULL parity with the (now-deleted) handwritten rule across every fixture
+// from the original require-use-server-directive.test.ts — INCLUDING the per-line
+// `// audit:exempt` case that bare `no-restricted-syntax` could not express (former GAP).
+//
+// The selector + message are read from the SHIPPED recipe so this guards the actual
+// declarative spec, not a hand-copied selector.
 
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Linter } from 'eslint';
 import * as tseslintParser from '@typescript-eslint/parser';
 import { describe, expect, it } from 'vitest';
+import { restrictedSyntaxAuditExempt } from '../../core/eslint-rules/restricted-syntax-audit-exempt.ts';
 
-// Selector from the declarative migration attempt (R20 retained handwritten — recipe reverted to type:"eslint").
-// Kept here as standalone gap-documentation: esquery covers the main case but cannot handle audit:exempt.
-const selector: string =
-  `Program:not(Program:has(ExpressionStatement:first-child > Literal[value='use server'])) ExportNamedDeclaration > FunctionDeclaration[async=true], Program:not(Program:has(ExpressionStatement:first-child > Literal[value='use server'])) ExportDefaultDeclaration > FunctionDeclaration[async=true]`;
-const message: string | undefined =
-  `Server Action file must start with 'use server' directive at the top of the file (R20).`;
+const HERE = dirname(fileURLToPath(import.meta.url));
+const RECIPE = resolve(
+  HERE,
+  '../../core/synthesizer/recipes/next-r20-require-use-server-directive.json',
+);
+const recipe = JSON.parse(readFileSync(RECIPE, 'utf8')) as {
+  rule: { check: { selector: string; message: string } };
+};
+const selector = recipe.rule.check.selector;
+const message = recipe.rule.check.message;
 
-function makeConfig(): Linter.Config[] {
-  const entry: Record<string, string> = { selector };
-  if (message) entry.message = message;
-  return [
+const WRAPPER = 'rules-as-tests/restricted-syntax-audit-exempt';
+
+function check(code: string): Linter.LintMessage[] {
+  const linter = new Linter();
+  const config = [
     {
       files: ['**/*.{ts,tsx,js,jsx}'],
       languageOptions: {
-        parser: tseslintParser as Linter.Parser,
+        parser: tseslintParser,
         parserOptions: {
           ecmaFeatures: { jsx: true },
           ecmaVersion: 'latest',
           sourceType: 'module',
         },
       },
-      rules: { 'no-restricted-syntax': ['error', entry] as Linter.RuleEntry },
+      plugins: {
+        'rules-as-tests': {
+          rules: { 'restricted-syntax-audit-exempt': restrictedSyntaxAuditExempt },
+        },
+      },
+      rules: { [WRAPPER]: ['error', { selector, message }] },
     },
-  ];
+  ] as unknown as Linter.Config[];
+  return linter
+    .verify(code, config, { filename: 'test.ts' })
+    .filter((m) => m.ruleId === WRAPPER);
 }
 
-const linter = new Linter();
-const config = makeConfig();
-
-function check(code: string): Linter.LintMessage[] {
-  return linter.verify(code, config, { filename: 'test.ts' }).filter((m) => m.ruleId === 'no-restricted-syntax');
-}
-
-describe('require-use-server-directive declarative parity (selector from next-r20-require-use-server-directive.json)', () => {
-  describe('PARITY: VALID — declarative must produce 0 violations (main-case fixtures)', () => {
-    it('sync export — rule does not apply', () => {
-      expect(check(`export function sync() { return 1; }`)).toHaveLength(0);
-    });
-
-    it("'use server' + named async export — OK", () => {
-      expect(check(`'use server';\nexport async function action() { return 1; }`)).toHaveLength(0);
-    });
-
-    it('"use server" double-quoted — OK', () => {
-      expect(check(`"use server";\nexport async function action() { return 1; }`)).toHaveLength(0);
-    });
-
-    it("'use server' + default async export — OK", () => {
-      expect(check(`'use server';\nexport default async function action() { return 1; }`)).toHaveLength(0);
-    });
-
-    it("'use server' + multiple async exports — OK", () => {
-      const code = `'use server';
+// Every fixture from require-use-server-directive.test.ts (the handwritten rule's spec).
+const VALID: Array<[string, string]> = [
+  ['no async export — rule does not apply', `export function sync() { return 1; }`],
+  [
+    "'use server' present + async export — OK",
+    `'use server';\nexport async function action() { return 1; }`,
+  ],
+  [
+    'double-quoted directive — OK',
+    `"use server";\nexport async function action() { return 1; }`,
+  ],
+  [
+    'default async export with directive — OK',
+    `'use server';\nexport default async function action() { return 1; }`,
+  ],
+  [
+    'multiple async exports with directive — OK',
+    `'use server';
      export async function a() { return 1; }
-     export async function b() { return 2; }`;
-      expect(check(code)).toHaveLength(0);
-    });
+     export async function b() { return 2; }`,
+  ],
+  ['only synchronous export named — does not apply', `export const value = 42;`],
+  [
+    'audit:exempt on async export line — SUPPRESSED (former GAP, now closed)',
+    `export async function action() { return 1; } // audit:exempt`,
+  ],
+  [
+    'async non-exported function — does not apply',
+    `async function helper() { return 1; }
+     export const x = 1;`,
+  ],
+];
 
-    it('only sync export — rule does not apply', () => {
-      expect(check(`export const value = 42;`)).toHaveLength(0);
-    });
-
-    it('non-exported async function — does not apply', () => {
-      const code = `async function helper() { return 1; }
-     export const x = 1;`;
-      expect(check(code)).toHaveLength(0);
-    });
-  });
-
-  describe('PARITY: INVALID — declarative must produce ≥1 violation (main-case fixtures)', () => {
-    it('named async export without use server', () => {
-      expect(check(`export async function action() { return 1; }`).length).toBeGreaterThan(0);
-    });
-
-    it('import + named async export without use server', () => {
-      const code = `import { db } from './db';
-export async function action() { return db.q(); }`;
-      expect(check(code).length).toBeGreaterThan(0);
-    });
-
-    it('directive not first statement — does not count', () => {
-      const code = `import './side-effect';
+const INVALID: Array<[string, string]> = [
+  ['named async export, no directive', `export async function action() { return 1; }`],
+  [
+    'import + named async export, no directive',
+    `import { db } from './db';
+export async function action() { return db.q(); }`,
+  ],
+  [
+    'directive not first statement — does not count',
+    `import './side-effect';
 'use server';
-export async function action() { return 1; }`;
-      expect(check(code).length).toBeGreaterThan(0);
-    });
+export async function action() { return 1; }`,
+  ],
+  [
+    'non-string-literal first statement',
+    `const x = 1;
+export async function action() { return 1; }`,
+  ],
+  ['default async export, no directive', `export default async function action() { return 1; }`],
+];
 
-    it('non-string-literal first statement', () => {
-      const code = `const x = 1;
-export async function action() { return 1; }`;
-      expect(check(code).length).toBeGreaterThan(0);
-    });
-
-    it('default export without use server', () => {
-      expect(check(`export default async function action() { return 1; }`).length).toBeGreaterThan(0);
+describe('require-use-server-directive declarative parity — exempt-aware wrapper (R20)', () => {
+  describe('PARITY: VALID fixtures → 0 violations (incl. audit:exempt — GAP CLOSED)', () => {
+    it.each(VALID)('%s', (_label, code) => {
+      expect(check(code)).toHaveLength(0);
     });
   });
 
-  describe('GAP: audit:exempt — NOT expressible in esquery (comment-based)', () => {
-    it('audit:exempt on async export line: declarative selector fires (FALSE POSITIVE — retention justification)', () => {
-      // The handwritten rule reads the source line for '// audit:exempt' and suppresses
-      // the report. ESQuery cannot access comments — this is structurally inexpressible.
-      // Evidence: the declarative selector fires on this fixture (1 violation),
-      // while the handwritten rule correctly produces 0 errors.
-      // Conclusion: R20 is RETAINED handwritten; audit:exempt is a documented gap.
-      const code = `export async function action() { return 1; } // audit:exempt`;
-      const violations = check(code);
-      // Asserts the gap EXISTS: selector fires (false positive) on an exempt fixture.
-      expect(violations.length).toBeGreaterThan(0);
+  describe('PARITY: INVALID fixtures → ≥1 violation', () => {
+    it.each(INVALID)('%s', (_label, code) => {
+      expect(check(code).length).toBeGreaterThan(0);
     });
+  });
 
-    it('multiple violations — one per export (multi-export case)', () => {
-      const code = `export async function a() { return 1; }
+  it('multiple async exports without directive → one violation per export (parity)', () => {
+    const code = `export async function a() { return 1; }
 export async function b() { return 2; }`;
-      // Two exports, each fires — consistent with handwritten rule behavior.
-      expect(check(code).length).toBeGreaterThanOrEqual(2);
-    });
+    expect(check(code).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('// audit:exempt suppresses the report (wrapper parity with handwritten — GAP closed)', () => {
+    const exempt = `export async function action() { return 1; } // audit:exempt`;
+    const withoutExempt = `export async function action() { return 1; }`;
+    expect(check(exempt)).toHaveLength(0);
+    // Paired-negative: the SAME code without the exemption still fires.
+    expect(check(withoutExempt).length).toBeGreaterThan(0);
   });
 });

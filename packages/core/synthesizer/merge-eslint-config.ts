@@ -14,6 +14,17 @@
 // - Every other rule: collision is treated as authoring error and throws.
 //   Future merge strategies for additional rules can be added here per case.
 
+import { ESLINT_RESTRICTED_RULE_NAME } from './compile-declarative-md.ts';
+
+// Rules whose config has the variadic `['severity', ...selectorEntries]` shape and
+// therefore merge by concatenating selector entries (dedupe by selector). Both the
+// built-in `no-restricted-syntax` and the exempt-aware wrapper the declarative tier
+// emits share this shape — the wrapper is the load-bearing carrier today.
+const RESTRICTED_SYNTAX_SHAPED: ReadonlySet<string> = new Set([
+  'no-restricted-syntax',
+  ESLINT_RESTRICTED_RULE_NAME,
+]);
+
 export class RuleCollisionError extends Error {
   constructor(
     public readonly ruleName: string,
@@ -130,7 +141,7 @@ export function mergeEslintRuleConfig(
       ruleSources.set(ruleName, [...existingSources, newSource]);
       continue;
     }
-    if (ruleName === 'no-restricted-syntax') {
+    if (RESTRICTED_SYNTAX_SHAPED.has(ruleName)) {
       acc[ruleName] = mergeNoRestrictedSyntax(
         acc[ruleName],
         ruleConfig,

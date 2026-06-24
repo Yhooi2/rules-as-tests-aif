@@ -8,7 +8,11 @@
 // L4 + L5 are byte-identical — this is a new input path, not a change to the validator.
 
 import type { ResearchPlan } from '../research/types.ts';
-import { compileDeclarativeMd } from './compile-declarative-md.ts';
+import {
+  ESLINT_RESTRICTED_RULE_NAME,
+  compileDeclarativeMd,
+  declarativeRestrictedConfigEntry,
+} from './compile-declarative-md.ts';
 import { mergeEslintRuleConfig } from './merge-eslint-config.ts';
 import type { ManifestCheck, SynthesisPlan, SynthesizedRule } from './types.ts';
 import type { GenerateClient, Menu, MenuCandidate } from './generate-port.ts';
@@ -101,11 +105,11 @@ export async function synthesizeGenerate(
       check.type === 'declarative' &&
       (!check.engine || check.engine === 'eslint-restricted')
     ) {
-      const selectorEntry: Record<string, string> = { selector: check.selector };
-      if (check.message) selectorEntry.message = check.message;
       mergeEslintRuleConfig(
         mergedEslintConfig,
-        { 'no-restricted-syntax': ['error', selectorEntry] } as Record<string, unknown>,
+        {
+          [ESLINT_RESTRICTED_RULE_NAME]: declarativeRestrictedConfigEntry(check),
+        } as Record<string, unknown>,
         candidate.ruleId,
         ruleSources,
       );

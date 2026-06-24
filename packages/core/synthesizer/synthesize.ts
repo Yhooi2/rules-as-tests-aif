@@ -8,7 +8,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv } from 'ajv';
 import type { ResearchPlan } from '../research/types.ts';
-import { compileDeclarativeMd } from './compile-declarative-md.ts';
+import {
+  ESLINT_RESTRICTED_RULE_NAME,
+  compileDeclarativeMd,
+  declarativeRestrictedConfigEntry,
+} from './compile-declarative-md.ts';
 import { mergeEslintRuleConfig } from './merge-eslint-config.ts';
 import type { SynthesisPlan, SynthesizedRule } from './types.ts';
 
@@ -96,11 +100,11 @@ export function synthesize(plan: ResearchPlan): SynthesisPlan {
       rule.check.type === 'declarative' &&
       (!rule.check.engine || rule.check.engine === 'eslint-restricted')
     ) {
-      const selectorEntry: Record<string, string> = { selector: rule.check.selector };
-      if (rule.check.message) selectorEntry.message = rule.check.message;
       mergeEslintRuleConfig(
         mergedEslintConfig,
-        { 'no-restricted-syntax': ['error', selectorEntry] } as Record<string, unknown>,
+        {
+          [ESLINT_RESTRICTED_RULE_NAME]: declarativeRestrictedConfigEntry(rule.check),
+        } as Record<string, unknown>,
         recipe.patternId,
         ruleSources,
       );
