@@ -53,6 +53,8 @@ function generatedWrapperSelectors(framework: string, version: string, patterns:
     framework,
     version,
     patterns: loadEntries(framework, version, patterns),
+    missing: [],
+    drift: null,
   });
   const snippet = JSON.parse(plan.eslintConfigSnippet) as Record<string, unknown>;
   const entry = snippet[WRAPPER_KEY];
