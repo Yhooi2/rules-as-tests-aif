@@ -328,6 +328,23 @@ jobs:
         run: bash tests/install-sh/f16-stryker-live-mutants.test.sh
       - name: install-sh — f17 lint rules planted-violation (post-install liveness smoke Check3 Arm ii)
         run: bash tests/install-sh/f17-lint-rules-planted-violation.test.sh
+      - name: install-sh — lib-helpers unit tests (setup.d/lib.sh helper coverage, S1)
+        run: bash tests/install-sh/lib-helpers.test.sh
+      - name: install-sh — layer smoke tests (setup.d/05-70 dry-run source check, S1)
+        run: bash tests/install-sh/layers.test.sh
+      - name: Shellcheck — setup.d/*.sh + install.sh (pinned to shellcheck 0.10.0)
+        run: |
+          pip install shellcheck-py==0.10.0.1  # ci-tool-pin: shellcheck via shellcheck-py wheel
+          find setup.d -name '*.sh' -print0 | xargs -0 shellcheck --severity=warning --shell=bash
+          shellcheck --severity=warning --shell=bash install.sh
+      - name: "install-sh — snapshot compare: ts-server (greenfield + brownfield)"
+        run: SNAPSHOT_MODE=compare bash tests/install-sh/snapshot.sh ts-server
+      - name: "install-sh — snapshot compare: react-next (greenfield + brownfield)"
+        run: SNAPSHOT_MODE=compare bash tests/install-sh/snapshot.sh react-next
+      - name: "install-sh — snapshot compare: react-spa (greenfield + brownfield)"
+        run: SNAPSHOT_MODE=compare bash tests/install-sh/snapshot.sh react-spa
+      - name: "install-sh — snapshot compare: react-native (greenfield + brownfield)"
+        run: SNAPSHOT_MODE=compare bash tests/install-sh/snapshot.sh react-native
       - name: Run install-sh meta-gate — every install-sh test is wired in CI (closes armed-but-not-fired)
         run: bash tests/install-sh/meta-all-wired.test.sh
       - name: Run agnosticism harness self-test (Umbrella-1 anti-theatre gate — harness must fail on a seeded CC-break)
