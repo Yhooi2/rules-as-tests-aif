@@ -16,7 +16,7 @@ const provenance = {
 };
 
 // BAD: declarative rule declares check.message='Do not use generators' but
-// eslintConfigSnippet configures no-restricted-syntax with a DIFFERENT message
+// eslintConfigSnippet configures rules-as-tests/restricted-syntax-audit-exempt with a DIFFERENT message
 // 'No generators!'. When examples.bad is linted, the emitted message is
 // 'No generators!' — the declared message is unreachable.
 export const messageIdCoverageBadPlan: SynthesisPlan = {
@@ -40,14 +40,14 @@ export const messageIdCoverageBadPlan: SynthesisPlan = {
       },
       'negative-test': {
         input: ['function* gen() { yield 1; }'],
-        'expect-violation': 'no-restricted-syntax',
+        'expect-violation': 'rules-as-tests/restricted-syntax-audit-exempt',
       },
       research: { entryId: 'adv-mic-bad', provenance: [provenance] },
     },
   ],
   rulesMd: '',
   eslintConfigSnippet: JSON.stringify({
-    'no-restricted-syntax': [
+    'rules-as-tests/restricted-syntax-audit-exempt': [
       'error',
       {
         selector: 'FunctionDeclaration[generator=true]',
@@ -81,14 +81,14 @@ export const messageIdCoverageValidPlan: SynthesisPlan = {
       },
       'negative-test': {
         input: ['function* gen() { yield 1; }'],
-        'expect-violation': 'no-restricted-syntax',
+        'expect-violation': 'rules-as-tests/restricted-syntax-audit-exempt',
       },
       research: { entryId: 'adv-mic-valid', provenance: [provenance] },
     },
   ],
   rulesMd: '',
   eslintConfigSnippet: JSON.stringify({
-    'no-restricted-syntax': [
+    'rules-as-tests/restricted-syntax-audit-exempt': [
       'error',
       {
         selector: 'FunctionDeclaration[generator=true]',

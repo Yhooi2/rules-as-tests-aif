@@ -137,11 +137,11 @@ describe('validator adversarial snapshots', () => {
         id: 'G91', title: 'adversarial-single-token-diff-bad', stack: ['react-next'],
         check: { type: 'declarative', engine: 'eslint-restricted', selector: 'FunctionDeclaration[generator=true]', message: 'No generator functions allowed', presence: 'forbid' },
         examples: { bad: 'const a = 1; const b = 2; const c = 3; function* gen() { yield a + b + c; }', good: '// no generators here' },
-        'negative-test': { input: ['function* gen() { yield 1; }'], 'expect-violation': 'no-restricted-syntax' },
+        'negative-test': { input: ['function* gen() { yield 1; }'], 'expect-violation': 'rules-as-tests/restricted-syntax-audit-exempt' },
         research: { entryId: 'adv-std-bad', provenance: [provenance] },
       }],
       rulesMd: '',
-      eslintConfigSnippet: JSON.stringify({ 'no-restricted-syntax': ['error', { selector: 'FunctionDeclaration[generator=true]', message: 'No generator functions allowed' }] }),
+      eslintConfigSnippet: JSON.stringify({ 'rules-as-tests/restricted-syntax-audit-exempt': ['error', { selector: 'FunctionDeclaration[generator=true]', message: 'No generator functions allowed' }] }),
     };
     const report = validate(singleTokenDiffBadPlan);
     const expected = JSON.parse(
@@ -157,11 +157,11 @@ describe('validator adversarial snapshots', () => {
         id: 'G89', title: 'adversarial-messageId-coverage-bad', stack: ['react-next'],
         check: { type: 'declarative', engine: 'eslint-restricted', selector: 'FunctionDeclaration[generator=true]', message: 'Do not use generators', presence: 'forbid' },
         examples: { bad: 'function* gen() { return 1; }', good: 'function gen() { return 1; }' },
-        'negative-test': { input: ['function* gen() { yield 1; }'], 'expect-violation': 'no-restricted-syntax' },
+        'negative-test': { input: ['function* gen() { yield 1; }'], 'expect-violation': 'rules-as-tests/restricted-syntax-audit-exempt' },
         research: { entryId: 'adv-mic-bad', provenance: [provenance] },
       }],
       rulesMd: '',
-      eslintConfigSnippet: JSON.stringify({ 'no-restricted-syntax': ['error', { selector: 'FunctionDeclaration[generator=true]', message: 'No generators!' }] }),
+      eslintConfigSnippet: JSON.stringify({ 'rules-as-tests/restricted-syntax-audit-exempt': ['error', { selector: 'FunctionDeclaration[generator=true]', message: 'No generators!' }] }),
     };
     const report = validate(messageIdCoverageBadPlan);
     const expected = JSON.parse(

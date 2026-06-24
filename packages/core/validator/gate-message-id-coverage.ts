@@ -19,11 +19,20 @@
 import { Linter } from 'eslint';
 import * as tseslintParser from '@typescript-eslint/parser';
 import presetPlugin from '@rules-as-tests/preset-next-15-canonical/eslint-rules';
+import corePlugin from '../eslint-rules/index.ts';
+import {
+  ESLINT_RESTRICTED_RULE_NAME,
+  extractDeclarativeRuleConfigFromSnippet,
+} from '../synthesizer/compile-declarative-md.ts';
 import type { SynthesisPlan, SynthesizedRule } from '../synthesizer/types.ts';
 import type { GateFailure, GateOutcome } from './types.ts';
 
+// `rules-as-tests` unions core (the exempt-aware wrapper) + preset (handwritten) rules,
+// matching the single barrel a consumer receives from install.sh.
 const KNOWN_PLUGINS: Record<string, unknown> = {
-  'rules-as-tests': presetPlugin,
+  'rules-as-tests': {
+    rules: { ...corePlugin.rules, ...presetPlugin.rules },
+  },
 };
 
 function buildSingleRuleConfig(
@@ -70,8 +79,13 @@ function checkRule(
     return [];
   }
 
-  const ruleName = 'no-restricted-syntax';
-  const ruleConfig = parsedSnippet[ruleName];
+  const ruleName = ESLINT_RESTRICTED_RULE_NAME;
+  // Test the EMITTED entry for THIS rule (matched by selector) — isolates it from sibling
+  // selectors while preserving spec-vs-emitted message-drift detection (the gate's point).
+  const ruleConfig = extractDeclarativeRuleConfigFromSnippet(
+    parsedSnippet,
+    rule.check.selector,
+  );
   if (!ruleConfig) {
     return [];
   }

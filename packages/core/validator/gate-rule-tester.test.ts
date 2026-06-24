@@ -26,14 +26,14 @@ const DECLARATIVE_ESLINT_RESTRICTED_PLAN: SynthesisPlan = {
       },
       'negative-test': {
         input: ["it.only('test', () => {})"],
-        'expect-violation': 'no-restricted-syntax',
+        'expect-violation': 'rules-as-tests/restricted-syntax-audit-exempt',
       },
       research: { entryId: 'test-only-forbid', provenance: [] },
     },
   ],
   rulesMd: '',
   eslintConfigSnippet: JSON.stringify({
-    'no-restricted-syntax': [
+    'rules-as-tests/restricted-syntax-audit-exempt': [
       'error',
       {
         selector:

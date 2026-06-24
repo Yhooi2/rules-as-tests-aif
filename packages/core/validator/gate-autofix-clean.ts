@@ -20,11 +20,21 @@
 import { Linter } from 'eslint';
 import * as tseslintParser from '@typescript-eslint/parser';
 import presetPlugin from '@rules-as-tests/preset-next-15-canonical/eslint-rules';
+import corePlugin from '../eslint-rules/index.ts';
+import {
+  ESLINT_RESTRICTED_RULE_NAME,
+  declarativeRestrictedConfigEntry,
+  extractDeclarativeRuleConfigFromSnippet,
+} from '../synthesizer/compile-declarative-md.ts';
 import type { SynthesisPlan, SynthesizedRule } from '../synthesizer/types.ts';
 import type { GateFailure, GateOutcome } from './types.ts';
 
+// `rules-as-tests` unions core (the exempt-aware wrapper) + preset (handwritten) rules,
+// matching the single barrel a consumer receives from install.sh.
 const KNOWN_PLUGINS: Record<string, unknown> = {
-  'rules-as-tests': presetPlugin,
+  'rules-as-tests': {
+    rules: { ...corePlugin.rules, ...presetPlugin.rules },
+  },
 };
 
 function buildSingleRuleConfig(
@@ -117,8 +127,18 @@ function checkRule(
   }
 
   const ruleName =
-    rule.check.type === 'eslint' ? rule.check.rule : 'no-restricted-syntax';
-  const ruleConfig = parsedSnippet[ruleName] ?? 'error';
+    rule.check.type === 'eslint'
+      ? rule.check.rule
+      : ESLINT_RESTRICTED_RULE_NAME;
+  // Declarative rules are tested in ISOLATION against their OWN emitted entry (see
+  // gate-rule-tester) — not the whole merged snippet.
+  const ruleConfig =
+    rule.check.type === 'declarative'
+      ? (extractDeclarativeRuleConfigFromSnippet(
+          parsedSnippet,
+          rule.check.selector,
+        ) ?? declarativeRestrictedConfigEntry(rule.check))
+      : (parsedSnippet[ruleName] ?? 'error');
   const config = buildSingleRuleConfig(ruleName, ruleConfig);
   const linter = new Linter();
 

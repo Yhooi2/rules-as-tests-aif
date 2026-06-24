@@ -1,5 +1,6 @@
 import { noUnsafeZodParse } from './no-unsafe-zod-parse.ts';
 import { noDirectTimeRandomness } from './no-direct-time-randomness.ts';
+import { restrictedSyntaxAuditExempt } from './restricted-syntax-audit-exempt.ts';
 
 const plugin = {
   meta: {
@@ -9,6 +10,7 @@ const plugin = {
   rules: {
     'no-unsafe-zod-parse': noUnsafeZodParse,
     'no-direct-time-randomness': noDirectTimeRandomness,
+    'restricted-syntax-audit-exempt': restrictedSyntaxAuditExempt,
   },
 };
 
