@@ -86,7 +86,8 @@ describe('Principle 9 — every authority-bearing doc declares Authoritative-for
     // otherwise pass vacuously) or accidentally explodes it. Semantic alignment
     // with rule §2 is the maintainer's responsibility on each list update.
     expect(REQUIRED_HEADER_DOCS.length).toBeGreaterThanOrEqual(20);
-    expect(REQUIRED_HEADER_DOCS.length).toBeLessThanOrEqual(66);
+    // Upper bound tracks the list in lockstep (66 → 69: +3 react-spa shipped docs, 2026-06-24).
+    expect(REQUIRED_HEADER_DOCS.length).toBeLessThanOrEqual(69);
     // Canonical roots must always be present
     expect(REQUIRED_HEADER_DOCS).toContain('README.md');
     expect(REQUIRED_HEADER_DOCS).toContain('CLAUDE.md');
@@ -155,6 +156,7 @@ describe('Principle 9 — every authority-bearing doc declares Authoritative-for
     const SHIPPED_DOC_PREFIXES = [
       'packages/core/templates/shared/',
       'packages/preset-next-15-canonical/',
+      'packages/preset-react-spa/',
       'agents/',
       'skills/tool-bootstrapping/',
     ];
@@ -162,7 +164,9 @@ describe('Principle 9 — every authority-bearing doc declares Authoritative-for
       SHIPPED_DOC_PREFIXES.some((pref) => p.startsWith(pref)),
     );
 
-    expect(installShipped).toHaveLength(19);
+    // 19 baseline + 3 react-spa shipped docs (RULES.md, RULES.react-spa.md,
+    // templates/ARCHITECTURE.react-spa.md) wired by install.sh react-spa = 22.
+    expect(installShipped).toHaveLength(22);
     expect(new Set(installShipped)).toEqual(new Set(shippedSubset));
   });
 
