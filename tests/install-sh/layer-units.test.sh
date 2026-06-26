@@ -60,10 +60,10 @@ else
   bad "lib.sh sourcing or helper exposure failed (exit $rc)"
 fi
 
-# ── 2. Stub layers: 05-mcp and 15-companions-stack ───────────────────────────
+# ── 2. Stub layers: 15-companions-stack (05-mcp promoted to content in S2) ───
 
-echo ""; echo "  ── stub layers (05-mcp, 15-companions-stack) ──"
-for stub in "05-mcp.sh" "15-companions-stack.sh"; do
+echo ""; echo "  ── stub layers (15-companions-stack) ──"
+for stub in "15-companions-stack.sh"; do
   layer="$REPO_ROOT/setup.d/$stub"
   [ -f "$layer" ] || { bad "$stub: file not found"; continue; }
 
@@ -90,6 +90,7 @@ done
 
 echo ""; echo "  ── content layers (dry-run sourcing) ──"
 CONTENT_LAYERS=(
+  "05-mcp.sh"
   "10-skills.sh"
   "20-agents.sh"
   "30-templates.sh"
