@@ -26,4 +26,38 @@ echo "$out" | grep -qx SHOULD_NOT_RUN && bad "dry-run ran install" || ok "dry-ru
 out=$(companion_step "rb" "false" "echo SHOULD_NOT_RUN" "external-service" "yes")
 echo "$out" | grep -q SHOULD_NOT_RUN && bad "external-service ran install_cmd" || ok "external-service → not a plain install"
 
+
+# === kind=mcp tests (S2 — engine.sh kind=mcp support) ===
+
+# Create a temporary claude stub so command -v claude succeeds for mcp tests.
+_stub_bin=$(mktemp -d)
+printf '#!/bin/sh\necho "claude-stub $*"\n' > "$_stub_bin/claude"
+chmod +x "$_stub_bin/claude"
+
+# kind=mcp + detect-present → skip (no install_cmd run)
+out=$(PATH="$_stub_bin:$PATH" companion_step "ctx7" "true" "echo SHOULD_NOT_RUN" "mcp" "yes")
+echo "$out" | grep -q SHOULD_NOT_RUN && bad "kind=mcp ran install despite detect-present" || ok "kind=mcp detect-present → skip"
+echo "$out" | grep -qi 'skip' && ok "kind=mcp skip message emitted" || bad "no skip message for kind=mcp detect-present"
+
+# kind=mcp + detect-absent + yes → runs install_cmd
+out=$(PATH="$_stub_bin:$PATH" companion_step "ctx7" "false" "echo INSTALLED_MCP" "mcp" "yes")
+echo "$out" | grep -q INSTALLED_MCP && ok "kind=mcp detect-absent + yes → installs" || bad "kind=mcp did not install"
+
+# kind=mcp + dry-run → no install even when detect fails
+out=$(PATH="$_stub_bin:$PATH" companion_step "ctx7" "false" "echo SHOULD_NOT_RUN" "mcp" "dry-run")
+echo "$out" | grep -qx SHOULD_NOT_RUN && bad "kind=mcp dry-run ran install" || ok "kind=mcp dry-run → no install"
+
+# kind=mcp with --scope user in install_cmd → machine-scope label emitted
+out=$(PATH="$_stub_bin:$PATH" companion_step "deepwiki" "false" "echo --scope user INSTALLED" "mcp" "yes")
+echo "$out" | grep -qi 'machine.scope\|machine scope' && ok "kind=mcp --scope user → machine-scope label emitted" || bad "no machine-scope label for user-scope MCP"
+
+# kind=mcp with claude CLI absent → graceful skip (no install, return 0)
+_empty_bin=$(mktemp -d)
+out=$(PATH="$_empty_bin:/usr/bin:/bin" companion_step "ctx7" "false" "echo SHOULD_NOT_RUN" "mcp" "yes")
+echo "$out" | grep -qi 'absent' && ok "claude CLI absent → notice emitted" || bad "no 'absent' notice when claude CLI missing"
+echo "$out" | grep -q SHOULD_NOT_RUN && bad "ran install despite claude CLI absent" || ok "no install when claude CLI absent"
+rm -rf "$_empty_bin"
+
+rm -rf "$_stub_bin"
+
 echo ""; echo "PASS=$PASS FAIL=$FAIL"; [ "$FAIL" -eq 0 ]

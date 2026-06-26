@@ -17,7 +17,7 @@ All layers are **sourced** (not exec'd) into the dispatcher shell so mutations t
 
 | # | File | Purpose | Depends on | Status |
 |---|------|---------|-----------|--------|
-| 05 | `05-mcp.sh` | MCP companion install | lib.sh (in scope) | **Stub** — content deferred to S2 |
+| 05 | `05-mcp.sh` | MCP companion install: (a) context7 → `.mcp.json` (regression L1 restore from `setup.sh:289-303`); (b) detect-first `claude mcp add` for each `kind=mcp` manifest row | lib.sh (in scope), engine.sh (sourced here) | **Done** (S2) — gated on `FULL`; non-full / snapshot path no-ops (D2) |
 | 10 | `10-skills.sh` | §1 Skills (`skills/` → `.claude/skills/`) + §1b deps-hash-check CC hook | (none — first content layer) | Done |
 | 15 | `15-companions-stack.sh` | Stack-specific companion installs | lib.sh (in scope) | **Stub** — content deferred to S3 |
 | 20 | `20-agents.sh` | §2 Sub-agents (`agents/` → `.claude/agents/`) + §3c skill-context overrides | `SHIPPED_DOCS` global (set in dispatcher) | Done |
@@ -27,6 +27,20 @@ All layers are **sourced** (not exec'd) into the dispatcher shell so mutations t
 | 60 | `60-ci.sh` | §6b `.nvmrc`↔CI drift WARN + §6b-bis R2 auto-wire L1 (sets `_r2_verdict`) + §6c CI-orphan WARN + yq auto-wire | 40-configs (`eslint.config.mjs` + `.github/workflows/` written) | Done |
 | 70 | `70-deps.sh` | §7 `package.json` scripts merge + §8 dev-dep install (sets `DEPS_INSTALLED`, `DEVDEPS`) + §8b tsx-at-root | 60-ci (`eslint.config.mjs`, `detect-r2-boundary` etc. written) | Done |
 | 99 | `99-finalize.sh` | §6b-bis-L2 R2 AST-wire (ts-morph) + V2 otel-arming WARN + `ignore_shipped_configs` CALL + Done banner | 70-deps (ts-morph installed; `DEPS_INSTALLED`/`DEVDEPS` set), 60-ci (`_r2_verdict` set), **ALL prior** (`SKIPPED` fully accumulated) | Done |
+
+### `kind=mcp` manifest contract (S2)
+
+`kind=mcp` rows in `setup.d/companions.manifest` are consumed by the `05-mcp` layer **inside `install.sh`, before `70-deps`** (I1 channel constraint, D5). The post-install wrapper loop in `setup` explicitly skips them (`[ "$kind" = "mcp" ] && continue`).
+
+**contract:**
+
+- `detect_cmd`: a shell expression that exits 0 when the MCP is already configured (e.g. `claude mcp list --scope user 2>/dev/null | grep -q <name>`).
+- `install_cmd`: the official `claude mcp add` command with no version pin. For user-scope MCPs, include `--scope user`; the engine emits a machine-scope notice automatically.
+- Rows are processed only when `FULL` is set (i.e., `install.sh --full`). Non-full / `--dry-run` paths are no-ops or print a preview respectively.
+- Requires `claude` CLI present; graceful skip (`⊝ claude CLI absent — skipping MCP <name>`) when absent.
+- **Byte-identical (D2):** `snapshot.sh` runs `install.sh <stack> --force` WITHOUT `--full`, so the `05-mcp` layer returns early → fingerprints unchanged. If `byte-identical.test.sh` goes red after editing this layer, the `FULL` gate is leaking — fix the gate, do NOT regenerate baselines.
+
+---
 
 ### Shared globals (set by dispatcher before sourcing layers)
 
@@ -83,10 +97,9 @@ All layers share the dispatcher shell scope. These globals are initialised in `i
 
 | Layer | Stub file | Populated in | Description |
 |-------|-----------|-------------|-------------|
-| `05-mcp.sh` | `setup.d/05-mcp.sh` | S2 | MCP companion integrations (Claude MCP server, etc.) |
 | `15-companions-stack.sh` | `setup.d/15-companions-stack.sh` | S3 | Stack-specific companion installs |
 
-Both stubs are safely `source`-able by the dispatcher: no-op body, no side effects, `exit 0`.
+`05-mcp.sh` was promoted from stub to content in **S2** (see Layer List row above). The stub is safely `source`-able by the dispatcher when `FULL` is unset (early `return 0`).
 
 ---
 
