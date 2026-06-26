@@ -59,7 +59,7 @@
 
 ## §7 Гейты стадий (реальные проверки, не «vibe»)
 
-- **S2 gate:** `node --input-type=module -e "await import('./eslint-rules-local/index.js')"` грузится без ошибки — тот же ESM-`import`, что делает шаблонный `eslint.config.mjs`, так гейт прогоняет **реальный путь потребителя** (а не CJS-`require`, который ложно покраснел бы на ESM-бареле / ложно прошёл бы мимо ESM-импорта шаблона); на чистом проекте, Node 22, `npx eslint <file с as any>` **падает** по правилу. Барель — `.js`, рядом `.d.ts`.
+- **S2 gate:** `node --input-type=module -e "await import('./eslint-rules-local/index.js')"` грузится без ошибки — тот же ESM-`import`, что делает шаблонный `eslint.config.mjs`, так гейт прогоняет **реальный путь потребителя**. (Не CJS-`require`: его результат на ESM-бареле **зависит от версии Node** — `ERR_REQUIRE_ESM` на Node 20 и ранних 22.x; проходит на ≥22.12, где `require(esm)` разрешён для модулей без top-level await — ровно та version-хрупкость, которую U2 искореняет; `import` стабилен по версиям и грузит барель и в CJS-, и в ESM-форме — проверено эмпирически 2026-06-26, Node 24.) На чистом проекте, Node 22, `npx eslint <file с as any>` **падает** по правилу. Барель — `.js`, рядом `.d.ts`.
 - **S3 gate:** на не-`src/` раскладке (`app/`, плоское дерево) аудит даёт WARN/SKIP (не PASS), либо реально итерирует файлы — grep по `probeR4`/`R17`, прогон на фикстуре не-`src/`.
 - **S4 gate:** при отсутствии dev-deps `pre-push` печатает явный WARN про REDUCED (не «✅ passed»).
 - **S5 gate (умбрелла-закрытие):** CI-workflow содержит Node `20` и `22` в матрице; `f17-lint-rules-planted-violation` зелёный на обеих; `done.md` с этим доказательством.
