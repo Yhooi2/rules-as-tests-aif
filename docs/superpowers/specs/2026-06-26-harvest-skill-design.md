@@ -51,11 +51,11 @@ The default run is **diff-aware**: it reads `git diff --name-only <merge-base>..
 Two safety rules make scoping false-green-proof:
 
 1. **Fail-safe to full, never fail-open to skip.** Any changed path not matched by a map entry → **escalate the whole run to `--full`**. An unrecognised path never silently narrows the gate set.
-2. **Shipped-file detection derives from the byte-identical baseline's own file list** (the baseline already enumerates the shipped tree), **not** a hand-maintained parallel list that would drift. "Did the diff touch a baseline-tracked file?" is computed from the baseline itself.
+2. **Shipped-file detection is additive + broad + fail-safe** (the byte-identical baseline cannot be the source — verified 2026-06-26: `*.fingerprint` lists **destination** consumer-tree paths `.ai-factory/…`/`.claude/…`, not the repo **source** paths a `git diff` reports). Mechanism: (a) a **broad shipped-source-root glob list** — the roots the `setup.d/*.sh` layers copy from (`skills/`, `agents/`, `packages/core/templates/`, `packages/preset-*/`, the shipped subset of `.claude/rules/`, plus the root configs install ships) — touching any → run byte-identical + `format:check`; (b) **additive selection** — a path can trigger several families (a shipped `*.md` triggers byte-identical **and** dead-links, never just one); (c) **fail-safe to full** closes any gap — a shipped source not caught by the glob list matches no gate → escalates to full → byte-identical runs anyway. The only residual (a shipped path matching *only* a non-shipped gate glob) is closed by making the shipped-root globs cover shipped markdown locations. Deriving an **authoritative** shipped-source manifest from the `setup.d` copy calls is a §Promotion hardening, not v1.
 
 | Diff touches | Gate families run | Unmapped path |
 |---|---|---|
-| a baseline-shipped file / `packages/core/templates/**` / `skills/**` / `.claude/skills/**` | byte-identical + `format:check` | |
+| a shipped-source root (`skills/**`, `agents/**`, `packages/core/templates/**`, `packages/preset-*/**`, shipped `.claude/rules/**`, shipped root configs) | byte-identical + `format:check` | |
 | `tests/install-sh/**` | meta-all-wired + the touched install-sh tests | |
 | `packages/core/**` (`.ts`) | test:principles / test:hooks / test:render + typecheck | |
 | `.github/workflows/**` | actionlint + meta-all-wired | |
@@ -134,6 +134,7 @@ The dispatcher's harvest step ([dispatcher/SKILL.md §2.4](../../../.claude/skil
 - **Pre-push gate wrapping the same script** — promote when a harvest reddens CI **after** this skill ships (i.e. the skill was skipped or a gate was missing): that is the incident evidence the cost-caveat demands. The gate reuses Unit 1 unchanged → skill-first is not throwaway.
 - **Mechanical base-red subtraction** — run each selected gate on the merge-base too and report only gates that **newly** red (instead of the prose "interpret against base" rule). Promote if base-red misattribution (the `layer-units` class) recurs.
 - **Content-hash skip cache** — only if fix-loop re-run cost remains painful after diff-scope + fail-fast AND every gate's input set proves reliably declarable (else false-green); see §Decided rejection.
+- **Authoritative shipped-source manifest** — generate the exact shipped-source path set from the `setup.d/*.sh` `copy_*` calls (replacing the broad glob list), so the shipped-trigger is precise rather than broad. Promote if the broad globs prove either too noisy (over-triggering byte-identical) or unsafe (a shipped root missed).
 - **Principle test "sweep script ⟷ CI gate set do not drift"** — a meta-all-wired analog for the sweep (recursive self-application). Promote if the sweep falls out of sync with `audit-self.yml`.
 
 ## Test plan
