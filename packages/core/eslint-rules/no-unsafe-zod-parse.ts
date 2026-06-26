@@ -11,7 +11,8 @@ const createRule = ESLintUtils.RuleCreator(
 function isZodChain(node: TSESTree.Node): boolean {
   if (node.type === 'CallExpression') return isZodChain(node.callee);
   if (node.type === 'MemberExpression') {
-    if (node.object.type === 'Identifier' && node.object.name === 'z') return true;
+    if (node.object.type === 'Identifier' && node.object.name === 'z')
+      return true;
     return isZodChain(node.object);
   }
   return false;
@@ -43,7 +44,8 @@ function isZodishReceiver(
         if (
           def.type === 'ImportBinding' &&
           (def.parent as TSESTree.ImportDeclaration)?.source.value === 'zod'
-        ) return true;
+        )
+          return true;
         // Variable initialised from a z.* chain: const S = z.object({...})
         if (def.type === 'Variable') {
           const init = (def.node as TSESTree.VariableDeclarator).init;

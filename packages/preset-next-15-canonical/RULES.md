@@ -13,37 +13,40 @@ automated check. Bypass via `/aif-rules` (with rationale), never via `--no-verif
 > Generated from `factory/rules-manifest.json` by `scripts/render-rules.ts`. Do not edit by hand.
 
 <!-- begin: rules-table-generated -->
-| Rule | Stack | Check |
-|---|---|---|
-| **R1 TypeScript hygiene** | ts-server, react-next | `tsc --noEmit && eslint <files>` |
-| **R2 Validation at boundaries** | ts-server, react-next | ESLint `rules-as-tests/no-unsafe-zod-parse` |
-| **R3 Architectural boundaries** | ts-server, react-next | `npm run arch:check` |
-| **R4 Tests for new public code** | ts-server, react-next | `scripts/audit-r4.ts` |
-| **R5 Async correctness** | ts-server, react-next | ESLint `@typescript-eslint/no-floating-promises` |
-| **R6 Errors** | ts-server, react-next | ESLint `no-throw-literal` |
-| **R7 Time, randomness, IO** | ts-server, react-next | ESLint `rules-as-tests/no-direct-time-randomness` |
-| **R8 Observability** | ts-server, react-next | ESLint `rules-as-tests/require-otel-span` |
-| **R9 Imports / dependencies** | ts-server, react-next | ESLint `no-restricted-imports` |
-| **R10 Naming** | ts-server, react-next | Manual review — Naming conventions are too project-specific to formalize reliably; sidecar runs ad-hoc grep on the diff. |
-| **R11 CI integrity** | ts-server, react-next | `ci.yml (lint/typecheck/architecture/test/security/audit-ai-docs → ci-success aggregate) + workflow-integrity.yml (branch-protection-assertion)` |
-| **R12 Server vs Client Components** | react-next | ESLint `rules-as-tests/no-server-imports-in-client` |
-| **R13 Data fetching** | react-next | ESLint `no-restricted-syntax` |
-| **R14 Forms** | react-next | ESLint `no-restricted-syntax` |
-| **R15 Accessibility** | react-next | ESLint `jsx-a11y/strict` |
-| **R16 Performance** | react-next | ESLint `@next/next/no-img-element` |
-| **R17 Component tests** | react-next | `scripts/audit-ai-docs.react-next.sh` |
-| **R18 TanStack Query / SWR** | react-next | ESLint `no-restricted-syntax` |
-| **R19 Styles** | react-next | `depcruise --validate (blocks styled-components/@emotion)` |
-| **R20 Server Actions** | react-next | ESLint `no-restricted-syntax` |
-| **IR1 API contracts** | microservices | `CI job: zod-to-openapi diff against published OpenAPI` |
-| **IR2 Consumer-driven contracts (Pact)** | microservices | `CI: pact-publish + pact-verify + can-i-deploy` |
-| **IR3 Event schemas (async messaging)** | microservices | `audit-ai-docs.sh probe — `publish()` calls reference @org/event-schemas` |
-| **IR4 Service-to-service auth** | microservices | `depcruise blocks bare fetch() to internal service URLs` |
-| **IR5 Observability propagation** | microservices | Manual review — Trace propagation is hard to lint; verify in integration tests + Jaeger/Tempo dashboards. |
-| **IR6 Resilience** | microservices | Manual review — Resilience patterns (retry, circuit breaker, timeout) verified by chaos tests in staging. |
+
+| Rule                                     | Stack                 | Check                                                                                                                                            |
+| ---------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **R1 TypeScript hygiene**                | ts-server, react-next | `tsc --noEmit && eslint <files>`                                                                                                                 |
+| **R2 Validation at boundaries**          | ts-server, react-next | ESLint `rules-as-tests/no-unsafe-zod-parse`                                                                                                      |
+| **R3 Architectural boundaries**          | ts-server, react-next | `npm run arch:check`                                                                                                                             |
+| **R4 Tests for new public code**         | ts-server, react-next | `scripts/audit-r4.ts`                                                                                                                            |
+| **R5 Async correctness**                 | ts-server, react-next | ESLint `@typescript-eslint/no-floating-promises`                                                                                                 |
+| **R6 Errors**                            | ts-server, react-next | ESLint `no-throw-literal`                                                                                                                        |
+| **R7 Time, randomness, IO**              | ts-server, react-next | ESLint `rules-as-tests/no-direct-time-randomness`                                                                                                |
+| **R8 Observability**                     | ts-server, react-next | ESLint `rules-as-tests/require-otel-span`                                                                                                        |
+| **R9 Imports / dependencies**            | ts-server, react-next | ESLint `no-restricted-imports`                                                                                                                   |
+| **R10 Naming**                           | ts-server, react-next | Manual review — Naming conventions are too project-specific to formalize reliably; sidecar runs ad-hoc grep on the diff.                         |
+| **R11 CI integrity**                     | ts-server, react-next | `ci.yml (lint/typecheck/architecture/test/security/audit-ai-docs → ci-success aggregate) + workflow-integrity.yml (branch-protection-assertion)` |
+| **R12 Server vs Client Components**      | react-next            | ESLint `rules-as-tests/no-server-imports-in-client`                                                                                              |
+| **R13 Data fetching**                    | react-next            | ESLint `no-restricted-syntax`                                                                                                                    |
+| **R14 Forms**                            | react-next            | ESLint `no-restricted-syntax`                                                                                                                    |
+| **R15 Accessibility**                    | react-next            | ESLint `jsx-a11y/strict`                                                                                                                         |
+| **R16 Performance**                      | react-next            | ESLint `@next/next/no-img-element`                                                                                                               |
+| **R17 Component tests**                  | react-next            | `scripts/audit-ai-docs.react-next.sh`                                                                                                            |
+| **R18 TanStack Query / SWR**             | react-next            | ESLint `no-restricted-syntax`                                                                                                                    |
+| **R19 Styles**                           | react-next            | `depcruise --validate (blocks styled-components/@emotion)`                                                                                       |
+| **R20 Server Actions**                   | react-next            | ESLint `no-restricted-syntax`                                                                                                                    |
+| **IR1 API contracts**                    | microservices         | `CI job: zod-to-openapi diff against published OpenAPI`                                                                                          |
+| **IR2 Consumer-driven contracts (Pact)** | microservices         | `CI: pact-publish + pact-verify + can-i-deploy`                                                                                                  |
+| **IR3 Event schemas (async messaging)**  | microservices         | `audit-ai-docs.sh probe — `publish()` calls reference @org/event-schemas`                                                                        |
+| **IR4 Service-to-service auth**          | microservices         | `depcruise blocks bare fetch() to internal service URLs`                                                                                         |
+| **IR5 Observability propagation**        | microservices         | Manual review — Trace propagation is hard to lint; verify in integration tests + Jaeger/Tempo dashboards.                                        |
+| **IR6 Resilience**                       | microservices         | Manual review — Resilience patterns (retry, circuit breaker, timeout) verified by chaos tests in staging.                                        |
+
 <!-- end: rules-table-generated -->
 
 ## R1 — TypeScript hygiene
+
 - No `as any` anywhere. If type is genuinely unknown, use `unknown` and narrow.
 - No non-null assertions (`!`). Use type guards or proper narrowing.
 - No `// @ts-ignore`. Use `// @ts-expect-error` with description (≥10 chars).
@@ -69,6 +72,7 @@ const x = data as unknown as User;
 **Policy:** Zod schema `.parse()` is forbidden in HTTP boundary code. Use `.safeParse()` and branch on `.success`. Stdlib `.parse()` (`JSON.parse`, `Date.parse`, `path.parse`) is **not** flagged — the rule targets Zod schema `.parse()` only.
 
 **Path-scoped enforcement:** the ESLint rule `rules-as-tests/no-unsafe-zod-parse` is enabled only for these globs (configured in `eslint.config.mjs`):
+
 - `src/web/handlers/**`
 - `src/app/actions/**`
 - `src/app/api/**`
@@ -76,6 +80,7 @@ const x = data as unknown as User;
 **Outside these paths** (e.g. `src/config/env.ts` startup code, tests, scripts) `.parse()` is allowed.
 
 **Other boundaries also require validation** — use `.safeParse()` (no ESLint rule today — manual sidecar check):
+
 - Message queue payloads on consume.
 - DB row mappers against domain schemas.
 
@@ -97,6 +102,7 @@ if (!r.success) return reply.code(400).send(r.error.flatten());
 ```
 
 ## R3 — Architectural boundaries
+
 - Domain code imports only stdlib and Zod.
 - No imports from `infrastructure/` in `application/` (except via `application/ports/`).
 - No imports from `web/` outside `web/`.
@@ -119,6 +125,7 @@ import type { OrderRepo } from './ports/order-repo';
 ```
 
 ## R4 — Tests for new public code
+
 - Every new public export needs at least one test.
 - Tests MUST contain at least one real assertion (not `toBeDefined()` for typed values).
 - No conditional logic (`if`/`for`/`while`) in test bodies — use `it.each` for variants.
@@ -131,16 +138,21 @@ import type { OrderRepo } from './ports/order-repo';
 
 ```ts
 // BAD
-export function isAdult(age: number) { return age >= 18; } // no test
+export function isAdult(age: number) {
+  return age >= 18;
+} // no test
 ```
 
 ```ts
 // GOOD
 // + isAdult.unit.ts:
-it('returns true for >= 18', () => { expect(isAdult(18)).toBe(true); });
+it('returns true for >= 18', () => {
+  expect(isAdult(18)).toBe(true);
+});
 ```
 
 ## R5 — Async correctness
+
 - All Promises either `await`ed or explicitly handled with `.catch()`.
 - No floating promises in production code.
 - No mixing `await` and `.then()` in the same function.
@@ -151,15 +163,20 @@ it('returns true for >= 18', () => { expect(isAdult(18)).toBe(true); });
 
 ```ts
 // BAD
-function send(): void { fetch('/x'); }
+function send(): void {
+  fetch('/x');
+}
 ```
 
 ```ts
 // GOOD
-async function send(): Promise<void> { await fetch('/x'); }
+async function send(): Promise<void> {
+  await fetch('/x');
+}
 ```
 
 ## R6 — Errors
+
 - No `throw 'string'`. Always throw an Error subclass.
 - No empty `catch (_)` blocks.
 - Domain errors extend `DomainError`. Infrastructure errors extend `InfraError`.
@@ -180,6 +197,7 @@ throw new ValidationError('bad input', { cause: err });
 ```
 
 ## R7 — Time, randomness, IO
+
 - No `Date.now()`, `new Date()`, `performance.now()` in `src/` (except `infrastructure/clock/`).
 - No `Math.random()` (except `infrastructure/random/`).
 - No direct `fs`, `http`, `https` imports outside `infrastructure/`.
@@ -201,6 +219,7 @@ const now = clock.now(); // injected from infrastructure/clock
 ```
 
 ## R8 — Observability
+
 - Public application commands/queries open an OTel span via the standard helper.
 - Span attributes include: relevant business identifiers and active feature flags.
 - Errors set span status with structured cause, never bare error strings.
@@ -213,7 +232,9 @@ const now = clock.now(); // injected from infrastructure/clock
 
 ```ts
 // BAD
-export async function placeOrder(o) { return await save(o); }
+export async function placeOrder(o) {
+  return await save(o);
+}
 ```
 
 ```ts
@@ -224,6 +245,7 @@ export async function placeOrder(o) {
 ```
 
 ## R9 — Imports / dependencies
+
 - No `lodash`, `moment`, `axios`, `request`, `node-fetch`. Use native fetch, date-fns, Zod.
 - New top-level dependency requires explicit ADR in `docs/adr/`.
 - No `* as` star imports except for namespaces (zod, ts).
@@ -243,6 +265,7 @@ import fs from 'fs'; // in src/domain/
 ```
 
 ## R10 — Naming
+
 - Classes: PascalCase. Functions/variables: camelCase. Constants: SCREAMING_SNAKE.
 - Files match exported symbol: `OrderService.ts` exports `OrderService`.
 - `*Repository` = interface in domain or application; impl in infrastructure.
@@ -264,16 +287,18 @@ import fs from 'fs'; // in src/domain/
 ```
 
 ## R11 — CI integrity
+
 - `.github/workflows/ci.yml` is generated by `/aif-ci` and customized by us.
 - Any modification requires re-running tests on the change.
 - The `ci-success` job must remain a required check on main.
 - New jobs are added through PR with explicit rationale.
 
 **Check:** two executable layers, both shipped by `install.sh`:
+
 1. `.github/workflows/ci.yml` — every quality job (`lint`, `typecheck`, `architecture`, `test`, `security`, `audit-ai-docs`) is funnelled into the single required `ci-success` aggregate via `needs:`. `ci-success` is the only context that must be a required check (it always runs and depends on all jobs).
 2. `.github/workflows/workflow-integrity.yml` — `branch-protection-assertion` job asserts the `ci-success` gate stays a required status check on the default protected branch. Tri-states: pass when configured-and-present, fail when configured-but-missing, warn-and-pass when no protection is configured (so it never blocks a fresh consumer).
 
-> **Caveat — GitHub Free private repos:** classic branch protection AND rulesets both require GitHub Pro (or Team/Enterprise) on a *private* repo — or making the repo public. On that plan `branches/*/protection` and `rulesets` return `403 Upgrade to GitHub Pro or make this repository public`, so the warn-and-pass branch is **permanent** and there is no consumer-side remediation. Treat R11 branch-protection as **unavailable** on a GitHub Free private repo, not "not yet adopted" — it activates automatically once the repo moves to a paid plan or becomes public. The `ci-success` aggregate (layer 1) still runs everywhere; only the protection *assertion* is plan-gated.
+> **Caveat — GitHub Free private repos:** classic branch protection AND rulesets both require GitHub Pro (or Team/Enterprise) on a _private_ repo — or making the repo public. On that plan `branches/*/protection` and `rulesets` return `403 Upgrade to GitHub Pro or make this repository public`, so the warn-and-pass branch is **permanent** and there is no consumer-side remediation. Treat R11 branch-protection as **unavailable** on a GitHub Free private repo, not "not yet adopted" — it activates automatically once the repo moves to a paid plan or becomes public. The `ci-success` aggregate (layer 1) still runs everywhere; only the protection _assertion_ is plan-gated.
 
 Why one aggregate context: `needs:` aggregation works only within one workflow file, and a path-filtered required check (e.g. one scoped to `.github/workflows/**`) never reports on PRs that don't touch that path → the PR deadlocks. Requiring only `ci-success` (which always runs and `needs:` every job) avoids both.
 
