@@ -1,6 +1,6 @@
 # `/harvest` skill + local CI-equivalent sweep — design
 
-> **Status:** approved (operator, 2026-06-26).
+> **Status:** draft — operator approved the verbal design 2026-06-26; written-spec review gate pending.
 > **Authoritative for:** the post-aif-acceptance harvest procedure as a session-invoked `/harvest` skill + the shared `scripts/run-local-ci-sweep.sh` aggregator that runs the local CI-equivalent gate set before push.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists); the aif egress primitives themselves (`harvest.ts`, `harvest-via-api.sh` — owned by `packages/runtime-bridge` + the dispatcher skill); the false-done guard ([2026-06-23-aif-harvest-false-done-guard-design.md](2026-06-23-aif-harvest-false-done-guard-design.md)).
 
@@ -58,6 +58,13 @@ Gate set (`--full`), each mirrored from `audit-self.yml`:
 - `actionlint .github/workflows/*.yml` **if** `actionlint` ∈ PATH; else loud `WARN: actionlint absent — run on host before push` + continue (a runtime container is not a push env — gotcha 9).
 - `npx tsx packages/core/render/render-rules.ts --check` — manifest→RULES.md drift (`manifest-render-check` job).
 - `npm run typecheck` (tsc `--noEmit`) — memory `tsc masks vitest`; run before trusting green.
+- `mechanical` job bundle — `md-line-gate.sh`, bash-syntax of all `*.sh`, JSON validity, `.md`→`.md` dead-link check, stale-path references (cheap; mirrors the `mechanical` job).
+
+**Known CI-equivalence gaps (named, not silently dropped — per "documents lie; tests don't"):**
+
+- `pr-commit-trailers` job (§1.7 + Prior-art **real-commit** backstop) is **PR-commit-scoped**, not pre-push-replicable from a bare working tree — and it is exactly the gate gotcha 9 hit (a ≥80-LOC file under `packages/` with no `Prior-art:` trailer in the commit). The sweep does **not** run it; the `/harvest` egress step (Unit 2 §1) carries the trailer requirement instead. A `--commits <range>` mode that runs `PREPUSH_ONLY=prior-art` over the harvested commits is a §Promotion candidate.
+- `zizmor` job needs the external `zizmor` binary (not guaranteed locally). The sweep runs it **if present**, else `WARN-skip` (same pattern as `actionlint`).
+- `mechanical` job (bash-syntax, JSON-validity, dead-links, stale-paths, md-line-gate) is cheap and **included** in `--full`.
 
 Flags:
 
@@ -84,7 +91,7 @@ The dispatcher's harvest step ([dispatcher/SKILL.md §2.4](../../../.claude/skil
 ## Build-vs-reuse
 
 - **REUSE:** `harvest.ts` + `harvest-via-api.sh` (egress, SSOT #111 dispatcher); `superpowers:requesting-code-review` + `verification-before-completion` (the *posture* "verify before claiming done" — but neither knows the project gate list, so they cannot replace Unit 1); every existing gate test (the sweep only *aggregates* them).
-- **BUILD:** only `run-local-ci-sweep.sh` — an aggregator that runs *exactly this project's* CI gate set locally. Search check (6-item, negative-existence): no upstream tool runs "this repo's bespoke CI-job gate set" locally — that is by definition project-specific. New SSOT entry: REUSE-posture (superpowers verification skills) + BUILD-aggregator. Falsified if a generic "run my CI locally" tool (e.g. `act`-class GitHub-Actions local runner) is judged to cover the gate set acceptably — noted as the SSOT revisit trigger.
+- **BUILD:** only `run-local-ci-sweep.sh` — an aggregator that runs *exactly this project's* CI gate set locally. **Negative-existence claim is provisional** — a fresh 6-item search (context7 + DeepWiki + WebSearch ≥3 phrasings on "run GitHub Actions / CI workflow locally") MUST be run at plan time before the BUILD verdict is load-bearing (H1 discipline; not yet run this session). The leading falsifier candidate is `act`-class GitHub-Actions local runners — likely REJECT (Docker-based, runs the YAML jobs not the bespoke gate selection / baseline-aware interpretation), but that must be confirmed, not asserted. New SSOT entry on BUILD confirmation: REUSE-posture (superpowers verification skills) + BUILD-aggregator, with `act` adoption as the revisit trigger.
 
 ## Decided on merits (reported, not punted)
 
@@ -101,7 +108,7 @@ The dispatcher's harvest step ([dispatcher/SKILL.md §2.4](../../../.claude/skil
 
 ## Test plan
 
-- `scripts/run-local-ci-sweep.sh` is itself shell — paired-negative coverage in `tests/` (mirrors `ci-success-gate.test.sh` precedent): (pos) all gates green → exit 0, summary all-PASS; (neg) a seeded failing gate → exit≠0, that gate reported FAIL, sweep stops; (`--core`) runs the 5-gate subset only; (`actionlint` absent) → WARN-skip, not FAIL.
+- `scripts/run-local-ci-sweep.sh` is itself shell — paired-negative coverage in `tests/` (mirrors `ci-success-gate.test.sh` precedent). **The test MUST stub the gate commands** (inject a fake gate list via an env seam, e.g. `SWEEP_GATES_OVERRIDE`), NOT invoke the real 5-min suite — otherwise the sweep's own test becomes a slow, flaky CI step (the exact failure mode this design fights). Cases: (pos) all stubbed gates exit 0 → sweep exit 0, summary all-PASS; (neg) one stubbed gate exits 1 → sweep exit≠0, that gate reported FAIL, sweep stops at it; (`--core`) the gate list is the 5-gate subset; (`actionlint`/`zizmor` absent) → `WARN-skip`, not FAIL, sweep continues.
 - `/harvest` SKILL.md — markdown; no executable test, but the **9 egress gotchas** it codifies are each backed by a documented live incident (citations in the skill body).
 
 ## §1.7 self-reflexive note
