@@ -250,6 +250,8 @@ jobs:
         run: bash scripts/ci-success-gate.test.sh
       - name: Run harvest-via-api mode/ref paired-negative (Git Data API push fallback)
         run: bash tests/dispatcher/harvest-via-api.test.sh
+      - name: Run local-ci-sweep paired-negative (harvest sweep aggregator)
+        run: bash scripts/run-local-ci-sweep.test.sh
       - name: Run install.sh internal-refs transform test (Item 12 mirror-sync, SSOT)
         run: bash tests/install-sh/transform-internal-refs.test.sh
       - name: Run audit-ai-docs consumer-mode paired-negative (D3/D5 skip on consumer installs)
