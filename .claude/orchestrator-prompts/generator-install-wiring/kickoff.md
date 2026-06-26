@@ -68,3 +68,13 @@ Active traps: **T2** (designing ≠ running — actually wire it + show a plante
 Domain-specific trap — **T-GIW-A**: «emitted files exist / output equals preset, therefore done». Equality with the gold preset is the oracle pass, NOT proof of enforcement. The gate is a generated rule **applied in the resolved consumer config** and **tripping a planted violation**. Falsify by `eslint --print-config <boundary-file>` showing the generated rule present + a RED planted-violation run.
 
 Domain-specific trap — **T-GIW-B** (oracle tautology): the gold side of the oracle test MUST read the **shipped preset template file** as a static string; never re-run the synthesizer to produce *both* sides of the equality (`synth == synth` stays green even if the preset drifts). Same paired-negative discipline principle 26 already enforces — falsify by mutating the preset template selector and confirming the oracle goes RED.
+
+## 9. aif autonomous dispatch — park-don't-guess contract (SKILL §4c, mandatory under autonomous bridge dispatch)
+
+**aif agent — fork discipline (non-negotiable):** On ANY genuine fork or ambiguity (two defensible implementations, an undecided design choice, a missing spec detail that changes behaviour) — **do NOT pick.** Park it as a question (set the task to `manualReviewRequired` / `blocked_external` with the fork stated as «Option A → consequence X / Option B → consequence Y») and **stop that task.** Proceed only on the unambiguous parts. Guessing a fork to "keep moving" is the failure this loop exists to prevent.
+
+**Pre-identified fork in this kickoff — park it, do not decide:** §3 step 5 (principle 26 reframe) is an explicit maintainer-owned choice — «(a) assert generated install output == hand-written gold preset» vs «(b) keep the template as gold and assert install reproduces it». Both keep a drift guard in both directions; the choice is the maintainer's. Implement steps 1–4 + 6 (which are unambiguous), and **park step 5 as a question** with both options stated. Do NOT silently wire one branch of the reframe.
+
+**Conservative config (set on bridge env before dispatch):** `AGENT_MAX_REVIEW_ITERATIONS=1` (not converged in 1 pass → hand to human, don't keep guessing), `AGENT_AUTO_REVIEW_STRATEGY=closure_first`, `AGENT_SKIP_REVIEW=false`.
+
+**Egress (mandatory after `status=done`):** aif does NOT push or open PRs by design — run `npx tsx packages/runtime-bridge/src/cli/harvest.ts <taskId> --base staging` to push the branch from the container + open the PR.
