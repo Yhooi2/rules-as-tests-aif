@@ -44,10 +44,10 @@ aif-version: 2.1.0
 
 ## Accepted
 
-| Tool       | Type | Accepted   | Rationale                                       |
-| ---------- | ---- | ---------- | ----------------------------------------------- |
+| Tool       | Type | Accepted    | Rationale                                               |
+| ---------- | ---- | ----------- | ------------------------------------------------------- |
 | context7   | MCP  | recommended | strongly recommended for doc lookup; NOT auto-installed |
-| github-mcp | MCP  | 2026-05-11 | GitHub Issues + PRs in active use by workflow   |
+| github-mcp | MCP  | 2026-05-11  | GitHub Issues + PRs in active use by workflow           |
 
 ## Rejected
 
