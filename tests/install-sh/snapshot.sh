@@ -38,7 +38,7 @@ compute_fingerprint() {
   local dir="$1"
   find "$dir" -type f \
     -not -path '*/.git/*' \
-    -not -path '*/node_modules/*' \
+    -not -path '*/node_modules/*' -not -name '*.tmp' \
     | sort \
     | while IFS= read -r f; do
         local h
