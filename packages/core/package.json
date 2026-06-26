@@ -2,7 +2,7 @@
   "name": "@rules-as-tests/core",
   "version": "0.1.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "FSL-1.1-ALv2",
   "type": "module",
   "main": "./manifest/rules-manifest.json",
   "bin": {
