@@ -1,6 +1,6 @@
 # `/harvest` skill + local CI-equivalent sweep — design
 
-> **Status:** draft — operator approved the verbal design 2026-06-26; written-spec review gate pending.
+> **Status:** approved (operator, 2026-06-26 — "модель ок, сделай качественно"). BUILD verdict confirmed via 6-item search (see Build-vs-reuse).
 > **Authoritative for:** the post-aif-acceptance harvest procedure as a session-invoked `/harvest` skill + the shared `scripts/run-local-ci-sweep.sh` aggregator that runs the local CI-equivalent gate set before push.
 > **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists); the aif egress primitives themselves (`harvest.ts`, `harvest-via-api.sh` — owned by `packages/runtime-bridge` + the dispatcher skill); the false-done guard ([2026-06-23-aif-harvest-false-done-guard-design.md](2026-06-23-aif-harvest-false-done-guard-design.md)).
 
@@ -87,6 +87,7 @@ Gate set (`--full`), each mirrored from `audit-self.yml`:
 - `pr-commit-trailers` job (§1.7 + Prior-art **real-commit** backstop) is **PR-commit-scoped**, not pre-push-replicable from a bare working tree — and it is exactly the gate gotcha 9 hit (a ≥80-LOC file under `packages/` with no `Prior-art:` trailer in the commit). The sweep does **not** run it; the `/harvest` egress step (Unit 2 §1) carries the trailer requirement instead. A `--commits <range>` mode that runs `PREPUSH_ONLY=prior-art` over the harvested commits is a §Promotion candidate.
 - `zizmor` job needs the external `zizmor` binary (not guaranteed locally). The sweep runs it **if present**, else `WARN-skip` (same pattern as `actionlint`).
 - `mechanical` job (bash-syntax, JSON-validity, dead-links, stale-paths, md-line-gate) is cheap and **included** in `--full`.
+- `framework-self-*` jobs (self-install ts-server / react-next / detect / research / synth / validate / install-validated / provenance) are the **heavy self-install matrix** — minutes each, real installs into temp dirs. **Deliberately CI-only**: running them locally on every harvest is exactly the cost the diff-aware model exists to avoid, and byte-identical already covers install determinism. Even `--full` does **not** run them. A `setup.d/**` or `install.sh` diff escalates to `--full` (which runs byte-identical + the install-sh suite) but still leaves the self-install matrix to CI — a named, accepted residue.
 
 Flags:
 
@@ -114,7 +115,11 @@ The dispatcher's harvest step ([dispatcher/SKILL.md §2.4](../../../.claude/skil
 
 - **REUSE:** `harvest.ts` + `harvest-via-api.sh` (egress, SSOT #111 dispatcher); `superpowers:requesting-code-review` + `verification-before-completion` (the *posture* "verify before claiming done" — but neither knows the project gate list, so they cannot replace Unit 1); every existing gate test (the sweep only *aggregates* them).
 - **ADAPT (in-repo pattern):** the diff-aware scope model is the repo's existing **change-scoped gate** discipline (SSOT #114 guard-liveness change-scoped pre-push gate) applied to the harvest sweep — not a new invention. `git diff --name-only <base>...HEAD` → gate-family selection is ~40 LOC of bash, cheaper and more transparent than adopting a task-runner framework.
-- **BUILD:** only `run-local-ci-sweep.sh` — an aggregator that runs *exactly this project's* CI gate set locally. **Negative-existence claim is provisional** — a fresh 6-item search (context7 + DeepWiki + WebSearch ≥3 phrasings on "run GitHub Actions / CI workflow locally") MUST be run at plan time before the BUILD verdict is load-bearing (H1 discipline; not yet run this session). The leading falsifier candidate is `act`-class GitHub-Actions local runners — likely REJECT (Docker-based, runs the YAML jobs not the bespoke gate selection / baseline-aware interpretation), but that must be confirmed, not asserted. New SSOT entry on BUILD confirmation: REUSE-posture (superpowers verification skills) + BUILD-aggregator, with `act` adoption as the revisit trigger.
+- **BUILD (confirmed):** only `run-local-ci-sweep.sh` — an aggregator that runs *exactly this project's* CI gate set locally, change-scoped. **6-item search run 2026-06-26** (WebSearch ×3 phrasings + DeepWiki `nektos/act` *(arg-error, retried)* + DeepWiki `obra/superpowers` + SSOT consult):
+  - `act` (nektos/act) — Docker-based whole-*workflow* runner; emulates the GH Actions YAML jobs, does **not** select gates by `git diff` nor do baseline-aware interpretation → **REJECT** for our problem class (would also drag the heavy `framework-self-*` self-install matrix). Recorded as the SSOT revisit trigger (adopt if `act` gains lightweight change-scoped local-gate selection).
+  - `husky` + `lint-staged` + `git merge-base` diff — the **established change-scoped-local-gate pattern**; this design ADAPTs it (husky already in-repo). Confirms the pattern, not a drop-in aggregator for our bespoke gate list.
+  - `obra/superpowers` (DeepWiki) — **no single gate-aggregator script**; `finishing-a-development-branch` enforces "all tests pass", `requesting-code-review` is `BASE_SHA..HEAD_SHA` scoped review — discipline + review **posture**, not the project's bespoke CI gate set → cannot replace Unit 1 (REUSE the posture only).
+  - Verdict load-bearing: no upstream tool runs *this repo's* CI-job gate selection locally. **A new SSOT entry is added in the same commit as the script** (per [build-first-reuse-default.md §3](../../../.claude/rules/build-first-reuse-default.md) / CLAUDE.md): REUSE-posture (superpowers) + ADAPT-pattern (husky/lint-staged change-scope, SSOT #114) + BUILD-aggregator; `act` adoption = revisit trigger.
 
 ## Decided on merits (reported, not punted)
 
