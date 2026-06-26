@@ -31,16 +31,7 @@ export interface AifGateResult {
   suggested_next: AifSuggestedNext;
 }
 
-const GATE_NAMES = [
-  'schema',
-  'ruleTester',
-  'tautology',
-  'conflict',
-  'singleTokenDiff',
-  'messageIdCoverage',
-  'autofixClean',
-  'requireVacuity',
-] as const;
+const GATE_NAMES = ['schema', 'ruleTester', 'tautology', 'conflict'] as const;
 
 function flattenGate(name: string, outcome: GateOutcome): AifBlocker[] {
   return outcome.failures.map((f) => ({

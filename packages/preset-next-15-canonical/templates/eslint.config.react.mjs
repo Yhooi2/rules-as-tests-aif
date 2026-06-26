@@ -237,30 +237,8 @@ export default defineConfig(
     files: RULE_GLOBS.boundary,
     plugins: { 'rules-as-tests': customRules },
     rules: {
-      // R14 + R20 are enforced through the exempt-aware wrapper
-      // `rules-as-tests/restricted-syntax-audit-exempt`: it runs each esquery selector
-      // and suppresses a report on any line carrying `// audit:exempt` (the built-in
-      // no-restricted-syntax is comment-blind). Selectors are the SSOT recipe selectors —
-      // packages/core/synthesizer/recipes/next-r14-* and next-r20-*; keep them in sync
-      // (drift from those recipe selectors is caught by
-      //  packages/core/principles/26-template-selector-sync.test.ts).
-      'rules-as-tests/restricted-syntax-audit-exempt': [
-        'error',
-        {
-          // R14 — Validate FormData parameters via .safeParse(...)
-          selector:
-            ":function:not(:has(CallExpression[callee.property.name='safeParse'])):has(Identifier[typeAnnotation.typeAnnotation.typeName.name='FormData'], Identifier[typeAnnotation.typeAnnotation.typeName.right.name='FormData'])",
-          message:
-            'Function accepts FormData but does not call .safeParse(...). Validate the form input with a Zod schema (R14).',
-        },
-        {
-          // R20 — Server Action files must start with a 'use server' directive
-          selector:
-            "Program:not(Program:has(ExpressionStatement:first-child > Literal[value='use server'])) ExportNamedDeclaration > FunctionDeclaration[async=true], Program:not(Program:has(ExpressionStatement:first-child > Literal[value='use server'])) ExportDefaultDeclaration > FunctionDeclaration[async=true]",
-          message:
-            "Server Action file must start with 'use server' directive at the top of the file (R20).",
-        },
-      ],
+      'rules-as-tests/require-form-safe-parse': 'error',
+      'rules-as-tests/require-use-server-directive': 'error',
     },
   },
   // R7 / R8 — runtime discipline, opt-in via AIF_STRICT_RUNTIME=1 (F7)
