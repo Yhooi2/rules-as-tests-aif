@@ -26,30 +26,25 @@ if command -v node >/dev/null 2>&1 && [ -f "$PROJECT_ROOT/eslint.config.mjs" ]; 
   if [ ! -f "$_synth_wirer" ]; then
     echo "  · synth-and-wire: script not found at $_synth_wirer — skipped"
   else
-    # variant-1: ensure the synthesizer runtime so the generator RUNS in any install mode
-    # (not only --full). Blockers verified by import-trace: tsx (runs the .ts), ajv
-    # (synthesize.ts + internal-validators.ts), semver (load.ts). ts-morph is NOT needed
-    # here — the idempotent path is string-search and ts-morph degrades gracefully.
-    # Honours --dry-run (installs nothing); rc=0 on every branch (install never aborts).
-    if [ "$DRY_RUN" != "--dry-run" ] \
-       && ! ( cd "$PROJECT_ROOT" && node -e "require.resolve('tsx');require.resolve('ajv');require.resolve('semver')" ) >/dev/null 2>&1; then
-      _pm=$(detect_pm)
-      case "$_pm" in
-        pnpm) if [ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ]; then _synth_argv=(pnpm add -D -w tsx ajv semver); else _synth_argv=(pnpm add -D tsx ajv semver); fi ;;
-        yarn) _synth_argv=(yarn add -D tsx ajv semver) ;;
-        *)    _synth_argv=(npm i -D tsx ajv semver) ;;
-      esac
-      if command -v "$_pm" >/dev/null 2>&1; then
-        echo "▶ synth-wire: installing synthesizer runtime (tsx ajv semver) so the generator runs in this install"
-        ( cd "$PROJECT_ROOT" && "${_synth_argv[@]}" ) >/dev/null 2>&1 || echo "  ⚠ synth runtime install failed — synth-wire will degrade (rules still ship via the p26-verified preset)"
-      fi
+    # variant-2: run the synthesizer when its runtime resolves; otherwise SKIP gracefully.
+    # A lite install must NOT install deps without consent (the consumer-install-completeness
+    # S3 «B neg» discipline: "PM not invoked without consent"), so we do NOT impose
+    # tsx/ajv/semver. The rules still ship via the p26-verified preset — principle 26 keeps
+    # the template's selectors in sync with what the synthesizer generates, so the lite
+    # consumer gets the same (verified) rules. The full source-of-truth run happens under
+    # --full, where §8 dev-dep install lands the runtime. ts-morph is not needed on the
+    # idempotent path. Path-3 (#755) makes the synthesizer a zero-dep bundle so it runs
+    # everywhere WITHOUT this skip. rc=0 on every branch; honours --dry-run.
+    if ! ( cd "$PROJECT_ROOT" && node -e "require.resolve('tsx');require.resolve('ajv');require.resolve('semver')" ) >/dev/null 2>&1; then
+      echo "  · synth-wire: skipped — synthesizer runtime (tsx/ajv/semver) absent in this lite install; rules ship via the p26-verified preset (run with --full to drive the synthesizer)"
+    else
+      echo "▶ synth-wire: confirming synthesized rules-as-tests slice in eslint.config.mjs"
+      # Run from PROJECT_ROOT so module resolution (ts-morph, ajv) finds consumer node_modules
+      ( cd "$PROJECT_ROOT" && npx --no-install tsx "$_synth_wirer" \
+          --stack "${STACK:-ts-server}" \
+          --path "$PROJECT_ROOT/eslint.config.mjs" \
+          ${DRY_RUN:+--dry-run} 2>&1 ) || true
     fi
-    echo "▶ synth-wire: confirming synthesized rules-as-tests slice in eslint.config.mjs"
-    # Run from PROJECT_ROOT so module resolution (ts-morph, ajv) finds consumer node_modules
-    ( cd "$PROJECT_ROOT" && npx --no-install tsx "$_synth_wirer" \
-        --stack "${STACK:-ts-server}" \
-        --path "$PROJECT_ROOT/eslint.config.mjs" \
-        ${DRY_RUN:+--dry-run} 2>&1 ) || true
   fi
 fi
 
