@@ -39,6 +39,15 @@ _build() {
     --external:ts-morph \
     --banner:js="$BANNER" \
     --outfile="$outfile" 2>&1
+  # Normalize env-specific node_modules resolve paths that esbuild embeds as
+  # module-map keys + comments (e.g. `packages/core/node_modules/semver` under a
+  # workspace install vs `node_modules/semver` under root-hoist). Without this the
+  # committed bundle is NOT byte-reproducible across npm layouts and the --check
+  # drift-gate fails environment-dependently (CI hoists differently than a local
+  # workspace install). These embedded paths are inert in the inlined output
+  # (everything is bundled; the keys are not used for runtime resolution), so
+  # collapsing the prefix is safe. Portable (.bak + rm) for BSD (macOS) + GNU (CI).
+  sed -i.bak -E 's#(["(/[:space:]]|^)([A-Za-z0-9_.-]+/)*node_modules/#\1node_modules/#g' "$outfile" && rm -f "$outfile.bak"
 }
 
 MODE="${1:-build}"
