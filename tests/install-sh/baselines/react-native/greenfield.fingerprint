@@ -24,7 +24,7 @@ e3c6086efb6dbafaac285132c61c3da1f17ada581d1efe84986c1589ed1b905a  .claude/skills
 f8ff7a734f8f4d3a9367ea45a61e17f1cde292327596c300e41ac8bf276f9e66  .claude/skills/dispatcher/helpers/monitor-classify.sh
 e1784c032fb6366007c76da0dcbba0f9db6a6816e4d3d9d27e0128554838d0a0  .claude/skills/dispatcher/helpers/notify-gate.sh
 5d21f0757512eafe17f0be69a891dea8ddee4627b3bf71871e8a71536e3dab7f  .claude/skills/dispatcher/helpers/tg-notify.sh
-3aece870a3bf404b529af0ae8a43851f1875adb6388661fdc8887294a81a823c  .claude/skills/pipeline/SKILL.md
+99772bb197317a143c2f56265597feeeab09da534b2406a5ee79175ec6f62272  .claude/skills/pipeline/SKILL.md
 7b016aef242405688029efd80b2e24dccabf3d03060a64cd019e522601fd990f  .claude/skills/pipeline/evals/RESULTS.md
 29731fcb8f314d897b786fbf6b840302bf7eb4dcc27e18d7cd5cb855b3341fee  .claude/skills/pipeline/evals/evals.json
 3fb659d0d73c6bdf90ab35758808c0e0ac47f31d19c7665bcc719dcf2497df2b  .claude/skills/pipeline/evals/files/scenario-1-noarg-state.md
