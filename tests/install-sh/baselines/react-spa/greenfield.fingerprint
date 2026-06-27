@@ -19,12 +19,12 @@ f6159ab2c6b5c23b937b439f181a7a5489973f51dc8267f4304d128c48eee567  .claude/settin
 76153b5303795a01386afcb3b681a910d5963fcd03fe48ea4b9ae53ff0d61809  .claude/skills/aif-doctor/SKILL.md
 a61194b1eb8ea92372cee7ad053b797d08f36d6d62f51c992aac015f4f97181b  .claude/skills/aif-doctor/helpers/heal.sh
 feb8117af8ed47e7651475cc8174fc49705538274c7c9fa200dda45d95616235  .claude/skills/aif-doctor/helpers/refresh-aif-base.sh
-e3c6086efb6dbafaac285132c61c3da1f17ada581d1efe84986c1589ed1b905a  .claude/skills/dispatcher/SKILL.md
+a528408b06040a8293962623c69d19afd09f53abd98dd7d857ff88e024bcda1c  .claude/skills/dispatcher/SKILL.md
 32171fb8f224dfed23e9985a70d7c4e566ff44ff15258a31d33013bb3224ff9a  .claude/skills/dispatcher/helpers/harvest-via-api.sh
-f8ff7a734f8f4d3a9367ea45a61e17f1cde292327596c300e41ac8bf276f9e66  .claude/skills/dispatcher/helpers/monitor-classify.sh
+31ccbff214f343f872135ab4b21192af1bba9ba06f7f633b8f33dee4e8166714  .claude/skills/dispatcher/helpers/monitor-classify.sh
 e1784c032fb6366007c76da0dcbba0f9db6a6816e4d3d9d27e0128554838d0a0  .claude/skills/dispatcher/helpers/notify-gate.sh
 5d21f0757512eafe17f0be69a891dea8ddee4627b3bf71871e8a71536e3dab7f  .claude/skills/dispatcher/helpers/tg-notify.sh
-3aece870a3bf404b529af0ae8a43851f1875adb6388661fdc8887294a81a823c  .claude/skills/pipeline/SKILL.md
+4f18279adc18b63b0bb48e173f4c761533f7a2276111531c837ae291a52f5e7d  .claude/skills/pipeline/SKILL.md
 7b016aef242405688029efd80b2e24dccabf3d03060a64cd019e522601fd990f  .claude/skills/pipeline/evals/RESULTS.md
 29731fcb8f314d897b786fbf6b840302bf7eb4dcc27e18d7cd5cb855b3341fee  .claude/skills/pipeline/evals/evals.json
 3fb659d0d73c6bdf90ab35758808c0e0ac47f31d19c7665bcc719dcf2497df2b  .claude/skills/pipeline/evals/files/scenario-1-noarg-state.md
@@ -37,7 +37,7 @@ eed9962cef541117bd4be15133ccdc05a05e4e90fea18108d15fd855d6cc7fd7  .claude/skills
 f58b54fd4a2c3b1bb1e99e7abc78984a8d74651612970157b233ee300b5a0a15  .claude/skills/pipeline/helpers/delta-diff.sh
 1ebcbf313a3c75ef3c4ca3bb07a76e4ab9935eb331d04e5074e2c43b26449bdb  .claude/skills/pipeline/helpers/delta-write-from-state.sh
 01fa576465e4a85ed54594bd99b86954ab616b35d3cae7f477d0f148ef0078fc  .claude/skills/pipeline/helpers/dispatch-from-state.sh
-64db1b0216ca8c0d8e0529492551faa722d7ba67b86f98cd5d868bcb676eb18f  .claude/skills/pipeline/helpers/dup-detect.sh
+23ce108236ff66b018cf835ad89612523e37bbee90ea037eceea6e004fa18c56  .claude/skills/pipeline/helpers/dup-detect.sh
 ea812d548aa1618c3c8093795d1532ca80a747ba6fb181ec584120c1c50d8373  .claude/skills/pipeline/helpers/emit-output-strings.sh
 a3fca0b0d4a4f22b0c8588c0b450b431db0865dcfdd2f466cce4d4e961731033  .claude/skills/pipeline/helpers/inflight-check.sh
 2d78d45261fb37f3e0b1d09fa39c272d0833190914a6a8b7ebd22f5047d922d1  .claude/skills/pipeline/helpers/integer-name-guard.sh
@@ -46,8 +46,8 @@ cf0210c2bcf5cb59cdd253a019457268de5229d6b2eab9c52e739ae1a30894c4  .claude/skills
 86f37d5e782836b18e6d4f5829007cb3495d89dc05819a5efa0ffadfb3eb8b43  .claude/skills/pipeline/helpers/parse-override-flags.sh
 949733f955e710cef66d1ee251abc45db922658ae739802353d918c27f38ac27  .claude/skills/pipeline/helpers/plan-currency-check.sh
 56a08403ffffe491fb20b8dd2a687cbb6f4583a114578e6ab89f0c7668de0b72  .claude/skills/pipeline/helpers/print-plan-path.sh
-deee719c8b0c00ec88a4cb6e94e82e8e177fb917a717467b2b944c8ced9bbdaa  .claude/skills/pipeline/helpers/priority-score-synthetic.sh
-3963003e37bd1eeed0f7db1fa6447d9afa35c979c59ad3df322aa19c23e59731  .claude/skills/pipeline/helpers/priority-score.sh
+104c00262ab70ba18061474dfa90b2bb71ae56874d6870af4910f4a5f8940015  .claude/skills/pipeline/helpers/priority-score-synthetic.sh
+e9fe6214267539439a40e69f05a30554aad46fd2af098f7c21935d41d44cdae0  .claude/skills/pipeline/helpers/priority-score.sh
 2c2a0920175c2693db7d879b1dfaa4d4c5e7d74fbf9505876cb8af9592bf6528  .claude/skills/pipeline/helpers/run-helper.sh
 587d26e1ffc4140df36d876af5d4c065b832b0581f6639978b0b5954feb1b881  .claude/skills/pipeline/helpers/update-cache.sh
 e788361fd1adc56ce28d47589d8fe6aba5bf5f289a423ae83e4f18f6a01515bc  .claude/skills/pipeline/helpers/update-delta.sh
@@ -65,7 +65,7 @@ dafa0f78758f1e7df80fbd66a304edde016fcf7740b8bc3906ab15c28352d0c8  .claude/skills
 828e353d144cb792efee02715606374786dcf534c90f746bfd49568159bda2ab  .claude/skills/pipeline/references/plain-language-tail.md
 dc81b0178b42ad6b120d92eeaa65de0bb60b0a0744c9205dcb6d7d7814d9bf5d  .claude/skills/pipeline/references/plan-cache.md
 1eec4cec44402238c004dbcef2a953b0e19b0fbdd01f344e8ff46b87e3923bda  .claude/skills/pipeline/references/red-flags.md
-099f646a8f53b2faff048ac0404ebdfa8b42a12b5a610d74c68dcca499f4f39c  .claude/skills/pipeline/templates/meta-kickoff.template.md
+70d09eb06dda00796a2f7f6980d42d91db9bdd449b683b6a0ab1384f6b02b885  .claude/skills/pipeline/templates/meta-kickoff.template.md
 e279a989947be84b0fd28929640037ed4c5753b2d7adcb158129af3fa62d129d  .claude/skills/pipeline/templates/state.md.template
 7c79f71a9893fd2ae4abd20f3119d5fc90d524fd594e80959994cdf4cb3530f0  .claude/skills/rules-as-tests/SKILL.md
 9cf60a06f9448d9666799a640dc4d5a93aa7c24292adc85b00f20af914e7ecc7  .claude/skills/rules-as-tests/references/ai-traps.md
@@ -92,8 +92,8 @@ f7b6c4be48388ef83423b21c00848ea715088fe4ef577a93262ccccdf2c81335  .prettierignor
 d37f3e8265f40120a35329d589512251d9b5a4411ef74237ae18e9203257fb3b  eslint-rules-local/no-direct-time-randomness.mjs
 4966ee76fe6db315f3fa4680eda22f939686974bf1c1ac99dbc08f046550c75c  eslint-rules-local/no-direct-time-randomness.ts
 44b08dc10a3bf1c7821be145024b9fb16db1ed0b2a0a0ec09ae5f686d62321c7  eslint-rules-local/no-unsafe-zod-parse.d.ts
-64e9c109d6dcc00a787f54cda90b42b57d6ee8823cc4b0d760f093d05d3f285f  eslint-rules-local/no-unsafe-zod-parse.mjs
-d221d1c0c3e5b637507114343c1237d572eec3e412cbe6954ccd5c0b94af2e98  eslint-rules-local/no-unsafe-zod-parse.ts
+c026af59622022a501a4eba07194a1eea5c70b614d39933866135cf907b4d1d2  eslint-rules-local/no-unsafe-zod-parse.mjs
+a268b470f008a07685d919d94d3f84c5c24f4c20c1b9977a023dbff57c6bf1fd  eslint-rules-local/no-unsafe-zod-parse.ts
 5c1541a94f98b0261224c57e8aff48a1d4222334a5f6806c1ad307ffed22e874  eslint-rules-local/require-error-boundary.d.ts
 dcf63f5757d9afce5b224da834c893cc7beab4e6a8e585f8dcf1e28b6e7c1c0f  eslint-rules-local/require-error-boundary.mjs
 3d194ef4f2a013d1d53e9029b0bbaa542d8b824421882d163a00284c443e697e  eslint-rules-local/require-error-boundary.ts
