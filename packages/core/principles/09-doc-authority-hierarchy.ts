@@ -47,6 +47,7 @@ export const REQUIRED_HEADER_DOCS: readonly string[] = [
   '.claude/rules/companion-install-principle.md',
   '.claude/rules/language-discipline.md',
   '.claude/rules/ci-tool-pinning.md',
+  '.claude/rules/egress-no-api-bypass.md',
 
   // docs/meta-factory/ reference docs (excluding sub-folders + filename-convention transients)
   'docs/meta-factory/EXECUTION-PLAN.md',
