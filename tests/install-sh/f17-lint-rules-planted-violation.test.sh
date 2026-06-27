@@ -134,7 +134,7 @@ import { Linter } from 'eslint';
 import { default as plugin } from './eslint-rules-local/index.mjs';
 const linter = new Linter();
 const cfg = [{ plugins: { rat: plugin }, rules: { 'rat/no-unsafe-zod-parse': 'error' }, languageOptions: { ecmaVersion: 2022 } }];
-const msgs = linter.verify("const s={parse:x=>x};const r=s.parse('x');", cfg, { filename: 'test.js' });
+const msgs = linter.verify("const bodySchema={parse:x=>x};const r=bodySchema.parse('x');", cfg, { filename: 'test.js' });
 process.exit(msgs.some(m => m.ruleId === 'rat/no-unsafe-zod-parse') ? 0 : 1);
 SCRIPT
 
@@ -144,7 +144,7 @@ import { Linter } from 'eslint';
 import { default as plugin } from './eslint-rules-local/index.mjs';
 const linter = new Linter();
 const cfg = [{ plugins: { rat: plugin }, rules: { 'rat/no-unsafe-zod-parse': 'error' }, languageOptions: { ecmaVersion: 2022 } }];
-const msgs = linter.verify("const s={parse:x=>x};const r=s.parse('x'); // audit:exempt", cfg, { filename: 'test.js' });
+const msgs = linter.verify("const bodySchema={parse:x=>x};const r=bodySchema.parse('x'); // audit:exempt", cfg, { filename: 'test.js' });
 process.exit(msgs.some(m => m.ruleId === 'rat/no-unsafe-zod-parse') ? 1 : 0);
 SCRIPT
 
