@@ -139,6 +139,17 @@ DEVDEPS=( "${CORE_DEVDEPS[@]}" )
 [ "$STACK" = "react-spa" ] && DEVDEPS+=( "${REACT_SPA_DEVDEPS[@]}" )
 [ "$STACK" = "react-native" ] && DEVDEPS+=( "${REACT_NATIVE_DEVDEPS[@]}" )
 
+# react-native only: eslint-plugin-react-native-a11y peer-deps eslint ^3..^8 (no eslint-9-compatible
+# release exists), while the preset ships eslint ^9. npm 7+ strict peer resolution aborts the whole
+# dev-dep install with ERESOLVE → a fresh `install.sh react-native --full` lands NO toolchain (no
+# prettier/depcruise) and the consumer's `npm run validate` cannot run. The plugin's rules are flat-
+# config plugin OBJECTS consumed as `plugins: { 'react-native-a11y': … }` (eslint.config.rn-common.mjs)
+# — they are eslint-9-functional; the peer range is stale npm metadata, not a runtime incompatibility.
+# So relax peer resolution for the RN npm install ONLY (ts-server/react-next/react-spa keep strict
+# peer checks). npm-specific: pnpm/yarn do not hard-fail on peer conflicts by default. (GH #779 follow-up)
+NPM_PEER_FLAG=""
+[ "$STACK" = "react-native" ] && NPM_PEER_FLAG="--legacy-peer-deps"
+
 DEPS_INSTALLED=""
 _do_dep_install=""
 if [ "$DRY_RUN" = "--dry-run" ]; then
@@ -180,7 +191,9 @@ if [ "$_do_dep_install" = "yes" ]; then
       yarn)
         if ( cd "$PROJECT_ROOT" && yarn add -D "${DEVDEPS[@]}" ); then _ok="yes"; fi ;;
       *)
-        if ( cd "$PROJECT_ROOT" && npm install --save-dev "${DEVDEPS[@]}" ); then _ok="yes"; fi ;;
+        # $NPM_PEER_FLAG is empty for all stacks except react-native (see ERESOLVE note above).
+        # Unquoted so an empty value expands to no arg (bash 3.2 + `set -u` safe).
+        if ( cd "$PROJECT_ROOT" && npm install --save-dev $NPM_PEER_FLAG "${DEVDEPS[@]}" ); then _ok="yes"; fi ;;
     esac
     if [ -n "$_ok" ]; then
       DEPS_INSTALLED="1"
