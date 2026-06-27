@@ -13,19 +13,32 @@ copy_safe "$PKG_ROOT/packages/core/templates/shared/husky-pre-push.sh" "$PROJECT
 # Wave 10.5: also install the bash critical-only fallback so the dispatcher can find it.
 # The runtime dispatcher (husky-pre-push.sh) selects between TS-core and fallback at each push.
 copy_safe "$PKG_ROOT/packages/core/hooks/pre-push.fallback.sh" "$PROJECT_ROOT/packages/core/hooks/pre-push.fallback.sh"
-# cih-s1 F1: also ship the TS-core hook + its bounded static import closure so the
-# dispatcher's Node≥20 arm is reachable (without these, husky-pre-push.sh always
-# falls to the presence-only bash fallback). The relative layout under
-# packages/core/hooks/ is preserved so the dispatcher resolves $REPO_ROOT/packages/
-# core/hooks/pre-push.ts. Closure (static, re-derived to fixpoint): pre-push.ts →
-# {utils/run-check.ts, utils/git.ts, checks/prior-art.ts, checks/s17.ts}. NOT shipped:
-# checks/guard-liveness.ts is dynamically import()ed and degrades gracefully when absent.
+# cih-s1 F1 / GH #735: ship the TS-core hook + its full STATIC import closure so the
+# dispatcher's Node≥20 arm is reachable AND does not crash on load. The relative layout
+# under packages/core/hooks/ is preserved so the dispatcher resolves
+# $REPO_ROOT/packages/core/hooks/pre-push.ts.
+#
+# Static closure (re-derived from pre-push.ts imports; a missing one is ERR_MODULE_NOT_FOUND
+# at load → EVERY push aborts before any check runs):
+#   utils/run-check.ts, utils/git.ts, checks/prior-art.ts, checks/s17.ts,
+#   checks/unpinned-tool-install.ts   ← pre-push.ts:32 `import … from './checks/unpinned-tool-install.ts'`
+# (#735: this static import was omitted here AND the closure comment wrongly claimed s17 was the last;
+#  the #747 fix added it only to do_refresh()/--refresh, never to this fresh-install path.)
+#
+# NOT shipped here (deliberate): checks/guard-liveness.ts + checks/cmd-script-liveness.ts are
+# dynamic `await import()`s — heavy (they pull eslint + ../../eslint-rules/index.ts, which trips
+# the consumer's prettier + dependency-cruiser gates if vendored in). Their catch currently
+# die()s rather than skipping, so the change-scoped guard-liveness/cmd-script gates still abort a
+# push that touches a rule manifest. Making those gates degrade gracefully (skip-with-warn instead
+# of die) — or shipping them with the prettier/depcruise/eslint-dep handling — is tracked separately;
+# this commit fixes only the UNCONDITIONAL crash. Keep the static list in sync with do_refresh().
 for ts_hook in \
   pre-push.ts \
   utils/run-check.ts \
   utils/git.ts \
   checks/prior-art.ts \
-  checks/s17.ts; do
+  checks/s17.ts \
+  checks/unpinned-tool-install.ts; do
   copy_safe "$PKG_ROOT/packages/core/hooks/$ts_hook" "$PROJECT_ROOT/packages/core/hooks/$ts_hook"
 done
 # GH #532: the shipped pre-push.ts is authored as an ES module, but its module-type is decided by
