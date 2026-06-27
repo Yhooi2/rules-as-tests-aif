@@ -22,7 +22,7 @@ After install, your project has:
 5. **Stack configs**:
    - ESLint 10 flat config (typescript-eslint strictTypeChecked + Prettier; for React, also react-hooks + jsx-a11y/strict + @next/next).
    - Vitest 4.x with `.unit.ts` / `.integration.ts` / `.audit.ts` naming and per-module coverage thresholds (90% domain, 85% application).
-   - Stryker mutation testing (incremental on PR diff, full sweep nightly).
+   - Stryker mutation testing (incremental on PR diff).
    - dependency-cruiser layered architecture rules.
    - Husky pre-commit (lint-staged) + pre-push (typecheck + vitest related + arch + audit-ai-docs).
    - GitHub Actions CI with required `ci-success` job.

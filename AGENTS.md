@@ -41,6 +41,7 @@ Universal format read by Cursor, Codex CLI, Aider, Windsurf, and other non-CC ha
 | [`.claude/rules/recommendation-laziness-discipline.md`](.claude/rules/recommendation-laziness-discipline.md) | Recommendations need at least one evidence-bearing tool call in the same turn; ambiguous forks route via AskUserQuestion |
 | [`.claude/rules/reviewer-discipline.md`](.claude/rules/reviewer-discipline.md) | Reviewer sessions surface decision-needed forks; they do not choose project strategy |
 | [`.claude/rules/rule-enforcement-channel-selection.md`](.claude/rules/rule-enforcement-channel-selection.md) | Every rule fails at the earliest reachable channel; CI is the last resort, not the primary gate |
+| [`.claude/rules/skill-description-quality.md`](.claude/rules/skill-description-quality.md) | SKILL.md `description`-field quality discipline (deferred Class C); promotion at ≥3 misrouting incidents / 6 months |
 
 ## Key files for contributors
 
