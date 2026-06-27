@@ -95,7 +95,7 @@ b15d3a4e0c0770a5a13fe03af325f433324080e7f7b8ab9b7d00cc16b2a3800c  eslint-rules-l
 64c109e7504248ee99cdd53fafc06b01991ddd891765d76d485e37ad1b3d45aa  eslint-rules-local/no-server-imports-in-client.mjs
 8047032d560cc33b06fddb7ecb4dced3ad60366a86e751527f532bdf2f0b2723  eslint-rules-local/no-server-imports-in-client.ts
 7753f59628dd5065af6054791589635da49507214d70c9c212d52b499cabb408  eslint-rules-local/no-unsafe-zod-parse.d.ts
-64e9c109d6dcc00a787f54cda90b42b57d6ee8823cc4b0d760f093d05d3f285f  eslint-rules-local/no-unsafe-zod-parse.mjs
+c026af59622022a501a4eba07194a1eea5c70b614d39933866135cf907b4d1d2  eslint-rules-local/no-unsafe-zod-parse.mjs
 a268b470f008a07685d919d94d3f84c5c24f4c20c1b9977a023dbff57c6bf1fd  eslint-rules-local/no-unsafe-zod-parse.ts
 23f35b3122e26e1e24b8abd13a6694460f7104966dc92fa7bff194d467f3a7b0  eslint-rules-local/require-otel-span.d.ts
 e10756bf6768a1a83ded9120167088a46c0538359b9ed4613fd95984d4577ffa  eslint-rules-local/require-otel-span.mjs

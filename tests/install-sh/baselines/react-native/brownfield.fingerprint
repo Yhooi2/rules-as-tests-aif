@@ -92,7 +92,7 @@ e5c55600007f1e16b82be03bd4056fdd4a5e4488f300dd5933466a45d71d248f  .prettierignor
 d37f3e8265f40120a35329d589512251d9b5a4411ef74237ae18e9203257fb3b  eslint-rules-local/no-direct-time-randomness.mjs
 4966ee76fe6db315f3fa4680eda22f939686974bf1c1ac99dbc08f046550c75c  eslint-rules-local/no-direct-time-randomness.ts
 7753f59628dd5065af6054791589635da49507214d70c9c212d52b499cabb408  eslint-rules-local/no-unsafe-zod-parse.d.ts
-64e9c109d6dcc00a787f54cda90b42b57d6ee8823cc4b0d760f093d05d3f285f  eslint-rules-local/no-unsafe-zod-parse.mjs
+c026af59622022a501a4eba07194a1eea5c70b614d39933866135cf907b4d1d2  eslint-rules-local/no-unsafe-zod-parse.mjs
 a268b470f008a07685d919d94d3f84c5c24f4c20c1b9977a023dbff57c6bf1fd  eslint-rules-local/no-unsafe-zod-parse.ts
 23f35b3122e26e1e24b8abd13a6694460f7104966dc92fa7bff194d467f3a7b0  eslint-rules-local/require-otel-span.d.ts
 e10756bf6768a1a83ded9120167088a46c0538359b9ed4613fd95984d4577ffa  eslint-rules-local/require-otel-span.mjs
