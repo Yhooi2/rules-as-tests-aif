@@ -81,15 +81,16 @@ mkdir -p "$T2/apps/api/src/handlers"; echo 'export const x = 1;' > "$T2/apps/api
   || bad "F3 behavioral (monorepo): R2 globs do NOT reach a monorepo handler"
 
 # ── F3 NEG (load-bearing): source present but no boundary dir → V-gate alarms ──
-# SKIPPED (GH #777) — post-#735, a fresh ts-server install ships packages/core/eslint-rules/,
-# which the install-injected `**/eslint-rules/**` boundary glob matches. R2 is therefore never
-# inert on ts-server, so a genuine "code present, no boundary match" scenario is unconstructible
-# here without a V-gate fix (exclude vendored framework packages/core/ from user-coverage).
-# This arm previously passed ONLY because eslint.config.mjs's barrel import crashed when the
-# barrel was absent (a crash, not real no-boundary detection) — #735 removed that mask and
-# exposed the latent vacuity. Skipping here is strictly more honest than the prior silent
-# vacuous pass; a genuine alarm is restored via GH #777 (the V-gate fix is tracked, not hidden).
-echo "  ⊘ F3 NEG (ts-server): SKIPPED — V-gate vacuity tracked in GH #777 (shipped framework eslint-rules/ permanently satisfies the injected boundary glob)"
+# (GH #777) check-rule-globs.sh now PRUNES the vendored framework packages/core/ from the
+# user-coverage scan, so the shipped eslint-rules/ no longer masks this arm: a consumer with
+# src/index.ts but no handlers/routes/... boundary dir → R2 matches zero USER source → alarms.
+T3=$(mktemp -d); install_into "$T3" ts-server
+mkdir -p "$T3/src"; echo 'export const x = 1;' > "$T3/src/index.ts"
+if ( cd "$T3" && ESLINT_CONFIG="$T3/eslint.config.mjs" bash "$T3/scripts/check-rule-globs.sh" ) >/dev/null 2>&1; then
+  bad "F3 NEG: code present but no boundary dir, yet V-gate stayed green → VACUOUS"
+else
+  ok "F3 NEG: code present, no boundary dir → V-gate alarms (non-vacuous)"
+fi
 
 # ── F7: default install does NOT require R7/R8 (deferred); strict mode DOES ──
 # Fixture has boundary (src/routes) but no application/ layer → R8 inert.
