@@ -130,9 +130,20 @@ REACT_SPA_DEVDEPS=(
 # Just the RN ESLint toolchain — eslint-config-expo (Expo baseline), @react-native/eslint-config +
 # @eslint/eslintrc (bare-RN baseline via FlatCompat), and the RN lint plugins. Ship BOTH baselines'
 # deps so a consumer can switch Expo↔bare without a reinstall.
+#
+# `typescript` is listed EXPLICITLY for react-native ONLY (GH #779 lint follow-up). The bare-RN
+# baseline resolves `@react-native/eslint-config#overrides[3]` → `@typescript-eslint/parser`, which
+# require()s a standalone `typescript` module at parse time (Expo's eslint-config-expo needs it too).
+# Other stacks get `typescript` auto-installed as a peer of `typescript-eslint`/the parser (verified:
+# a react-spa consumer carries node_modules/typescript with NO package.json entry); RN can't, because
+# the RN install runs with `--legacy-peer-deps` (the a11y-peer ERESOLVE workaround above), which
+# SUPPRESSES npm's peer auto-install. Without this line `npm run lint` dies on a fresh RN consumer:
+# "Cannot find module 'typescript'". Unpinned — consistent with the bare entries in these arrays; the
+# parser's `typescript >=4.8.4 <6.1.0` peer is satisfied by the current registry latest.
 REACT_NATIVE_DEVDEPS=(
   eslint-config-expo @react-native/eslint-config @eslint/eslintrc
   eslint-plugin-react-native eslint-plugin-react-native-a11y
+  typescript
 )
 DEVDEPS=( "${CORE_DEVDEPS[@]}" )
 [ "$STACK" = "react-next" ] && DEVDEPS+=( "${REACT_DEVDEPS[@]}" )
