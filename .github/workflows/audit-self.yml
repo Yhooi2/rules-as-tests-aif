@@ -347,6 +347,8 @@ jobs:
         run: bash tests/install-sh/ship-orchestration-skills.test.sh
       - name: install-sh — detect-r2-boundary (GH #547 C1 classifier)
         run: bash tests/install-sh/detect-r2-boundary.test.sh
+      - name: Run install-sh multi-stack monorepo per-workspace scoping test (§13.5 I-2 L2)
+        run: bash tests/install-sh/multi-stack-monorepo.test.sh
       - name: install-sh — r2-na-marker (GH #547 C4 two-gates-one-marker)
         run: bash tests/install-sh/r2-na-marker.test.sh
       - name: install-sh — r2-auto-wire (GH #547 C2/C3 fixtures + self-probe)
