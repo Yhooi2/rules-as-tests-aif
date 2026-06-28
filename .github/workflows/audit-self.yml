@@ -626,11 +626,14 @@ jobs:
         # module gives tsconfig inputs — without it tsc/depcruise abort with TS18003 on an empty
         # tree — while target="." keeps the vendored packages/core/** in depcruise's scope. No
         # string literal (the consumer ships .prettierrc.json with singleQuote) and no ${…}/backtick
-        # so the line is prettier-config-agnostic AND shellcheck-clean (SC2016).
+        # so the line is prettier-config-agnostic AND shellcheck-clean (SC2016). No type annotation
+        # either: the ts-server/react-next/react-spa typed configs enable
+        # @typescript-eslint/no-inferrable-types, which flags `: number` on a literal — the
+        # un-annotated form is lint-clean on all 4 stacks (the lint arm below runs for every stack).
         run: |
           cd "$CONSUMER"
           mkdir -p src
-          printf 'export const answer: number = 42;\n' > src/index.ts
+          printf 'export const answer = 42;\n' > src/index.ts
       - name: Assert the consumer toolchain installed (else the validate gate is vacuous)
         run: |
           cd "$CONSUMER"
@@ -647,18 +650,20 @@ jobs:
         run: |
           cd "$CONSUMER"
           npm run arch:check
-      - name: "Consumer: npm run lint (react-native only — GH #779 lint follow-up)"
-        # react-native-SCOPED on purpose. A fresh `install.sh react-native --full` consumer's
-        # `npm run lint` had two RN-eslint-9 defects this PR fixes: (1) the bare-RN/Expo parser
-        # needs a standalone `typescript` module that the RN `--legacy-peer-deps` install dropped
-        # (now in REACT_NATIVE_DEVDEPS), and (2) the RN eslint configs had no global `ignores`, so
-        # `eslint .` parsed the vendored framework namespace (eslint-rules-local/**, packages/core/**,
-        # the .mjs configs) under the @react-native baseline and died (now ignored in rn-common).
-        # The other stacks are NOT covered here: their fresh-install lint has separate, pre-existing
-        # vendored-namespace defects (e.g. typescript-eslint typed-linting choking on the same .mjs)
-        # that are out of this PR's scope — gating them green here would be dishonest. Deterministic +
-        # API-free (eslint, no LLM) per .claude/rules/no-paid-llm-in-ci.md.
-        if: ${{ matrix.stack == 'react-native' }}
+      - name: "Consumer: npm run lint (all stacks — GH #779 lint follow-up)"
+        # All 4 stacks run the consumer's `npm run lint` (eslint . --max-warnings=0). A fresh
+        # `install.sh <stack> --full` vendors the AIF framework namespace (eslint-rules-local/**,
+        # packages/core/**, scripts/audit-r4.ts, the root .mjs/.cjs/.ts configs) into the consumer
+        # tree. `eslint .` walks all of it, so each stack's eslint config must ignore that namespace
+        # or it false-fails on files the consumer never authored:
+        #   • react-native (#787): @react-native's espree @ es2015 parse-errors on the .mjs + a
+        #     dot-notation warn on the vendored .ts → fixed in eslint.config.rn-common.mjs `ignores`
+        #     (plus a standalone `typescript` devdep the --legacy-peer-deps install had dropped).
+        #   • ts-server / react-next / react-spa (this PR): the typescript-eslint type-aware configs
+        #     (strictTypeChecked + projectService) fatal-error on the same vendored .mjs/.ts/.cjs
+        #     (no type info / "not found by the project service") → fixed by adding the framework
+        #     namespace to each stack's eslint config `ignores`.
+        # Deterministic + API-free (eslint, no LLM) per .claude/rules/no-paid-llm-in-ci.md.
         run: |
           cd "$CONSUMER"
           test -x node_modules/.bin/eslint \

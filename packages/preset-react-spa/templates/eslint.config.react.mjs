@@ -62,6 +62,18 @@ export default defineConfig(
       'public/**',
       '**/*.d.ts',
       'reports/**',
+      // ─── AIF framework machinery vendored by install.sh (GH #779 lint follow-up) ───
+      // NOT consumer source — `eslint .` walks the whole tree and this config's type-aware
+      // rules (strictTypeChecked + projectService) fatal-error on the shipped `.mjs` (no type
+      // info) and the vendored `.ts`/`.cjs` outside the tsconfig `src/**` include. The consumer
+      // authors none of these; lint only their own source. Parity with react-native (#787).
+      'eslint-rules-local/**',
+      'packages/core/**',
+      'scripts/audit-r4.ts',
+      'eslint.config.mjs',
+      'vitest.config.ts',
+      'playwright.config.ts',
+      '.dependency-cruiser.cjs',
     ],
   },
 
