@@ -76,7 +76,9 @@ HUMAN — interactive agent session (MCP connected: context7 + deepwiki):
 - **`FileResearchClient`** — reads `<stack>.research.json`, runs `validateResearchPlan` (throws → degrade), returns the `ResearchPlan`. Trust boundary #1.
 - **`FileGenerateClient`** — reads `<stack>.selection.json`, returns the `GenerateSelection` (ignores `menu`, like the stub ignores `detection`). Trust boundary #2 = L4 downstream (+ the §MAJOR-1 manual-drop).
 - **Two files, not one:** maps 1:1 onto the two injectable ports; each validated by its own gate. Drift (entryId mismatch between files) degrades safely (candidate dropped → research-only), never ships a broken rule.
-- **MINOR-1 resolved — committed, not transient:** `.ai-factory/rules-research/*.json` are committed (team-shared reproducibility + audit, same rationale as `tool-decisions.md`). They are the human-auditable input record; `rules-lock.json` remains the machine output record.
+- **MINOR-1 resolved — runtime path vs test-fixture path (the framework gitignores its own `.ai-factory/`):**
+  - **Runtime (consumer):** `.ai-factory/rules-research/*.json` are committed *in the consumer repo* (team-shared reproducibility + audit, same rationale as `tool-decisions.md`). The human-auditable input record; `rules-lock.json` is the machine output record. The framework repo gitignores its OWN `/.ai-factory/` ([`.gitignore:42`](../../../.gitignore)) — that path is per-consumer scaffolding, not framework source, so nothing the slice writes there is committed in THIS repo.
+  - **Test fixture (framework):** the deterministic test's sample plan+selection are committed framework fixtures under [`packages/core/synthesizer/fixtures/`](../../../packages/core/synthesizer/fixtures/) (precedent: `rn-research-plan.json`), **NOT** under `.ai-factory/` (gitignored → would never commit). The test reads the fixture from `fixtures/` and writes output to a `mkdtemp` consumer root (mirror [`rule-bootstrap.test.ts`](../../../packages/core/synthesizer/rule-bootstrap.test.ts)).
 
 ## 7. Provenance discipline (MINOR-2 / Q2 — verified-at-author-time, not "on conscience")
 
@@ -98,7 +100,7 @@ The deterministic core is already AI-agnostic (a JSON file contract + a pure tai
 2. Wire `rule-bootstrap-cli.ts` (`--from-research` + `--from-selection`, inject file-clients; default = stubs) + the §MAJOR-1 manual-drop backstop.
 3. Wire `setup.d/80-rule-bootstrap.sh` — pass the two files when present; degrade + guidance when absent (Decision B).
 4. `agents/rule-researcher.md` (portable canon) + `.claude/skills/rule-research/SKILL.md` (thin CC trigger). Not capability commits.
-5. Deterministic test (mirror [`rule-bootstrap.test.ts`](../../../packages/core/synthesizer/rule-bootstrap.test.ts)): a sample agent-written plan+selection (the **`no-head-element`** demo) flows `--from-research`/`--from-selection` → factory → real `rules-lock.json`; a non-expressible (manual) candidate is dropped, not shipped. `$0`-in-CI.
+5. Deterministic test (mirror [`rule-bootstrap.test.ts`](../../../packages/core/synthesizer/rule-bootstrap.test.ts)): committed sample plan+selection fixtures under `packages/core/synthesizer/fixtures/` (the **`no-head-element`** demo; NOT `.ai-factory/` — gitignored) flow `--from-research`/`--from-selection` → factory → real `rules-lock.json` in a `mkdtemp` root; a non-expressible (manual) candidate is dropped, not shipped. `$0`-in-CI.
 
 ## 10. Demo rule (MAJOR-3) + Phase-0 prototype gate (PASSED)
 
@@ -116,7 +118,7 @@ The deterministic core is already AI-agnostic (a JSON file contract + a pure tai
 
 ## 12. Testing / $0-in-CI (principle 17)
 
-Live MCP research is session-bound, NEVER in CI. The deterministic tail is CI-tested with injected stubs (`stubRuleResearch`/`stubGenerateNextImage`). New test feeds a committed sample plan+selection through the file-clients (no network). Re-confirm `tests/agnosticism/probes/paid.sh` stays green.
+Live MCP research is session-bound, NEVER in CI. The deterministic tail is CI-tested with injected stubs (`stubRuleResearch`/`stubGenerateNextImage`). New test feeds committed sample fixtures (`packages/core/synthesizer/fixtures/`, not `.ai-factory/`) through the file-clients (no network). Re-confirm `tests/agnosticism/probes/paid.sh` stays green.
 
 ## 13. SSOT / capability commit
 
