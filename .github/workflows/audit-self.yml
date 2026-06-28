@@ -647,6 +647,23 @@ jobs:
         run: |
           cd "$CONSUMER"
           npm run arch:check
+      - name: "Consumer: npm run lint (react-native only — GH #779 lint follow-up)"
+        # react-native-SCOPED on purpose. A fresh `install.sh react-native --full` consumer's
+        # `npm run lint` had two RN-eslint-9 defects this PR fixes: (1) the bare-RN/Expo parser
+        # needs a standalone `typescript` module that the RN `--legacy-peer-deps` install dropped
+        # (now in REACT_NATIVE_DEVDEPS), and (2) the RN eslint configs had no global `ignores`, so
+        # `eslint .` parsed the vendored framework namespace (eslint-rules-local/**, packages/core/**,
+        # the .mjs configs) under the @react-native baseline and died (now ignored in rn-common).
+        # The other stacks are NOT covered here: their fresh-install lint has separate, pre-existing
+        # vendored-namespace defects (e.g. typescript-eslint typed-linting choking on the same .mjs)
+        # that are out of this PR's scope — gating them green here would be dishonest. Deterministic +
+        # API-free (eslint, no LLM) per .claude/rules/no-paid-llm-in-ci.md.
+        if: ${{ matrix.stack == 'react-native' }}
+        run: |
+          cd "$CONSUMER"
+          test -x node_modules/.bin/eslint \
+            || { echo "::error::eslint not installed — install.sh --full dep install failed; the lint gate cannot run (false-green guard)"; exit 1; }
+          npm run lint
 
   framework-self-detect:
     name: Detector v1 — self-application snapshot (L1 invariant)
