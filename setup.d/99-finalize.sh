@@ -187,6 +187,70 @@ fi
 # Runs after ALL copy_safe calls so SKIPPED is complete, and after the static .prettierignore merge.
 ignore_shipped_configs
 
+# ─── install-self-verification capstone (FULL only) ─────────────────────────
+# Runs at the end of --full install to PROVE — not just assert — that:
+#   1. Installed ESLint fences FIRE on deliberately-bad input (D1)
+#   2. Husky shields are wired and active (D2)
+#   3. Generated rule tests are non-vacuous: kill ≥60% of selector mutations (D5)
+# MUST NOT run on CI self-install path (FULL unset). Degrades gracefully (rc=0) when
+# eslint/deps are absent. Mirrors 80-rule-bootstrap.sh FULL guard (lines 25-27).
+if [ -z "${FULL:-}" ]; then
+  : # not a --full install — skip self-verification
+elif [ "${DRY_RUN:-}" = "--dry-run" ]; then
+  echo "· install-self-verify: [dry-run] would run fences-fire + shields-up + mutation gates"
+else
+  echo ""
+  echo "▶ install-self-verify: proving fences fire, shields are up, generated tests non-vacuous"
+
+  _ISV_PASS=0; _ISV_FAIL=0
+
+  # D1: fences fire
+  _FF_SCRIPT="$PROJECT_ROOT/scripts/check-fences-fire.sh"
+  if [ -x "$_FF_SCRIPT" ]; then
+    if AIF_PROJECT_ROOT="$PROJECT_ROOT" bash "$_FF_SCRIPT"; then
+      _ISV_PASS=$((_ISV_PASS+1))
+    else
+      _ISV_FAIL=$((_ISV_FAIL+1))
+      echo "  ✗ fences-fire FAILED — some installed ESLint rules are silent on bad input"
+    fi
+  else
+    echo "  · fences-fire: script not found at $_FF_SCRIPT (40-configs.sh copy skipped?) — skipped"
+  fi
+
+  # D2: shields up
+  _SU_SCRIPT="$PROJECT_ROOT/scripts/check-shields-up.sh"
+  if [ -x "$_SU_SCRIPT" ]; then
+    if AIF_PROJECT_ROOT="$PROJECT_ROOT" bash "$_SU_SCRIPT"; then
+      _ISV_PASS=$((_ISV_PASS+1))
+    else
+      _ISV_FAIL=$((_ISV_FAIL+1))
+      echo "  ✗ shields-up FAILED — Husky hooks not fully wired (see above)"
+    fi
+  else
+    echo "  · shields-up: script not found at $_SU_SCRIPT — skipped"
+  fi
+
+  # D5: mutation gate (install-time, framework-side — not shipped to consumer)
+  _MUT_SCRIPT="$PKG_ROOT/packages/core/audit-self/check-generated-rule-mutation.sh"
+  if [ -x "$_MUT_SCRIPT" ]; then
+    if AIF_PROJECT_ROOT="$PROJECT_ROOT" bash "$_MUT_SCRIPT" "$PROJECT_ROOT"; then
+      _ISV_PASS=$((_ISV_PASS+1))
+    else
+      _ISV_FAIL=$((_ISV_FAIL+1))
+      echo "  ✗ generated-rule-mutation FAILED — some generated tests are selector-blind (theatre)"
+    fi
+  else
+    echo "  · generated-rule-mutation: script not at $_MUT_SCRIPT — skipped"
+  fi
+
+  echo ""
+  if [ "$_ISV_FAIL" -eq 0 ]; then
+    echo "✓ self-verify: $_ISV_PASS/3 checks passed — fences fire, shields active, generated tests non-vacuous"
+  else
+    echo "⚠  self-verify: $_ISV_PASS/3 passed, $_ISV_FAIL FAILED — review output above before committing"
+  fi
+fi
+
 # ─── Done ───────────────────────────────────────────────
 if [ ${#SKIPPED[@]} -gt 0 ]; then
   echo ""
