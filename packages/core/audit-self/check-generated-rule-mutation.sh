@@ -7,14 +7,22 @@
 # selector, the test is theatre — per the mutation-discipline, SSOT #91 ADAPT).
 #
 # MECHANISM: selector perturbation (NOT Stryker/universalmutator — generated rules are
-# declarative no-restricted-syntax selectors, not TS code). Three mutations per rule:
-#   M1 — prepend unreachable ancestor: "NOMATCH_9X > <selector>"
-#   M2 — replace entirely with sentinel: "Program > NOMATCH_SENTINEL_9X"
-#   M3 — append unmatchable attribute: "<selector>[NOMATCH_ATTR_9X='_']"
-# Each mutation is tested via ESLint Linter API (no-restricted-syntax built-in, no plugin
-# needed) against the rule's negative-test.input strings.
-# Killed = mutated selector does NOT fire on bad input (good: test would detect breakage).
-# Survived = mutated selector STILL fires (bad: test is selector-blind).
+# declarative no-restricted-syntax selectors, not TS code). 11 mutations per rule:
+#   STRUCT-1  Prepend unreachable ancestor    "NOMATCH_9X > <orig>"
+#   STRUCT-2  Replace with sentinel           "Program > NOMATCH_SENTINEL_9X"
+#   STRUCT-3  Append unmatchable attribute    "<orig>[NOMATCH_ATTR_9X='_']"
+#   STRUCT-4  Swap first '>' combinator       "> " → " " (descendant)
+#   VAL-1     Prefix first quoted value       'X_<val>'
+#   VAL-2     Suffix first quoted value       '<val>_Y'
+#   VAL-3     Replace first quoted value      '_NOMATCH_VAL_9X'
+#   ATTR-1    Remove first [...] filter       (broadens selector — can SURVIVE on weak tests)
+#   NODE-1    Prefix first node type          'X_<NodeType>'
+#   NODE-2    Suffix first node type          '<NodeType>_Y'
+#   LOGIC-1   Negate first attribute          [attr='v'] → [attr!='v']
+# Semantic mutations (VAL/ATTR/LOGIC) can SURVIVE if the test input is too broad,
+# making the ≥60% kill-floor meaningful — unlike structure-only sentinels.
+# Killed = mutated selector does NOT fire on bad input (test would detect breakage).
+# Survived = mutated selector STILL fires (test is selector-blind).
 #
 # DEGRADES GRACEFULLY when:
 #   - Manifest absent (80-rule-bootstrap skipped → zero generated rules → exit 0)
@@ -101,7 +109,7 @@ const cfg = [{
 }];
 
 try {
-  const msgs = linter.verify(code, cfg, { filename: 'probe.ts' });
+  const msgs = linter.verify(code, cfg, { filename: 'probe.js' });
   process.exit(msgs.some(m => m.ruleId === 'no-restricted-syntax') ? 0 : 1);
 } catch (e) {
   process.stderr.write('probe error: ' + String(e) + '\n');
@@ -159,6 +167,34 @@ fi
 
 echo "▶ check-generated-rule-mutation: testing $RULE_COUNT generated rule(s) for mutation kill-rate ≥60%"
 
+# ─── Selector perturbation helpers (mirrors run-generated-rule-mutation.sh _mutate) ───
+# Prints 11 mutated selectors to stdout, one per line.
+_mutate() {
+  local ORIG="$1"
+  # STRUCT-1: prepend unreachable ancestor
+  echo "NOMATCH_9X > ${ORIG}"
+  # STRUCT-2: replace with sentinel
+  echo "Program > NOMATCH_SENTINEL_9X"
+  # STRUCT-3: append unmatchable attribute
+  echo "${ORIG}[NOMATCH_ATTR_9X='_']"
+  # STRUCT-4: replace first ' > ' child combinator with descendant (space)
+  echo "$(echo "$ORIG" | sed 's/ > / /')"
+  # VAL-1: prefix first quoted value
+  echo "$(echo "$ORIG" | sed "s/'\\([^']*\\)'/'X_\\1'/")"
+  # VAL-2: suffix first quoted value
+  echo "$(echo "$ORIG" | sed "s/'\\([^']*\\)'/'\\1_Y'/")"
+  # VAL-3: replace first quoted value with nomatch
+  echo "$(echo "$ORIG" | sed "s/'[^']*'/'_NOMATCH_VAL_9X'/")"
+  # ATTR-1: remove first [...] attribute filter (makes selector broader — can SURVIVE)
+  echo "$(echo "$ORIG" | sed 's/\[[^]]*\]//')"
+  # NODE-1: prefix first node-type identifier
+  echo "$(echo "$ORIG" | sed 's/^\([A-Z][A-Za-z]*\)/X_\1/')"
+  # NODE-2: suffix first node-type identifier
+  echo "$(echo "$ORIG" | sed 's/^\([A-Z][A-Za-z]*\)/\1_Y/')"
+  # LOGIC-1: negate first attribute equality  ='...' → !='...'
+  echo "$(echo "$ORIG" | sed "s/='\([^']*\)'/!='\1'/")"
+}
+
 # ─── Per-rule mutation testing ─────────────────────────────────────────────────
 _test_rule() {
   local RULE_ID="$1"
@@ -198,20 +234,20 @@ _test_rule() {
     return
   fi
 
-  # Apply 3 mutations
-  local KILLED=0 TOTAL=3
-  local M1="NOMATCH_ANON_9X > ${SELECTOR}"
-  local M2="Program > NOMATCH_SENTINEL_9X"
-  local M3="${SELECTOR}[NOMATCH_ATTR_9X='_']"
-
-  for MUT in "$M1" "$M2" "$M3"; do
+  # Apply 11 semantic selector mutations (VAL/ATTR/NODE/LOGIC operators can SURVIVE
+  # on weak tests, making the ≥60% kill-floor meaningful).
+  local KILLED=0 TOTAL=0
+  while IFS= read -r MUT; do
+    [ -z "$MUT" ] && continue
+    TOTAL=$((TOTAL+1))
     if _probe_selector "$MUT" "$BAD_CODE"; then
       : # still fires = SURVIVED
     else
       KILLED=$((KILLED+1))
     fi
-  done
+  done < <(_mutate "$SELECTOR")
 
+  [ "$TOTAL" -eq 0 ] && { skip "[$RULE_ID] no mutations generated — skipped"; return; }
   local KILL_PCT=$(( KILLED * 100 / TOTAL ))
   RULES_TESTED=$((RULES_TESTED+1))
 

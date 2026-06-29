@@ -69,12 +69,34 @@ const stubGenerateHead: GenerateClient = {
   },
 };
 
-// ─── Inline mutation helpers (same 3-mutation set as install-time gate M1/M2/M3) ──
+// ─── Inline mutation helpers — mirrors check-generated-rule-mutation.sh _mutate() ──
+// 11 operators: STRUCT-1/2/3/4, VAL-1/2/3, ATTR-1, NODE-1/2, LOGIC-1.
+// Semantic operators (VAL/ATTR/LOGIC) can SURVIVE on over-broad selectors, making the
+// ≥60% kill-floor meaningful — unlike structure-only sentinels that are always killed.
 function applyMutations(selector: string): string[] {
   return [
-    `NOMATCH_ANON_9X > ${selector}`,       // M1: prepend unreachable ancestor
-    'Program > NOMATCH_SENTINEL_9X',        // M2: replace with sentinel
-    `${selector}[NOMATCH_ATTR_9X='_']`,    // M3: append unmatchable attribute
+    // STRUCT-1: prepend unreachable ancestor (always killed)
+    `NOMATCH_9X > ${selector}`,
+    // STRUCT-2: replace with sentinel (always killed)
+    'Program > NOMATCH_SENTINEL_9X',
+    // STRUCT-3: append unmatchable attribute (always killed)
+    `${selector}[NOMATCH_ATTR_9X='_']`,
+    // STRUCT-4: swap first ' > ' combinator to descendant space (survives if no '>')
+    selector.replace(' > ', ' '),
+    // VAL-1: prefix first quoted value (survives if selector has no quoted value)
+    selector.replace(/'([^']+)'/, "'X_$1'"),
+    // VAL-2: suffix first quoted value
+    selector.replace(/'([^']+)'/, "'$1_Y'"),
+    // VAL-3: replace first quoted value with nomatch token
+    selector.replace(/'[^']+'/, "'_NOMATCH_VAL_9X'"),
+    // ATTR-1: remove first [...] attribute filter (SURVIVES on over-broad test inputs)
+    selector.replace(/\[[^\]]*\]/, ''),
+    // NODE-1: prefix first node-type identifier (always killed — not a real AST type)
+    selector.replace(/^([A-Z][A-Za-z]*)/, 'X_$1'),
+    // NODE-2: suffix first node-type identifier
+    selector.replace(/^([A-Z][A-Za-z]*)/, '$1_Y'),
+    // LOGIC-1: negate first attribute equality (killed when bad input has target value)
+    selector.replace(/='([^']*)'/, "!='$1'"),
   ];
 }
 
@@ -92,7 +114,7 @@ function probeSelector(selector: string, code: string): boolean {
     },
   ];
   try {
-    const msgs = linter.verify(code, cfg, { filename: 'probe.ts' });
+    const msgs = linter.verify(code, cfg, { filename: 'probe.js' });
     return msgs.some((m) => m.ruleId === 'no-restricted-syntax');
   } catch {
     return false;
@@ -173,49 +195,51 @@ describe('run-generated-rule-mutation — D5 CI proof', () => {
     }
   });
 
-  it('paired-negative (neuter → RED): neutered selector fails baseline — gate detects broken test', async () => {
-    // Simulate: generator produced a selector with a typo ('createHeadElement' → 'createHeadXlement').
-    // The bad input still contains 'createHeadElement()' → neutered selector does NOT fire.
-    // The mutation gate's baseline check catches this: original-does-not-fire → bad() → rc=1 (RED).
-    const plan = await synthesizeGenerate(noHeadPlan, stubGenerateHead);
-    const g1 = plan.rules.find((r) => r.research.entryId === 'next-no-head-element');
-    expect(g1).toBeDefined();
-    if (!g1 || g1.check.type !== 'declarative') return;
+  it('paired-negative (neuter → RED): over-broad selector yields <60% kill rate via semantic mutations', () => {
+    // An over-broad selector (no attribute constraint) passes the gate's baseline check
+    // (original fires on bad input) but fails the kill-rate floor: semantic mutations
+    // STRUCT-4, VAL-1/2/3, ATTR-1, LOGIC-1 all produce the SAME broad selector when
+    // there are no quoted values, brackets, or '>' combinators to perturb → they SURVIVE.
+    // Only STRUCT-1/2/3 + NODE-1/2 are reliably killed (5/11 ≈ 45% < 60% floor).
+    // This proves the mutation operators have teeth: the gate goes RED for a weak test.
+    const broadSelector = 'CallExpression'; // no attribute constraint — over-broad
+    const badInput = 'foo();'; // any call expression matches
 
-    const badInput = g1['negative-test']!.input[0]!;
+    // Baseline passes (gate precondition: original selector fires)
+    expect(probeSelector(broadSelector, badInput)).toBe(true);
 
-    // Sanity: the REAL selector fires on the bad input
-    expect(probeSelector(g1.check.selector, badInput)).toBe(true);
-
-    // Neutered: replace 'createHeadElement' → 'createHeadXlement' (typo)
-    const neuteredSelector = g1.check.selector.replace('createHeadElement', 'createHeadXlement');
-    expect(neuteredSelector).not.toBe(g1.check.selector); // confirm mutation happened
-
-    // RED: neutered selector does NOT fire on the bad input
-    // → the gate's baseline check would call bad() → fail → exit 1 (RED, not vacuous-pass)
+    // Kill rate must be < 60% — semantic mutations produce the same selector → SURVIVE
+    const killRate = measureKillRate(broadSelector, badInput);
     expect(
-      probeSelector(neuteredSelector, badInput),
-      `neutered selector '${neuteredSelector}' must NOT fire on '${badInput}' — gate should catch it`,
-    ).toBe(false);
+      killRate,
+      `over-broad selector '${broadSelector}' kill=${Math.round(killRate * 100)}% — ` +
+        `must be <60% so the gate flags this as a weak (theatre) negative-test`,
+    ).toBeLessThan(0.6);
   });
 
-  it('M1/M2/M3 mutation set: each mutation independently fails to fire on bad input', async () => {
-    // Prove that ALL THREE mutations are semantically broken (they never fire on valid bad inputs).
-    // This is a white-box test of the mutation operators themselves.
-    const badInput = "import 'server-only';";
+  it('semantic mutations (ATTR-1, LOGIC-1): non-structural operators have teeth', () => {
+    // White-box check: the semantic operators are NOT structurally always-killed.
+    // ATTR-1 (remove attribute filter) broadens the selector → can SURVIVE on over-broad inputs.
+    // LOGIC-1 (negate attribute equality) reliably KILLS for well-specified selectors.
     const selector = "ImportDeclaration[source.value='server-only']";
+    const badInput = "import 'server-only';";
 
     // Original fires
     expect(probeSelector(selector, badInput)).toBe(true);
 
-    // M1: NOMATCH_ANON_9X > selector → NOMATCH_ANON_9X never exists → 0 matches → KILLED
-    expect(probeSelector(`NOMATCH_ANON_9X > ${selector}`, badInput)).toBe(false);
-    // M2: Program > NOMATCH_SENTINEL_9X → NOMATCH_SENTINEL_9X never exists → 0 matches → KILLED
-    expect(probeSelector('Program > NOMATCH_SENTINEL_9X', badInput)).toBe(false);
-    // M3: selector[NOMATCH_ATTR_9X='_'] → no node has NOMATCH_ATTR_9X → 0 matches → KILLED
-    expect(probeSelector(`${selector}[NOMATCH_ATTR_9X='_']`, badInput)).toBe(false);
+    // ATTR-1: removes [source.value='server-only'] → 'ImportDeclaration'
+    // 'import "server-only";' IS an ImportDeclaration → SURVIVED (proves not always-killed)
+    const attr1 = selector.replace(/\[[^\]]*\]/, '');
+    expect(attr1).toBe('ImportDeclaration');
+    expect(probeSelector(attr1, badInput)).toBe(true); // SURVIVED
 
-    // All 3 killed → kill rate = 100% (well above 60% floor)
-    expect(measureKillRate(selector, badInput)).toBe(1.0);
+    // LOGIC-1: negate equality → [source.value!='server-only']
+    // bad input has value='server-only' so != doesn't match → KILLED
+    const logic1 = selector.replace(/='([^']*)'/, "!='$1'");
+    expect(probeSelector(logic1, badInput)).toBe(false); // KILLED
+
+    // Full kill rate for a well-specified selector is still ≥60%
+    const killRate = measureKillRate(selector, badInput);
+    expect(killRate).toBeGreaterThanOrEqual(0.6);
   });
 });
