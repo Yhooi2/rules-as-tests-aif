@@ -237,6 +237,13 @@ if [ -n "$_ws_lines" ]; then
       echo "  ✓ $_ws_dir/eslint-rules-local/index.mjs stub → root"
     fi
   done <<< "$_ws_lines"
+  # GH #807: the multi-stack branch placed per-workspace ESLint configs but no root
+  # .dependency-cruiser.cjs, so `arch:check` (depcruise --config .dependency-cruiser.cjs) exited 1
+  # and validate went RED. Unlike ESLint's per-config (nearest-config) scoping, dependency-cruiser
+  # is a REPO-WIDE arch tool that crawls from src/ — it is naturally root-level. Place it ONCE at
+  # root, AFTER the per-workspace loop (NOT inside it — that would copy_safe to the same root path N
+  # times). Mirrors the flat-path placement at the ts-server/react-* branches below. (kickoff ⚑M2)
+  copy_safe "$PKG_ROOT/templates/ts-server/dependency-cruiser.cjs" "$PROJECT_ROOT/.dependency-cruiser.cjs"
 else
   # ── Flat / single-root repo: original single-stack behavior unchanged ──────────────────────────
   echo "▶ Stack-specific templates ($STACK) → project root"

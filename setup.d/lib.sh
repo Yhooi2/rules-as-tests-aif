@@ -216,6 +216,25 @@ ignore_shipped_configs() {
     ".dependency-cruiser.cjs" "stryker.config.json" ".lintstagedrc.json"
     ".github/workflows/ci.yml" ".github/workflows/workflow-integrity.yml"
   )
+  # GH #807: a #793/#796 multi-stack monorepo ships per-workspace configs (apps/*/eslint.config.mjs,
+  # deeper */*/eslint.config.mjs, and the RN */eslint.config.rn-common.mjs) — root basenames above do
+  # NOT cover them, so prettier --check . reflowed them and format:check went RED. Discover the
+  # per-workspace configs the multi-stack branch (40-configs.sh) wrote and fold them into candidates
+  # at their RELATIVE paths. The same fresh-vs-SKIPPED guard below applies — a consumer-authored
+  # per-workspace config (copy_safe-SKIPPED) stays format-checked; only shipped-fresh ones are ignored.
+  # (Single `while`, no nested pipe + no single-line `case */*` — bash 3.2 on macOS mis-parses that
+  # combination; the slash test below is the bash-3.2-safe equivalent.)
+  while IFS= read -r _abs; do
+    [ -n "$_abs" ] || continue
+    _wsrel="${_abs#"$PROJECT_ROOT"/}"
+    # workspace-nested only: if stripping a leading `*/` leaves the path unchanged it has no slash
+    # → it is a root-level basename, already covered by the static candidates list above → skip.
+    [ "$_wsrel" = "${_wsrel#*/}" ] && continue
+    candidates+=("$_wsrel")
+  done < <(
+    find "$PROJECT_ROOT" -name node_modules -prune -o -name .git -prune -o \
+         \( -name 'eslint.config.mjs' -o -name 'eslint.config.rn-common.mjs' \) -print 2>/dev/null
+  )
   local fresh=() rel
   for rel in "${candidates[@]}"; do
     [ -e "$PROJECT_ROOT/$rel" ] || continue                       # not shipped for this stack/preset
