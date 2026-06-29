@@ -713,7 +713,11 @@ jobs:
           # meanwhile detect_pm falls to npm (the runner has npm, not pnpm) so `--full` actually
           # installs the toolchain. No workspace marker + no root src → AIF_ARCH_TARGET resolves to "."
           # (setup.d/70-deps.sh:35-44) — the same safe target the green flat job uses.
-          echo '{"name":"timeliner-mono","version":"0.0.0","private":true,"devDependencies":{"typescript":"5.6.0"}}' > package.json
+          # Root carries NO deps (exactly like the flat job): install.sh adds its 22 DEVDEPS and npm
+          # auto-installs the typescript-eslint peer typescript. A root `typescript` pin here caused an
+          # ERESOLVE/ETARGET on the first run (a non-existent 5.6.0 exact). Per-workspace `typescript`
+          # keys below are detection SIGNALS only (never npm-resolved — no "workspaces" field).
+          echo '{"name":"timeliner-mono","version":"0.0.0","private":true}' > package.json
           # apps/api → ts-server (Hono). A boundary source file under src/routes so check:globs
           # exercises the real glob-liveness recursion (not the trivial "no source → skip").
           mkdir -p apps/api/src/routes
