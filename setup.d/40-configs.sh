@@ -45,6 +45,21 @@ chmod_safe +x "$PROJECT_ROOT/scripts/check-arch-boundaries.sh" 2>/dev/null || tr
 # can't resolve from the cwd lint-staged would use (the ENOENT-before-commit alarm on monorepos).
 copy_safe "$PKG_ROOT/packages/core/audit-self/check-lintstaged-resolves.sh" "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh"
 chmod_safe +x "$PROJECT_ROOT/scripts/check-lintstaged-resolves.sh" 2>/dev/null || true
+# install-self-verification D1: fences-fire gate — prove installed ESLint rules FIRE on bad input.
+# Uses f17 proven technique (ESLint Linter API via tsx, not CLI). Consumer runs:
+#   npm run check:fences-fire  (wired in setup.d/70-deps.sh + validate aggregate).
+copy_safe "$PKG_ROOT/packages/core/audit-self/check-fences-fire.sh" "$PROJECT_ROOT/scripts/check-fences-fire.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/check-fences-fire.sh" 2>/dev/null || true
+# Fixtures subtree: bad/good paired inputs per fence + manifest declaring expected rule-id.
+copy_safe "$PKG_ROOT/packages/core/audit-self/fixtures/fences-fire" "$PROJECT_ROOT/scripts/fences-fire-fixtures"
+# install-self-verification D2: shields-up gate — prove Husky hooks are wired and active.
+# Checks core.hooksPath=.husky, pre-commit/pre-push present+executable+referencing gate commands.
+copy_safe "$PKG_ROOT/packages/core/audit-self/check-shields-up.sh" "$PROJECT_ROOT/scripts/check-shields-up.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/check-shields-up.sh" 2>/dev/null || true
+# install-self-verification D5: on-demand local mutation depth pass for generated rules.
+# Consumer surface: npm run test:mutation:generated (not in validate — on-demand only).
+copy_safe "$PKG_ROOT/packages/core/synthesizer/run-generated-rule-mutation.sh" "$PROJECT_ROOT/scripts/run-generated-rule-mutation.sh"
+chmod_safe +x "$PROJECT_ROOT/scripts/run-generated-rule-mutation.sh" 2>/dev/null || true
 if [ "$STACK" = "react-next" ]; then
   copy_safe "$PKG_ROOT/packages/preset-next-15-canonical/audit-self/audit-ai-docs.react-next.sh" "$PROJECT_ROOT/scripts/audit-ai-docs.react-next.sh"
   chmod_safe +x "$PROJECT_ROOT/scripts/audit-ai-docs.react-next.sh" 2>/dev/null || true
