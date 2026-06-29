@@ -8578,6 +8578,8 @@ import { fileURLToPath as fileURLToPath2 } from "node:url";
 var ALLOWED_SOURCES = {
   "next.official": ["nextjs.org", "vercel.com"],
   "react.official": ["react.dev"],
+  "react-native.official": ["reactnative.dev"],
+  "expo.official": ["expo.dev"],
   "tailwind.official": ["tailwindcss.com"],
   "mdn": ["developer.mozilla.org"],
   "typescript.official": ["typescriptlang.org", "www.typescriptlang.org"]
@@ -9548,20 +9550,21 @@ async function main2() {
     }
   }
   const stackDef = STACK_PATTERNS[stack];
-  if (!stackDef) {
-    console.log(`  [synth-wire] stack '${stack}' has no synthesizer pattern set \u2014 skipped (no-op)`);
-    process3.exit(0);
+  let synthRules = {};
+  if (stackDef) {
+    console.debug(`  [synth-wire] DEBUG: synthesizing rules for stack '${stack}' (${stackDef.framework}@${stackDef.version})`);
+    const entries = loadEntries(stackDef.framework, stackDef.version, stackDef.patterns);
+    const plan = synthesize({
+      framework: stackDef.framework,
+      version: stackDef.version,
+      patterns: entries,
+      missing: [],
+      drift: null
+    });
+    synthRules = JSON.parse(plan.eslintConfigSnippet);
+  } else {
+    console.log(`  [synth-wire] stack '${stack}' has no synthesizer pattern set \u2014 preset baseline empty; live-research snippet (if any) still wires`);
   }
-  console.debug(`  [synth-wire] DEBUG: synthesizing rules for stack '${stack}' (${stackDef.framework}@${stackDef.version})`);
-  const entries = loadEntries(stackDef.framework, stackDef.version, stackDef.patterns);
-  const plan = synthesize({
-    framework: stackDef.framework,
-    version: stackDef.version,
-    patterns: entries,
-    missing: [],
-    drift: null
-  });
-  const synthRules = JSON.parse(plan.eslintConfigSnippet);
   const liveRules = readLiveSnippet(snippetPath);
   const { rules: mergedRules, overrideKeys } = mergeLiveRules(synthRules, liveRules);
   if (Object.keys(liveRules).length > 0) {
