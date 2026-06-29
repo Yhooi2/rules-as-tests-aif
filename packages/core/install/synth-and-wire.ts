@@ -54,6 +54,16 @@ const STACK_PATTERNS: Record<string, { framework: string; version: string; patte
 // must OVERRIDE the preset value already in the consumer config (D2 live-wins); the wrapper
 // rule (restricted-syntax-audit-exempt) augments by selector-union, never override.
 
+/**
+ * Safe rule-id charset: letters, digits, @, /, _, - (standard ESLint plugin/rule naming).
+ * Keys from the LLM-sourced live snippet are validated against this before use — a key outside
+ * this set could break out of the string literal in the generated eslint.config.mjs (RCE).
+ * NOTE: underscores (_) are in-charset, so `__proto__` PASSES this regex. The actual guard
+ * against prototype-key attacks is `Object.create(null)` in readLiveSnippet (creates a null-
+ * prototype object so `__proto__` is stored as an own data property, not a setter).
+ */
+const RULE_ID_SAFE = /^[A-Za-z0-9@/_-]+$/;
+
 /** Union two restricted-syntax wrapper arrays by selector; live entry wins on selector collision. */
 function unionWrapperSelectors(presetArr: unknown[], liveArr: unknown[]): unknown[] {
   const severity =
@@ -81,7 +91,11 @@ export function mergeLiveRules(
   const rules: Record<string, unknown> = { ...presetRules };
   const overrideKeys = new Set<string>();
   for (const [id, liveVal] of Object.entries(liveRules)) {
-    if (!(id in presetRules)) {
+    if (!RULE_ID_SAFE.test(id)) {
+      console.error(`  · synth-and-wire: live snippet — non-conforming rule-id '${id}' rejected`);
+      continue;
+    }
+    if (!Object.hasOwn(presetRules, id)) {
       rules[id] = liveVal; // live-only rule — pure augment
       continue;
     }
@@ -110,7 +124,15 @@ function readLiveSnippet(snippetPath: string): Record<string, unknown> {
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
+      const safe: Record<string, unknown> = Object.create(null);
+      for (const [id, val] of Object.entries(parsed as Record<string, unknown>)) {
+        if (!RULE_ID_SAFE.test(id)) {
+          console.error(`  · synth-and-wire: live snippet — non-conforming rule-id '${id}' rejected (must match [A-Za-z0-9@/_-]+)`);
+          continue;
+        }
+        safe[id] = val;
+      }
+      return safe;
     }
     console.error(`  · synth-and-wire: live snippet at ${snippetPath} is not a rules object — ignored`);
     return {};

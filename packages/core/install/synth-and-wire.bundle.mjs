@@ -9033,9 +9033,12 @@ async function wireConfigSource(source, opts = {}) {
 }
 var WRAPPER_RULE_KEY = "rules-as-tests/restricted-syntax-audit-exempt";
 function jsString(s) {
-  if (!s.includes('"')) return `"${s}"`;
-  if (!s.includes("'")) return `'${s}'`;
-  return `"${s.replace(/"/g, '\\"')}"`;
+  const needsEscape = s.includes("\\") || s.includes("\n") || s.includes("\r") || s.includes("\u2028") || s.includes("\u2029");
+  if (!needsEscape) {
+    if (!s.includes('"')) return `"${s}"`;
+    if (!s.includes("'")) return `'${s}'`;
+  }
+  return JSON.stringify(s);
 }
 function simpleRulePresent(source, ruleName) {
   return source.includes(`'${ruleName}'`) || source.includes(`"${ruleName}"`);
@@ -9049,7 +9052,7 @@ function wrapperSelectorsPresent(source, arrValue) {
 }
 function buildRuleValueExpr(value) {
   if (typeof value === "string") {
-    return value.includes("'") ? jsString(value) : `'${value}'`;
+    return jsString(value);
   }
   if (Array.isArray(value)) {
     const severity = typeof value[0] === "string" ? value[0] : "error";
@@ -9064,7 +9067,7 @@ function buildRuleValueExpr(value) {
 }
 function buildRuleConfigElement(ruleName, value, scope) {
   const filesPart = scope ? `files: [${scope.files.map((f) => jsString(f)).join(", ")}], ` : "";
-  return `{ ${filesPart}rules: { '${ruleName}': ${buildRuleValueExpr(value)} } }`;
+  return `{ ${filesPart}rules: { ${jsString(ruleName)}: ${buildRuleValueExpr(value)} } }`;
 }
 function exprEqual(a, b) {
   const norm = (s) => s.replace(/['"`]/g, '"').replace(/\s+/g, "");
@@ -9429,6 +9432,7 @@ var STACK_PATTERNS = {
     ]
   }
 };
+var RULE_ID_SAFE = /^[A-Za-z0-9@/_-]+$/;
 function unionWrapperSelectors(presetArr, liveArr) {
   const severity = typeof liveArr[0] === "string" ? liveArr[0] : typeof presetArr[0] === "string" ? presetArr[0] : "error";
   const bySelector = /* @__PURE__ */ new Map();
@@ -9446,7 +9450,11 @@ function mergeLiveRules(presetRules, liveRules) {
   const rules = { ...presetRules };
   const overrideKeys = /* @__PURE__ */ new Set();
   for (const [id, liveVal] of Object.entries(liveRules)) {
-    if (!(id in presetRules)) {
+    if (!RULE_ID_SAFE.test(id)) {
+      console.error(`  \xB7 synth-and-wire: live snippet \u2014 non-conforming rule-id '${id}' rejected`);
+      continue;
+    }
+    if (!Object.hasOwn(presetRules, id)) {
       rules[id] = liveVal;
       continue;
     }
@@ -9467,7 +9475,15 @@ function readLiveSnippet(snippetPath) {
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
+      const safe = /* @__PURE__ */ Object.create(null);
+      for (const [id, val] of Object.entries(parsed)) {
+        if (!RULE_ID_SAFE.test(id)) {
+          console.error(`  \xB7 synth-and-wire: live snippet \u2014 non-conforming rule-id '${id}' rejected (must match [A-Za-z0-9@/_-]+)`);
+          continue;
+        }
+        safe[id] = val;
+      }
+      return safe;
     }
     console.error(`  \xB7 synth-and-wire: live snippet at ${snippetPath} is not a rules object \u2014 ignored`);
     return {};

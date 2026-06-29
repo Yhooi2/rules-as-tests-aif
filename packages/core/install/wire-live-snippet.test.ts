@@ -143,3 +143,57 @@ describe('live-research-default-delivery — wire the live snippet into the pres
     },
   );
 });
+
+describe('security — rule-id key validation (injection prevention)', () => {
+  it('mergeLiveRules rejects keys outside [A-Za-z0-9@/_-]+ charset', () => {
+    const preset = { [R12]: 'error' };
+    // "bad'key" and "has space" are rejected by RULE_ID_SAFE (chars outside the charset).
+    // "__proto__" NOTE: underscores ARE in-charset so RULE_ID_SAFE does NOT reject it.
+    // The test still passes because JS object-literal semantics mean { '__proto__': v }
+    // modifies the prototype rather than creating an own property named '__proto__', so
+    // Object.entries({ '__proto__': 'error' }) returns [] — the key never reaches mergeLiveRules.
+    // The guard in readLiveSnippet (Object.create(null)) handles the JSON.parse path.
+    const malicious = { "bad'key": 'warn', 'has space': 'error', '__proto__': 'error' };
+    const { rules } = mergeLiveRules(preset, malicious as Record<string, unknown>);
+    expect(Object.keys(rules)).not.toContain("bad'key");
+    expect(Object.keys(rules)).not.toContain('has space');
+    expect(Object.keys(rules)).not.toContain('__proto__');
+  });
+
+  it('mergeLiveRules accepts conforming keys (rule-id safe charset)', () => {
+    const preset = {};
+    const conforming = {
+      'plugin/rule-name': 'error',
+      '@scope/package/rule': 'warn',
+      'no-unused-vars': 'off',
+    };
+    const { rules } = mergeLiveRules(preset, conforming);
+    expect(Object.keys(rules)).toContain('plugin/rule-name');
+    expect(Object.keys(rules)).toContain('@scope/package/rule');
+    expect(Object.keys(rules)).toContain('no-unused-vars');
+  });
+
+  it.skipIf(!TS_MORPH_AVAILABLE)(
+    'Negative 3 (injection-resilience) — backslash in live value does not break generated config',
+    async () => {
+      const preset = presetRules();
+      // A live rule reusing R12's id with a value containing a trailing backslash — the exact
+      // character that previously caused `'${value}'` to emit `'warn\'` (an invalid JS string
+      // literal: the \\ escapes the closing quote, leaving trailing code outside the string).
+      // With jsString fixed (falls back to JSON.stringify), the value is emitted as `"warn\\"`.
+      const live = { [R12]: 'warn\\' };
+      const { rules: merged, overrideKeys } = mergeLiveRules(preset, live);
+      expect(overrideKeys.has(R12)).toBe(true);
+
+      const templateSource = readFileSync(TEMPLATE, 'utf8');
+      const result = await wireNRules(templateSource, merged, { overrideKeys });
+
+      expect(result.status).toBe('wired');
+      // The backslash must be escaped in the emitted literal: "warn\\" (two chars: w,a,r,n,\).
+      // A raw unescaped \ at this position would leave eslint.config.mjs unparseable.
+      expect(result.modified).toContain('"warn\\\\"');
+      // Paired-negative: must NOT contain the broken unescaped form.
+      expect(result.modified).not.toContain("'warn\\'");
+    },
+  );
+});

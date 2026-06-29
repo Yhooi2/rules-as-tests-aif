@@ -215,11 +215,19 @@ export async function wireConfigSource(source: string, opts: TransformOpts = {})
 
 const WRAPPER_RULE_KEY = 'rules-as-tests/restricted-syntax-audit-exempt';
 
-/** Pick the best JS quote style for a string (avoids escaping CSS-selector single quotes). */
+/**
+ * Serialize a string to a safe JS string literal. Prefers double/single quotes for the
+ * common case; falls back to JSON.stringify for any string containing a backslash or line
+ * terminator (U+000A \n, U+000D \r, U+2028, U+2029) — these characters would break out of
+ * an unescaped `'...'` or `"..."` literal in the generated eslint.config.mjs.
+ */
 function jsString(s: string): string {
-  if (!s.includes('"')) return `"${s}"`;
-  if (!s.includes("'")) return `'${s}'`;
-  return `"${s.replace(/"/g, '\\"')}"`;
+  const needsEscape = s.includes('\\') || s.includes('\n') || s.includes('\r') || s.includes('\u2028') || s.includes('\u2029');
+  if (!needsEscape) {
+    if (!s.includes('"')) return `"${s}"`;
+    if (!s.includes("'")) return `'${s}'`;
+  }
+  return JSON.stringify(s); // always valid, handles all escaping → double-quoted
 }
 
 function simpleRulePresent(source: string, ruleName: string): boolean {
@@ -243,10 +251,10 @@ function wrapperSelectorsPresent(source: string, arrValue: unknown[]): boolean {
  */
 function buildRuleValueExpr(value: unknown): string {
   if (typeof value === 'string') {
-    // Severity strings ('error'/'warn'/'off') emit single-quoted to match the R2 path
-    // (r2Element) + the shipped preset config style; fall back to jsString only for the
-    // pathological case of an embedded single quote (injection-safe).
-    return value.includes("'") ? jsString(value) : `'${value}'`;
+    // Severity strings ('error'/'warn'/'off') serialise via jsString — injection-safe for
+    // all inputs (backslash, line terminators, embedded quotes) since jsString falls back
+    // to JSON.stringify when escaping is required.
+    return jsString(value);
   }
   if (Array.isArray(value)) {
     const severity = typeof value[0] === 'string' ? value[0] : 'error';
@@ -265,9 +273,9 @@ function buildRuleValueExpr(value: unknown): string {
 function buildRuleConfigElement(ruleName: string, value: unknown, scope?: { files: string[] }): string {
   // SSOT #182: files: scoped emission — when scope provided, emit workspace-scoped block.
   // Scope source = install-time dir→stack map, NOT recipe appliesTo (T-MS-A).
-  // jsString() prevents code-injection when glob contains a single quote (T-MSA-sec).
+  // jsString() prevents code-injection when glob/ruleName contains a single quote (T-MSA-sec).
   const filesPart = scope ? `files: [${scope.files.map((f) => jsString(f)).join(', ')}], ` : '';
-  return `{ ${filesPart}rules: { '${ruleName}': ${buildRuleValueExpr(value)} } }`;
+  return `{ ${filesPart}rules: { ${jsString(ruleName)}: ${buildRuleValueExpr(value)} } }`;
 }
 
 /** Quote-/whitespace-insensitive equality of two value expressions (idempotency guard for override). */

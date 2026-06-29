@@ -147,7 +147,7 @@ describe('wireNRules — simple rule wiring', () => {
     async () => {
       const result = await wireNRules(BASE_SOURCE, SIMPLE_RULE);
       expect(result.status).toBe('wired');
-      expect(result.modified).toContain("'rules-as-tests/no-server-imports-in-client'");
+      expect(result.modified).toMatch(/['"]rules-as-tests\/no-server-imports-in-client['"]/);
       // Original import is preserved (non-destructive)
       expect(result.modified).toContain(`import base from './base.mjs';`);
     },
@@ -275,7 +275,7 @@ describe('wireNRules — combined (simple + wrapper)', () => {
     async () => {
       const result = await wireNRules(BASE_SOURCE, COMBINED_SYNTH_RULES);
       expect(result.status).toBe('wired');
-      expect(result.modified).toContain("'rules-as-tests/no-server-imports-in-client'");
+      expect(result.modified).toMatch(/['"]rules-as-tests\/no-server-imports-in-client['"]/);
       expect(result.modified).toContain('restricted-syntax-audit-exempt');
     },
   );
@@ -351,7 +351,7 @@ describe('wireNRules — defineConfig(obj, …) shape (production export shape)'
     async () => {
       const result = await wireNRules(DEFINE_CONFIG_SOURCE_UNWIRED, SIMPLE_RULE);
       expect(result.status).toBe('wired');
-      expect(result.modified).toContain("'rules-as-tests/no-server-imports-in-client'");
+      expect(result.modified).toMatch(/['"]rules-as-tests\/no-server-imports-in-client['"]/);
       expect(result.modified).toContain('defineConfig(');
     },
   );
@@ -443,7 +443,7 @@ describe('wireNRules — live-wins override (overrideKeys)', () => {
     async () => {
       const result = await wireNRules(BASE_SOURCE, { [R12]: 'warn' }, { overrideKeys: new Set([R12]) });
       expect(result.status).toBe('wired');
-      expect(result.modified).toContain(`'${R12}'`);
+      expect(result.modified).toMatch(/['"]rules-as-tests\/no-server-imports-in-client['"]/);
     },
   );
 });
