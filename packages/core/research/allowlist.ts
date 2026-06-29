@@ -8,6 +8,8 @@ import type { Provenance } from './types.ts';
 export const ALLOWED_SOURCES = {
   'next.official': ['nextjs.org', 'vercel.com'],
   'react.official': ['react.dev'],
+  'react-native.official': ['reactnative.dev'],
+  'expo.official': ['expo.dev'],
   'tailwind.official': ['tailwindcss.com'],
   'mdn': ['developer.mozilla.org'],
   'typescript.official': ['typescriptlang.org', 'www.typescriptlang.org'],

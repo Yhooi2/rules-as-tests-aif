@@ -195,24 +195,29 @@ async function main(): Promise<void> {
     }
   }
 
-  // Unknown stack → no declared patterns → synthesizer would emit {} → skip early
+  // Preset baseline: synthesize the stack's declared patterns. A stack with NO STACK_PATTERNS
+  // entry (ts-server, react-native, react-spa, …) contributes no preset rules → synthRules = {},
+  // but the LIVE-research snippet below can still wire — augment-first: live is the default
+  // delivery, presets the fallback baseline. #827 B2: the read+merge of the live snippet MUST run
+  // for an absent stackDef too, so the former early "no synthesizer pattern set" exit(0) (which
+  // fired BEFORE the merge) no longer kills live delivery for every non-react-next stack.
   const stackDef = STACK_PATTERNS[stack];
-  if (!stackDef) {
-    console.log(`  [synth-wire] stack '${stack}' has no synthesizer pattern set — skipped (no-op)`);
-    process.exit(0);
+  let synthRules: Record<string, unknown> = {};
+  if (stackDef) {
+    // Run the deterministic synthesizer (no LLM; no network — principle 17)
+    console.debug(`  [synth-wire] DEBUG: synthesizing rules for stack '${stack}' (${stackDef.framework}@${stackDef.version})`);
+    const entries = loadEntries(stackDef.framework, stackDef.version, stackDef.patterns);
+    const plan = synthesize({
+      framework: stackDef.framework,
+      version: stackDef.version,
+      patterns: entries,
+      missing: [],
+      drift: null,
+    });
+    synthRules = JSON.parse(plan.eslintConfigSnippet) as Record<string, unknown>;
+  } else {
+    console.log(`  [synth-wire] stack '${stack}' has no synthesizer pattern set — preset baseline empty; live-research snippet (if any) still wires`);
   }
-
-  // Run the deterministic synthesizer (no LLM; no network — principle 17)
-  console.debug(`  [synth-wire] DEBUG: synthesizing rules for stack '${stack}' (${stackDef.framework}@${stackDef.version})`);
-  const entries = loadEntries(stackDef.framework, stackDef.version, stackDef.patterns);
-  const plan = synthesize({
-    framework: stackDef.framework,
-    version: stackDef.version,
-    patterns: entries,
-    missing: [],
-    drift: null,
-  });
-  const synthRules = JSON.parse(plan.eslintConfigSnippet) as Record<string, unknown>;
 
   // ─── Augment-first: merge the LIVE-research snippet over the preset baseline (D1/D2) ──
   // The live snippet (when present) is the consumer's researched rules; it AUGMENTS the preset

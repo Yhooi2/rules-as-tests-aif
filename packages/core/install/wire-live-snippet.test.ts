@@ -20,7 +20,9 @@
  *                override path — not presence-only wiring — is what flips it.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -40,6 +42,9 @@ const SELECTION = resolve(HERE, '../synthesizer/fixtures/no-head-element.selecti
 const TS_MORPH_AVAILABLE =
   existsSync(resolve(REPO_ROOT, 'node_modules/ts-morph/package.json')) ||
   existsSync(resolve(REPO_ROOT, 'packages/core/node_modules/ts-morph/package.json'));
+
+const BUNDLE = resolve(HERE, 'synth-and-wire.bundle.mjs');
+const RN_SELECTOR = "MemberExpression[object.name='localStorage']";
 
 const R12 = 'rules-as-tests/no-server-imports-in-client';
 const HEAD_SELECTOR = "JSXOpeningElement[name.name='head']";
@@ -194,6 +199,69 @@ describe('security — rule-id key validation (injection prevention)', () => {
       expect(result.modified).toContain('"warn\\\\"');
       // Paired-negative: must NOT contain the broken unescaped form.
       expect(result.modified).not.toContain("'warn\\'");
+    },
+  );
+});
+
+describe('#827 B2 — live snippet wires for a stack with NO STACK_PATTERNS entry (CLI control-flow)', () => {
+  // These exercise the SHIPPED bundle's main() control flow, not just mergeLiveRules: the B2 bug was
+  // an early `process.exit(0)` ("no synthesizer pattern set") that fired BEFORE the live-snippet
+  // merge for any stack absent from STACK_PATTERNS (ts-server / react-native / react-spa). The unit
+  // tests above prove mergeLiveRules({}, live) === live; they do NOT prove main() reaches the merge.
+  // Spawning the bundle (the artifact 99-finalize.sh runs via plain node) is the faithful proof.
+  // cwd = REPO_ROOT so the bundle's externalised ts-morph (wireNRules) resolves, as in 99-finalize.
+
+  const run = (cfg: string, snippet: string) =>
+    execFileSync('node', [BUNDLE, '--stack', 'react-native', '--path', cfg, '--snippet', snippet], {
+      cwd: REPO_ROOT,
+      stdio: 'pipe',
+      // Anchor the bundle's fs-based schema reads (import.meta.url collapses to install/ under
+      // bundling, #755) — the same env var 99-finalize.sh:34 sets when it runs the bundle.
+      env: { ...process.env, AIF_SYNTH_PKG_ROOT: resolve(REPO_ROOT, 'packages/core') },
+    });
+
+  it.skipIf(!TS_MORPH_AVAILABLE)(
+    'positive — react-native (no preset patterns) + live snippet ⇒ the live selector wires',
+    () => {
+      const dir = mkdtempSync(resolve(tmpdir(), 'b2-pos-'));
+      const cfg = resolve(dir, 'eslint.config.mjs');
+      copyFileSync(TEMPLATE, cfg);
+      const snippet = resolve(dir, 'snippet.json');
+      writeFileSync(
+        snippet,
+        JSON.stringify({
+          'rules-as-tests/restricted-syntax-audit-exempt': [
+            'error',
+            { selector: RN_SELECTOR, message: 'no web localStorage in RN' },
+          ],
+        }),
+      );
+      try {
+        run(cfg, snippet);
+        // B2: the live RN selector landed even though react-native has no STACK_PATTERNS entry.
+        // Under the pre-fix early-exit this would be ABSENT (the merge was never reached).
+        expect(readFileSync(cfg, 'utf8')).toContain(RN_SELECTOR);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.skipIf(!TS_MORPH_AVAILABLE)(
+    'negative — react-native + absent snippet ⇒ byte-identical no-op (preserves §5 baselines)',
+    () => {
+      const dir = mkdtempSync(resolve(tmpdir(), 'b2-neg-'));
+      const cfg = resolve(dir, 'eslint.config.mjs');
+      copyFileSync(TEMPLATE, cfg);
+      const before = readFileSync(cfg, 'utf8');
+      try {
+        run(cfg, resolve(dir, 'does-not-exist.json'));
+        const after = readFileSync(cfg, 'utf8');
+        expect(after).toBe(before); // empty preset + absent snippet ⇒ {} ⇒ no write
+        expect(after).not.toContain(RN_SELECTOR);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
     },
   );
 });
