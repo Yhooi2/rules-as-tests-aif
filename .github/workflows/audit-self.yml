@@ -676,6 +676,67 @@ jobs:
             || { echo "::error::eslint not installed — install.sh --full dep install failed; the lint gate cannot run (false-green guard)"; exit 1; }
           npm run lint
 
+  framework-fresh-install-validate-multistack:
+    # GH #807: the deps-installed e2e companion to tests/install-sh/multi-stack-monorepo.test.sh §9.
+    # A fresh `install.sh ts-server --full` on a #793/#796 multi-stack monorepo (apps/api ts-server +
+    # apps/mobile Expo, NO root eslint.config.mjs) used to make the 4 root-anchored validate gates go
+    # RED 6/10 (check:globs/check:enforced exit 2; arch:check/format:check exit 1). The flat matrix
+    # job above installs into a SINGLE-package consumer and never exercises the no-root-config path —
+    # this job is the genuinely-different monorepo fixture (⚑m3). It runs ONLY the 4 gates this fix
+    # repairs (the RED-6/10 set), deterministically and API-free per no-paid-llm-in-ci.md — NOT the
+    # full `npm run validate`, whose typecheck/test/lint arms depend on per-workspace toolchain
+    # surfaces tracked separately (#808/#810) and out of #807 scope.
+    name: "Fresh-install validate smoke — multi-stack monorepo (closes #807)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '20'
+      - name: "Fresh install.sh ts-server --full into a multi-stack monorepo consumer"
+        run: |
+          CONSUMER=$(mktemp -d)
+          cd "$CONSUMER"
+          git init --quiet
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          # pnpm-workspace monorepo root: only typescript at root; per-workspace stack signals below.
+          echo '{"name":"timeliner-mono","version":"0.0.0","private":true,"devDependencies":{"typescript":"5.6.0"}}' > package.json
+          printf 'packages:\n  - "apps/*"\n  - "packages/*"\n' > pnpm-workspace.yaml
+          # apps/api → ts-server (Hono). A boundary source file under src/routes so check:globs
+          # exercises the real glob-liveness recursion (not the trivial "no source → skip").
+          mkdir -p apps/api/src/routes
+          echo '{"name":"@timeliner/api","dependencies":{"hono":"4.0.0"},"devDependencies":{"typescript":"5.6.0"}}' > apps/api/package.json
+          printf 'export const users = 1;\n' > apps/api/src/routes/users.ts
+          # apps/mobile → react-native/Expo (ships NO RULE_GLOBS.boundary → the gate skips it).
+          mkdir -p apps/mobile
+          echo '{"name":"@timeliner/mobile","dependencies":{"expo":"~52.0.0","react-native":"0.76.0","react":"18.3.0"}}' > apps/mobile/package.json
+          bash "$GITHUB_WORKSPACE/install.sh" ts-server --full
+          echo "CONSUMER=$CONSUMER" >> "$GITHUB_ENV"
+      - name: Assert the consumer toolchain installed (else the validate gate is vacuous)
+        run: |
+          cd "$CONSUMER"
+          for bin in prettier depcruise; do
+            test -x "node_modules/.bin/$bin" \
+              || { echo "::error::$bin not installed — install.sh --full dep install failed; the multi-stack validate gate cannot run (false-green guard)"; exit 1; }
+          done
+          echo "✓ consumer toolchain present (prettier + dependency-cruiser)"
+      - name: "Consumer (multi-stack): the 4 root-anchored gates #807 repairs must all be green"
+        # check:globs + check:enforced are dependency-free bash (they recurse per workspace);
+        # arch:check (depcruise) + format:check (prettier) need the toolchain asserted above.
+        # All four were RED before the fix; assert each exits 0 on the no-root-config monorepo.
+        run: |
+          cd "$CONSUMER"
+          npm run check:globs
+          npm run check:enforced
+          npm run arch:check
+          npm run format:check
+          echo "✓ multi-stack monorepo: check:globs + check:enforced + arch:check + format:check all green (#807)"
+
   framework-self-detect:
     name: Detector v1 — self-application snapshot (L1 invariant)
     runs-on: ubuntu-latest
