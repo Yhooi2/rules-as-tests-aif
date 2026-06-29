@@ -679,13 +679,16 @@ jobs:
   framework-fresh-install-validate-multistack:
     # GH #807: the deps-installed e2e companion to tests/install-sh/multi-stack-monorepo.test.sh §9.
     # A fresh `install.sh ts-server --full` on a #793/#796 multi-stack monorepo (apps/api ts-server +
-    # apps/mobile Expo, NO root eslint.config.mjs) used to make the 4 root-anchored validate gates go
-    # RED 6/10 (check:globs/check:enforced exit 2; arch:check/format:check exit 1). The flat matrix
-    # job above installs into a SINGLE-package consumer and never exercises the no-root-config path —
-    # this job is the genuinely-different monorepo fixture (⚑m3). It runs ONLY the 4 gates this fix
-    # repairs (the RED-6/10 set), deterministically and API-free per no-paid-llm-in-ci.md — NOT the
-    # full `npm run validate`, whose typecheck/test/lint arms depend on per-workspace toolchain
-    # surfaces tracked separately (#808/#810) and out of #807 scope.
+    # apps/mobile Expo, NO root eslint.config.mjs) used to make the root-anchored validate gates go
+    # RED (check:globs/check:enforced exit 2; arch:check exit 1). The flat matrix job above installs
+    # into a SINGLE-package consumer and never exercises the no-root-config path — this is the
+    # genuinely-different monorepo fixture (⚑m3). It asserts the 3 deps-installed-meaningful gates:
+    # check:globs + check:enforced (Batch-A per-workspace recursion) and arch:check (Batch-B root
+    # .dependency-cruiser.cjs). format:check is covered deps-free by the §9 .prettierignore placement
+    # assertion (its #807 surface is a brownfield consumer-.prettierrc mismatch, NOT reproduced by a
+    # greenfield fixture whose configs are AIF-prettier-clean). Deterministic + API-free per
+    # no-paid-llm-in-ci.md — NOT the full `npm run validate` (typecheck/test/lint arms depend on
+    # per-workspace toolchain surfaces tracked under #808/#810, out of #807 scope).
     name: "Fresh-install validate smoke — multi-stack monorepo (closes #807)"
     runs-on: ubuntu-latest
     permissions:
@@ -704,9 +707,13 @@ jobs:
           git init --quiet
           git config user.email "ci@example.com"
           git config user.name "CI"
-          # pnpm-workspace monorepo root: only typescript at root; per-workspace stack signals below.
+          # npm-managed multi-stack monorepo: apps/api (ts-server) + apps/mobile (Expo). NO
+          # pnpm-workspace.yaml — per-workspace detection (_workspace_pkg_dirs) keys on the
+          # apps/*/package.json dir-walk, NOT a pnpm manifest, so the multi-stack branch still fires;
+          # meanwhile detect_pm falls to npm (the runner has npm, not pnpm) so `--full` actually
+          # installs the toolchain. No workspace marker + no root src → AIF_ARCH_TARGET resolves to "."
+          # (setup.d/70-deps.sh:35-44) — the same safe target the green flat job uses.
           echo '{"name":"timeliner-mono","version":"0.0.0","private":true,"devDependencies":{"typescript":"5.6.0"}}' > package.json
-          printf 'packages:\n  - "apps/*"\n  - "packages/*"\n' > pnpm-workspace.yaml
           # apps/api → ts-server (Hono). A boundary source file under src/routes so check:globs
           # exercises the real glob-liveness recursion (not the trivial "no source → skip").
           mkdir -p apps/api/src/routes
@@ -717,25 +724,28 @@ jobs:
           echo '{"name":"@timeliner/mobile","dependencies":{"expo":"~52.0.0","react-native":"0.76.0","react":"18.3.0"}}' > apps/mobile/package.json
           bash "$GITHUB_WORKSPACE/install.sh" ts-server --full
           echo "CONSUMER=$CONSUMER" >> "$GITHUB_ENV"
-      - name: Assert the consumer toolchain installed (else the validate gate is vacuous)
+      - name: Assert the consumer toolchain installed (else the gates are vacuous)
         run: |
           cd "$CONSUMER"
-          for bin in prettier depcruise; do
+          for bin in eslint depcruise; do
             test -x "node_modules/.bin/$bin" \
-              || { echo "::error::$bin not installed — install.sh --full dep install failed; the multi-stack validate gate cannot run (false-green guard)"; exit 1; }
+              || { echo "::error::$bin not installed — install.sh --full dep install failed; the multi-stack gate cannot run (false-green guard)"; exit 1; }
           done
-          echo "✓ consumer toolchain present (prettier + dependency-cruiser)"
-      - name: "Consumer (multi-stack): the 4 root-anchored gates #807 repairs must all be green"
-        # check:globs + check:enforced are dependency-free bash (they recurse per workspace);
-        # arch:check (depcruise) + format:check (prettier) need the toolchain asserted above.
-        # All four were RED before the fix; assert each exits 0 on the no-root-config monorepo.
+          echo "✓ consumer toolchain present (eslint + dependency-cruiser)"
+      - name: "Consumer (multi-stack): the deps-installed #807 gates must be green"
+        # check:globs + check:enforced recurse per-workspace (Batch A); arch:check needs the root
+        # .dependency-cruiser.cjs the multi-stack branch now places (Batch B). All three were RED on a
+        # no-root-config monorepo before the fix (check:globs/enforced exit 2; arch:check exit 1).
+        # check:enforced runs `eslint --print-config` per workspace (eslint asserted above); apps/api
+        # has no zod boundary and apps/mobile no boundary tokens → both skip R2 cleanly → exit 0.
+        # format:check is covered deps-free by multi-stack-monorepo.test.sh §9 (Batch C placement).
+        # Deterministic + API-free per no-paid-llm-in-ci.md.
         run: |
           cd "$CONSUMER"
           npm run check:globs
           npm run check:enforced
           npm run arch:check
-          npm run format:check
-          echo "✓ multi-stack monorepo: check:globs + check:enforced + arch:check + format:check all green (#807)"
+          echo "✓ multi-stack monorepo: check:globs + check:enforced + arch:check all green (#807)"
 
   framework-self-detect:
     name: Detector v1 — self-application snapshot (L1 invariant)
