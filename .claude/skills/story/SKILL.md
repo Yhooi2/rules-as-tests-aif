@@ -3,10 +3,10 @@ name: story
 description: Tell the story of this session in plain, engaging language — by acts, with jargon explained, honest about what's left. Use when work is done / a PR was pushed, or when the user asks to recap what was done ("расскажи что сделали", "расскажи историю", "story", "recap", "по актам"). Output language follows AIF_HOOK_LANG (RU operator / EN default).
 ---
 
-# /story — session recap as a story
+> **Authoritative for:** /story skill — session recap narrated as a story by acts; localized to the operator's language via AIF_HOOK_LANG; single SSOT for the story spec shared with the Stop-hook branch.
+> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../../README.md#why-this-exists). Per-turn self-diagnostic recap (`## 🟢`) — that is a separate output.
 
-> **Authoritative for:** session recap narration skill — localized story-format generation, act-by-act narrative structure, `## 🎬` marker convention, and the shared SSOT link to the Stop-hook `aif_msg_eot_branch_story` branch.
-> **NOT authoritative for:** project goal — see [README.md#why-this-exists](../../README.md#why-this-exists). Output language gate — see `AIF_HOOK_LANG` convention and [.claude/hooks/inject-session-bootstrap.sh](./../hooks/inject-session-bootstrap.sh).
+# /story — session recap as a story
 
 Narrate the whole session as an engaging, plain-language story for the human — the
 reader-facing companion to the dry per-turn self-diagnostic recap (`## 🟢`). Different
